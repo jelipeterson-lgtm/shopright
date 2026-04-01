@@ -5,6 +5,9 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Settings from './pages/Settings'
 import NewStore from './pages/NewStore'
+import Session from './pages/Session'
+import Visit from './pages/Visit'
+import ManualVisit from './pages/ManualVisit'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -40,6 +43,9 @@ function App() {
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/new-store" element={<ProtectedRoute><NewStore /></ProtectedRoute>} />
+          <Route path="/session" element={<ProtectedRoute><Session /></ProtectedRoute>} />
+          <Route path="/visit/:id" element={<ProtectedRoute><Visit /></ProtectedRoute>} />
+          <Route path="/manual-visit" element={<ProtectedRoute><ManualVisit /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

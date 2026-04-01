@@ -55,6 +55,37 @@ const api = {
 
   getStorePrograms: (storeNumber, retailerName) =>
     request(`/stores/programs?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}`),
+
+  // Visits
+  createVisit: (data) => request('/visits', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  getVisits: (params = {}) => {
+    const qs = new URLSearchParams(params).toString()
+    return request(`/visits${qs ? '?' + qs : ''}`)
+  },
+
+  getVisit: (id) => request(`/visits/${id}`),
+
+  updateVisit: (id, data) => request(`/visits/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+
+  completeVisit: (id) => request(`/visits/${id}/complete`, { method: 'POST' }),
+
+  unlockVisit: (id) => request(`/visits/${id}/unlock`, { method: 'POST' }),
+
+  discardVisit: (id) => request(`/visits/${id}`, { method: 'DELETE' }),
+
+  closeStop: (storeNumber, retailerName, sessionDate) =>
+    request(`/visits/close-stop?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}&session_date=${sessionDate}`, {
+      method: 'POST',
+    }),
+
+  checkOpenStops: (sessionDate) => request(`/visits/check/open-stops?session_date=${sessionDate}`),
 }
 
 export default api

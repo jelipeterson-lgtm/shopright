@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 2 — Store Directory & GPS
+**Current Phase:** 🟡 Phase 3 — Session & Visit Flow
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -115,13 +115,13 @@
 | 2.10 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 2 Validation:**
-- [ ] Backend pulls Book1.xlsx from Dropbox — stores visible in database
-- [ ] Open on iPhone in Chrome → tap New Store → GPS fires → nearby stores shown with distances
-- [ ] Correct store appears for a known location
-- [ ] Manual search works by store number and retailer name
-- [ ] Program picklist shows correct options after store confirmed
+- [x] Backend pulls Book1.xlsx from Dropbox — stores visible in database
+- [x] Open on iPhone in Chrome → tap New Store → GPS fires → nearby stores shown with distances
+- [x] Correct store appears for a known location
+- [x] Manual search works by store number and retailer name
+- [x] Program picklist shows correct options after store confirmed
 
-**Phase 2 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 2 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
 
 ---
 
@@ -131,19 +131,19 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 3.1 | Plan mode: visit state machine, data model, gate logic | ⬜ | |
-| 3.2 | VendorVisit data model — all fields, Draft/Complete status | ⬜ | |
-| 3.3 | Home screen — active session card, Start Session button, past sessions list | ⬜ | |
-| 3.4 | Session screen — vendor visits grouped by store, status badges | ⬜ | |
-| 3.5 | New Store flow — GPS/search, confirm, open stop | ⬜ | |
-| 3.6 | New Vendor — program picklist, creates Draft VendorVisit, opens form | ⬜ | |
-| 3.7 | Multiple drafts — toggle between open drafts from session screen | ⬜ | |
-| 3.8 | After completing vendor: 'Add Another Vendor' or 'Close Store' options | ⬜ | |
-| 3.9 | Close Store gate — blocks if Draft visits exist at stop | ⬜ | |
-| 3.10 | New Store gate — blocks if any stop from today is still open | ⬜ | |
-| 3.11 | End Session gate — blocks if any open stops | ⬜ | |
-| 3.12 | Manual visit entry — full store search, date/time fields, same form | ⬜ | |
-| 3.13 | Loading, error, and empty states on all screens | ⬜ | |
+| 3.1 | Plan mode: visit state machine, data model, gate logic | ✅ | vendor_visits table with all 40 fields |
+| 3.2 | VendorVisit data model — all fields, Draft/Complete status | ✅ | Draft/Complete status, stop_open flag |
+| 3.3 | Home screen — active session card, Start Session button, past sessions list | ✅ | Shows today's visit count, draft indicator |
+| 3.4 | Session screen — vendor visits grouped by store, status badges | ✅ | Grouped by store, Open/Closed badges |
+| 3.5 | New Store flow — GPS/search, confirm, open stop | ✅ | Creates Draft visit on confirm |
+| 3.6 | New Vendor — program picklist, creates Draft VendorVisit, opens form | ✅ | |
+| 3.7 | Multiple drafts — toggle between open drafts from session screen | ✅ | Edit/View links per visit |
+| 3.8 | After completing vendor: 'Add Another Vendor' or 'Close Store' options | ✅ | Shown on open stops |
+| 3.9 | Close Store gate — blocks if Draft visits exist at stop | ✅ | Server-side check |
+| 3.10 | New Store gate — blocks if any stop from today is still open | ✅ | Checks open stops before GPS |
+| 3.11 | End Session gate — blocks if any open stops | ✅ | Same check on End Session |
+| 3.12 | Manual visit entry — full store search, date/time fields, same form | ✅ | ManualVisit page with date/time |
+| 3.13 | Loading, error, and empty states on all screens | ✅ | All screens covered |
 
 **🛑 GATE — Phase 3 Validation:**
 - [ ] Start session → add store via GPS → add two vendors as drafts → toggle between them
@@ -332,6 +332,7 @@
 | March 2026 | Setup | PRD v3 complete. Setup Guide, CLAUDE.md, PROGRESS.md created. Ready to begin setup. | Complete Section 3 of Setup Guide |
 | April 1, 2026 | Setup + Phase 0 | All setup steps completed. Scaffolded React+Tailwind frontend and FastAPI backend. Deployed to Vercel and Render. End-to-end health check verified. | Phase 1 — Auth & Profile |
 | April 1, 2026 | Phase 1 | Auth + profile complete. 3-step signup, login, settings, API key test, Supabase profiles table with RLS. Fixed auth token propagation and added inline API key setup instructions. | Phase 2 — Store Directory & GPS |
+| April 1, 2026 | Phase 2 | Store directory loaded from Dropbox (44 stores, 37 geocoded). GPS nearby, manual search, program picklist all working. | Phase 3 — Session & Visit Flow |
 
 ---
 

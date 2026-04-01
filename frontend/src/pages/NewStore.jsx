@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import api from '../services/api'
 
 function NewStore() {
   const navigate = useNavigate()
-  const [gpsStatus, setGpsStatus] = useState('requesting')
+  const location = useLocation()
+  const sessionDate = location.state?.sessionDate || new Date().toISOString().split('T')[0]
+  const preselectedStore = location.state?.preselectedStore
+  const [gpsStatus, setGpsStatus] = useState(preselectedStore ? 'skipped' : 'requesting')
   const [nearbyStores, setNearbyStores] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -19,7 +22,12 @@ function NewStore() {
   const [loadingPrograms, setLoadingPrograms] = useState(false)
 
   useEffect(() => {
-    requestGPS()
+    if (preselectedStore) {
+      // Coming from "Add Another Vendor" — skip GPS, go straight to program selection
+      handleSelectStore(preselectedStore)
+    } else {
+      requestGPS()
+    }
   }, [])
 
   const requestGPS = () => {
@@ -93,14 +101,30 @@ function NewStore() {
     }
   }
 
-  const handleConfirm = () => {
-    // Store confirmed with program — pass to session flow (Phase 3)
-    const storeData = {
-      ...selectedStore,
-      program: selectedProgram,
+  const handleConfirm = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const now = new Date()
+      const visitData = {
+        store_id: selectedStore.id,
+        retailer_name: selectedStore.retailer_name,
+        store_number: selectedStore.store_number,
+        program: selectedProgram,
+        address: selectedStore.address,
+        city: selectedStore.city,
+        state: selectedStore.state,
+        visit_date: sessionDate,
+        visit_time: now.toTimeString().slice(0, 5),
+        session_date: sessionDate,
+      }
+      const result = await api.createVisit(visitData)
+      navigate(`/visit/${result.data.id}`)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-    // For now, navigate back to home with confirmed store info
-    navigate('/', { state: { confirmedStore: storeData } })
   }
 
   // Store card component
