@@ -20,59 +20,6 @@ const EVAL_FIELDS = [
   ['eval_other_store_areas', 'In other areas of store?'],
 ]
 
-// Map flag field names to visit data keys for inline editing
-const FIELD_MAP = {
-  'Visit Recap': 'visit_recap',
-  'Rep Names': 'rep_names',
-  'Rep Description': 'rep_description',
-  'Rep Count Reason': 'rep_count_reason',
-  'Engaging Comment': 'eval_engaging_comment',
-  'Greeting Comment': 'eval_greeting_comment',
-  'One No Comment': 'eval_one_no_comment',
-  'Pushy Comment': 'eval_pushy_comment',
-  'Clogging Comment': 'eval_clogging_comment',
-  'Leaning Comment': 'eval_leaning_comment',
-  'Food/Drink Comment': 'eval_food_drink_comment',
-  'Dress Code Comment': 'eval_dress_code_comment',
-  'Name Badge Comment': 'eval_name_badge_comment',
-  'Badge Location Comment': 'eval_badge_location_comment',
-  'Badge Where': 'eval_badge_where',
-  'Other Area Comment': 'eval_other_area_comment',
-  'Other Store Areas Comment': 'eval_other_store_areas_comment',
-  'Soft Selling Comment': 'eval_soft_selling_comment',
-}
-
-function FlagCard({ flag, visit, onUpdate, onDismiss }) {
-  const fieldKey = FIELD_MAP[flag.field]
-  const currentValue = fieldKey ? (visit[fieldKey] || '') : null
-
-  return (
-    <div className="bg-white rounded-md p-3 border border-yellow-200">
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <p className="text-xs font-medium text-yellow-700">{flag.field}</p>
-          <p className="text-sm text-gray-700 mt-1">{flag.question}</p>
-        </div>
-        <button
-          onClick={onDismiss}
-          className="text-xs text-green-600 font-medium hover:text-green-700 ml-2 flex-shrink-0 bg-green-50 px-2 py-1 rounded"
-        >
-          Done
-        </button>
-      </div>
-      {fieldKey && (
-        <textarea
-          value={currentValue}
-          onChange={(e) => onUpdate(fieldKey, e.target.value)}
-          rows={2}
-          className="w-full border border-yellow-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300"
-          placeholder="Edit your response here..."
-        />
-      )}
-    </div>
-  )
-}
-
 function Visit() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -229,9 +176,6 @@ function Visit() {
     }
   }
 
-  const handleDismissFlag = (index) => {
-    setFlags((prev) => prev.filter((_, i) => i !== index))
-  }
 
   const handleUnlock = async () => {
     setSaving(true)
@@ -503,17 +447,16 @@ function Visit() {
         {/* AI Review Flags */}
         {reviewState === 'flags' && flags.length > 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <h2 className="text-sm font-semibold text-yellow-800 mb-2">AI Review — Questions</h2>
-            <p className="text-xs text-yellow-600 mb-3">Edit your response below each flag, then dismiss when done.</p>
-            <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-yellow-800 mb-2">AI Review — {flags.length} question{flags.length !== 1 ? 's' : ''}</h2>
+            <p className="text-xs text-yellow-600 mb-3">
+              Review the questions below. Tap "Edit My Notes" to go back and update your responses, then submit again for a fresh review.
+            </p>
+            <div className="space-y-2">
               {flags.map((flag, i) => (
-                <FlagCard
-                  key={i}
-                  flag={flag}
-                  visit={visit}
-                  onUpdate={updateField}
-                  onDismiss={() => handleDismissFlag(i)}
-                />
+                <div key={i} className="bg-white rounded-md p-3 border border-yellow-200">
+                  <p className="text-xs font-medium text-yellow-700">{flag.field}</p>
+                  <p className="text-sm text-gray-700 mt-1">{flag.question}</p>
+                </div>
               ))}
             </div>
           </div>
@@ -538,15 +481,19 @@ function Visit() {
                 <p className="text-gray-500 text-sm">AI is reviewing your notes...</p>
               </div>
             ) : reviewState === 'flags' ? (
-              <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setReviewState('idle'); setFlags([]); window.scrollTo(0, 0) }}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700"
+                >
+                  Edit My Notes
+                </button>
                 <button
                   onClick={handleSubmitAnyway}
                   disabled={saving}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
                 >
-                  {flags.length === 0
-                    ? (saving ? 'Submitting...' : 'Submit')
-                    : (saving ? 'Submitting...' : 'Looks good, submit anyway')}
+                  {saving ? 'Submitting...' : 'Submit Anyway'}
                 </button>
               </div>
             ) : !isComplete ? (
