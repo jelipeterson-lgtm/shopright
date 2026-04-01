@@ -35,7 +35,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Routes>

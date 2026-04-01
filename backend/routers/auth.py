@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from db import supabase
+from db import supabase, supabase_admin
 import anthropic
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -31,7 +31,7 @@ class ProfileUpdate(BaseModel):
 @router.get("/profile")
 def get_profile(authorization: str = Header(...)):
     user_id = get_user_id(authorization)
-    result = supabase.table("profiles").select("*").eq("id", user_id).single().execute()
+    result = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
     return {"success": True, "data": result.data, "error": None}
 
 
@@ -41,7 +41,7 @@ def update_profile(body: ProfileUpdate, authorization: str = Header(...)):
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     if not updates:
         return {"success": True, "data": None, "error": "No fields to update"}
-    result = supabase.table("profiles").update(updates).eq("id", user_id).execute()
+    result = supabase_admin.table("profiles").update(updates).eq("id", user_id).execute()
     return {"success": True, "data": result.data[0] if result.data else None, "error": None}
 
 
