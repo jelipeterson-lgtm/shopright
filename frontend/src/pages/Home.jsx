@@ -1,39 +1,32 @@
-import { useState, useEffect } from 'react'
-import api from '../services/api'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../services/AuthContext'
 
 function Home() {
-  const [status, setStatus] = useState('Checking connection...')
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    api.healthCheck()
-      .then((data) => {
-        setStatus(data.data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError('Could not reach backend')
-        setLoading(false)
-      })
-  }, [])
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-      <h1 className="text-4xl font-bold text-gray-900 mb-2">ShopRight</h1>
-      <p className="text-gray-500 mb-8">Field assessment tool for mystery shoppers</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">ShopRight</h1>
+          <button onClick={() => navigate('/settings')} className="text-blue-600 text-sm hover:underline">Settings</button>
+        </div>
 
-      <div className="bg-white rounded-lg shadow p-6 w-full max-w-sm text-center">
-        <h2 className="text-lg font-semibold text-gray-700 mb-3">System Status</h2>
-        {loading && (
-          <p className="text-gray-400">Connecting to server...</p>
-        )}
-        {error && (
-          <p className="text-red-500">{error}</p>
-        )}
-        {!loading && !error && (
-          <p className="text-green-600">{status}</p>
-        )}
+        <div className="bg-white rounded-lg shadow p-6 mb-4">
+          <p className="text-sm text-gray-500">Signed in as</p>
+          <p className="text-gray-800 font-medium">{user?.email}</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <p className="text-gray-400 text-sm">No active session</p>
+          <p className="text-gray-300 text-xs mt-1">Session and visit features coming in Phase 3</p>
+        </div>
       </div>
     </div>
   )

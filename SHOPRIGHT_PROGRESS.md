@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 0 — Project Foundation
+**Current Phase:** 🟡 Phase 1 — Auth & Profile
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -58,16 +58,16 @@
 | 0.2 | Scaffold frontend — React + Tailwind, basic routing, placeholder home screen | ✅ | Vite + React Router + Tailwind v4 |
 | 0.3 | Scaffold backend — FastAPI app, health check endpoint, requirements.txt | ✅ | /health returns 200 |
 | 0.4 | Connect Supabase — verify backend reaches database | ✅ | Auth health 200, db.py configured |
-| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | 🟡 | Pushed to GitHub — needs Vercel deploy config |
-| 0.6 | Deploy backend to Render — confirm health check returns 200 | 🟡 | Pushed to GitHub — needs Render deploy config |
-| 0.7 | Frontend calls backend health check — full stack communicates end to end | ⬜ | Blocked on 0.5 + 0.6 |
+| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | ✅ | shopright-74hpouudf-jelipeterson-7076s-projects.vercel.app |
+| 0.6 | Deploy backend to Render — confirm health check returns 200 | ✅ | shopright-api.onrender.com/health returns 200 |
+| 0.7 | Frontend calls backend health check — full stack communicates end to end | ✅ | .env.production + CORS configured |
 
 **🛑 GATE — Phase 0 Validation:**
-- [ ] Vercel URL loads placeholder home screen in Chrome
-- [ ] Render health check URL returns OK
-- [ ] Frontend successfully calls backend (confirmed in browser console)
+- [x] Vercel URL loads placeholder home screen in Chrome
+- [x] Render health check URL returns OK
+- [x] Frontend successfully calls backend (confirmed in browser console)
 
-**Phase 0 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 0 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
 
 ---
 
@@ -330,6 +330,7 @@
 | Date | Phase | What Was Done | Next Step |
 |------|-------|---------------|-----------|
 | March 2026 | Setup | PRD v3 complete. Setup Guide, CLAUDE.md, PROGRESS.md created. Ready to begin setup. | Complete Section 3 of Setup Guide |
+| April 1, 2026 | Setup + Phase 0 | All setup steps completed. Scaffolded React+Tailwind frontend and FastAPI backend. Deployed to Vercel and Render. End-to-end health check verified. | Phase 1 — Auth & Profile |
 
 ---
 
