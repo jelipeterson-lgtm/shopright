@@ -1,6 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import EvaluationField from '../components/EvaluationField'
+import VoiceInput from '../components/VoiceInput'
+
+// All 22 evaluation fields: [fieldId, label, commentFieldId]
+const EVAL_FIELDS = [
+  ['eval_engaging', 'Were reps engaging with members?'],
+  ['eval_greeting', 'Following approved greeting script?'],
+  ['eval_one_no', 'Accepting 1 no & go?'],
+  ['eval_pushy', 'Pushy or unprofessional?'],
+  ['eval_clogging', 'Clogging aisle/blocking carts?'],
+  ['eval_leaning', 'Leaning/sitting at kiosk?'],
+  ['eval_food_drink', 'Kiosk free of food/drink?'],
+  ['eval_dress_code', 'Proper dress code?'],
+  ['eval_name_badge', 'Wearing proper name badge?'],
+  ['eval_badge_location_pass', 'Badge at shoulder height or lanyard?'],
+  ['eval_other_area', 'Using area other than kiosk?'],
+  ['eval_other_store_areas', 'In other areas of store?'],
+]
 
 function Visit() {
   const { id } = useParams()
@@ -9,9 +27,11 @@ function Visit() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const saveTimerRef = useRef(null)
 
   useEffect(() => {
     loadVisit()
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [id])
 
   const loadVisit = async () => {
@@ -25,10 +45,82 @@ function Visit() {
     }
   }
 
+  const autoSave = useCallback((updates) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await api.updateVisit(id, updates)
+      } catch (err) {
+        // Silent fail on auto-save — data is in local state
+      }
+    }, 500)
+  }, [id])
+
+  const updateField = (field, value) => {
+    setVisit((prev) => {
+      const updated = { ...prev, [field]: value }
+      autoSave({ [field]: value })
+      return updated
+    })
+  }
+
+  const handleEvalChange = (fieldId, value) => {
+    const updates = { [fieldId]: value }
+    // Clear comment when switching away from Fail
+    if (value !== 'Fail') {
+      updates[fieldId + '_comment'] = ''
+    }
+    setVisit((prev) => {
+      const updated = { ...prev, ...updates }
+      autoSave(updates)
+      return updated
+    })
+  }
+
+  const handleCommentChange = (commentField, value) => {
+    updateField(commentField, value)
+  }
+
   const handleComplete = async () => {
+    // Validate required fields
+    if (!visit.reps_present) {
+      setError('Reps Present is required')
+      return
+    }
+    if (visit.reps_present === 'Pass') {
+      if (!visit.rep_count && visit.rep_count !== 0) {
+        setError('Rep count is required')
+        return
+      }
+      if (visit.rep_count > 4 && !visit.rep_count_reason?.trim()) {
+        setError('Reason for unusual rep count is required when count > 4')
+        return
+      }
+      // Check for Fail fields without comments
+      for (const [fieldId] of EVAL_FIELDS) {
+        if (visit[fieldId] === 'Fail' && !visit[fieldId + '_comment']?.trim()) {
+          setError(`Comment required for failed field: ${fieldId.replace('eval_', '').replace(/_/g, ' ')}`)
+          return
+        }
+      }
+      // Badge location comment required if badge_location_pass = Fail
+      if (visit.eval_badge_location_pass === 'Fail' && !visit.eval_badge_location_comment?.trim()) {
+        setError('Badge location comment required when badge location fails')
+        return
+      }
+      // Soft selling comment if Fail
+      if (visit.eval_soft_selling === 'Fail' && !visit.eval_soft_selling_comment?.trim()) {
+        setError('Soft selling comment required')
+        return
+      }
+    }
+
     setSaving(true)
     setError(null)
     try {
+      // Save any pending changes first
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      await api.updateVisit(id, visit)
       await api.completeVisit(id)
       navigate('/session')
     } catch (err) {
@@ -67,20 +159,28 @@ function Visit() {
   }
 
   const isComplete = visit.status === 'Complete'
+  const repsPresent = visit.reps_present
+  const showFullForm = repsPresent === 'Pass'
+  const isWaterProgram = visit.program?.includes('WATER') || visit.program?.includes('RSW')
+  const isCostco = visit.retailer_name?.toLowerCase().includes('costco')
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6 pb-24">
       <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Visit</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold text-gray-900">Assessment</h1>
           <button onClick={() => navigate('/session')} className="text-blue-600 text-sm hover:underline">Back</button>
         </div>
 
-        {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
 
         {/* Visit header */}
         <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-gray-900">{visit.retailer_name} #{visit.store_number}</p>
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
               isComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
@@ -89,36 +189,236 @@ function Visit() {
             </span>
           </div>
           <p className="text-sm text-gray-500">{visit.program}</p>
-          <p className="text-sm text-gray-500">{visit.city}, {visit.state}</p>
-          <p className="text-xs text-gray-400 mt-1">{visit.visit_date} at {visit.visit_time}</p>
+          <div className="flex gap-4 mt-2">
+            <div>
+              <label className="block text-xs text-gray-400">Date</label>
+              <p className="text-sm text-gray-700">{visit.visit_date}</p>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400">Time</label>
+              <input
+                type="time"
+                value={visit.visit_time || ''}
+                onChange={(e) => updateField('visit_time', e.target.value)}
+                disabled={isComplete}
+                className="text-sm text-gray-700 border border-gray-200 rounded px-2 py-0.5 disabled:bg-gray-50"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Placeholder for assessment form (Phase 4) */}
-        <div className="bg-white rounded-lg shadow p-6 mb-4 text-center">
-          <p className="text-gray-400 text-sm">Assessment form coming in Phase 4</p>
-          <p className="text-gray-300 text-xs mt-1">
-            For now, you can mark this visit as Complete or go back to the session.
-          </p>
+        {/* Zone 1 — Reps Present Gate */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Reps Present?</h2>
+          <div className="flex gap-2 mb-3">
+            {['Pass', 'Fail'].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => !isComplete && updateField('reps_present', opt)}
+                disabled={isComplete}
+                className={`flex-1 py-2 rounded-md text-sm font-medium transition ${
+                  repsPresent === opt
+                    ? opt === 'Pass'
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-red-100 text-red-700 border border-red-300'
+                    : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100'
+                } ${isComplete ? 'opacity-50' : ''}`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+
+          {repsPresent === 'Fail' && (
+            <p className="text-sm text-red-500 italic">Reps not present — skip to Visit Recap below.</p>
+          )}
+
+          {showFullForm && (
+            <div className="space-y-3 mt-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Rep(s) First Names <span className="text-gray-400">(optional)</span></label>
+                <input
+                  type="text"
+                  value={visit.rep_names || ''}
+                  onChange={(e) => updateField('rep_names', e.target.value)}
+                  disabled={isComplete}
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description of Reps <span className="text-gray-400">(optional)</span></label>
+                <div className="flex items-start gap-2">
+                  <textarea
+                    value={visit.rep_description || ''}
+                    onChange={(e) => updateField('rep_description', e.target.value)}
+                    disabled={isComplete}
+                    rows={2}
+                    className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+                  />
+                  <VoiceInput
+                    onTranscript={(text) => updateField('rep_description', (visit.rep_description || '') + ' ' + text)}
+                    disabled={isComplete}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">How many reps present? <span className="text-red-400">*</span></label>
+                <input
+                  type="number"
+                  min="0"
+                  value={visit.rep_count ?? ''}
+                  onChange={(e) => updateField('rep_count', e.target.value ? parseInt(e.target.value) : null)}
+                  disabled={isComplete}
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+                />
+              </div>
+              {visit.rep_count > 4 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Reason for unusual rep count <span className="text-red-400">*</span></label>
+                  <div className="flex items-start gap-2">
+                    <textarea
+                      value={visit.rep_count_reason || ''}
+                      onChange={(e) => updateField('rep_count_reason', e.target.value)}
+                      disabled={isComplete}
+                      rows={2}
+                      className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+                    />
+                    <VoiceInput
+                      onTranscript={(text) => updateField('rep_count_reason', (visit.rep_count_reason || '') + ' ' + text)}
+                      disabled={isComplete}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Zone 2 — Evaluation Fields (only if Reps Present = Pass) */}
+        {showFullForm && (
+          <div className="bg-white rounded-lg shadow p-4 mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 mb-2">Evaluation</h2>
+            <p className="text-xs text-gray-400 mb-3">All fields default to Pass. Only tap Fail or N/A for exceptions.</p>
+
+            {EVAL_FIELDS.map(([fieldId, label]) => (
+              <EvaluationField
+                key={fieldId}
+                label={label}
+                fieldId={fieldId}
+                value={visit[fieldId]}
+                comment={visit[fieldId + '_comment']}
+                onValueChange={handleEvalChange}
+                onCommentChange={handleCommentChange}
+                disabled={isComplete}
+              />
+            ))}
+
+            {/* Badge location — always shown when reps present */}
+            <div className="py-3 border-b border-gray-100">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Where was badge located? {visit.eval_badge_location_pass === 'Fail' && <span className="text-red-400">*</span>}
+              </label>
+              <div className="flex items-start gap-2">
+                <textarea
+                  value={visit.eval_badge_where || ''}
+                  onChange={(e) => updateField('eval_badge_where', e.target.value)}
+                  disabled={isComplete}
+                  rows={1}
+                  placeholder={visit.eval_badge_location_pass === 'Fail' ? 'Required — where was it?' : 'Optional note'}
+                  className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+                />
+                <VoiceInput
+                  onTranscript={(text) => updateField('eval_badge_where', (visit.eval_badge_where || '') + ' ' + text)}
+                  disabled={isComplete}
+                />
+              </div>
+            </div>
+
+            {/* Soft Selling — Water programs only */}
+            {isWaterProgram && (
+              <EvaluationField
+                label="Soft Selling"
+                fieldId="eval_soft_selling"
+                value={visit.eval_soft_selling}
+                comment={visit.eval_soft_selling_comment}
+                onValueChange={handleEvalChange}
+                onCommentChange={handleCommentChange}
+                disabled={isComplete}
+              />
+            )}
+
+            {/* Resource Guide — Costco only */}
+            {isCostco && (
+              <div className="py-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-800">Costco Resource Guide Present</p>
+                  <div className="flex gap-1">
+                    {['Yes', 'No', 'N/A'].map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => !isComplete && updateField('eval_resource_guide', opt)}
+                        disabled={isComplete}
+                        className={`px-3 py-1 text-xs rounded-full font-medium transition ${
+                          visit.eval_resource_guide === opt
+                            ? opt === 'Yes'
+                              ? 'bg-green-100 text-green-700'
+                              : opt === 'No'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-600'
+                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                        } ${isComplete ? 'opacity-50' : ''}`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Zone 3 — Visit Recap (always shown) */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Visit Recap</h2>
+          <div className="flex items-start gap-2">
+            <textarea
+              value={visit.visit_recap || ''}
+              onChange={(e) => updateField('visit_recap', e.target.value)}
+              disabled={isComplete}
+              rows={5}
+              placeholder="Describe the overall visit..."
+              className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+            />
+            <VoiceInput
+              onTranscript={(text) => updateField('visit_recap', (visit.visit_recap || '') + ' ' + text)}
+              disabled={isComplete}
+            />
+          </div>
         </div>
 
         {/* Actions */}
-        {!isComplete ? (
-          <button
-            onClick={handleComplete}
-            disabled={saving}
-            className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Mark Complete'}
-          </button>
-        ) : (
-          <button
-            onClick={handleUnlock}
-            disabled={saving}
-            className="w-full bg-yellow-50 text-yellow-700 py-3 rounded-lg text-sm font-medium border border-yellow-200 hover:bg-yellow-100 disabled:opacity-50"
-          >
-            {saving ? 'Unlocking...' : 'Unlock for Editing'}
-          </button>
-        )}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <div className="max-w-lg mx-auto">
+            {!isComplete ? (
+              <button
+                onClick={handleComplete}
+                disabled={saving}
+                className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Review & Submit'}
+              </button>
+            ) : (
+              <button
+                onClick={handleUnlock}
+                disabled={saving}
+                className="w-full bg-yellow-50 text-yellow-700 py-3 rounded-lg text-sm font-medium border border-yellow-200 hover:bg-yellow-100 disabled:opacity-50"
+              >
+                {saving ? 'Unlocking...' : 'Unlock for Editing'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

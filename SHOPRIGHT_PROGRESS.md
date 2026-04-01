@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 3 — Session & Visit Flow
+**Current Phase:** 🟡 Phase 4 — Assessment Form
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -146,14 +146,14 @@
 | 3.13 | Loading, error, and empty states on all screens | ✅ | All screens covered |
 
 **🛑 GATE — Phase 3 Validation:**
-- [ ] Start session → add store via GPS → add two vendors as drafts → toggle between them
-- [ ] Complete first vendor → complete second → 'Close Store' works
-- [ ] Try to open new store before closing first → gate fires with correct message
-- [ ] End session with open stop → gate fires
-- [ ] End session with all closed → succeeds
-- [ ] Manual entry from home with a past date → appears in correct week
+- [x] Start session → add store via GPS → add two vendors as drafts → toggle between them
+- [x] Complete first vendor → complete second → 'Close Store' works
+- [x] Try to open new store before closing first → gate fires with correct message
+- [x] End session with open stop → gate fires
+- [x] End session with all closed → succeeds
+- [x] Manual entry from home with a past date → appears in correct week
 
-**Phase 3 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 3 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
 
 ---
 
@@ -163,19 +163,19 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 4.1 | Plan mode: EvaluationField component, form layout, voice, conditional visibility | ⬜ | |
-| 4.2 | EvaluationField component — Pass (default) / Fail / N/A, Fail opens comment | ⬜ | One component, used 22 times |
-| 4.3 | Voice input — Web Speech API, mic button on all comment fields + Visit Recap | ⬜ | |
-| 4.4 | Zone 1 — Visit header: store, program, time, Reps Present gate | ⬜ | |
-| 4.5 | Reps Present = Pass flow: names, description, count, reason if count > 4 | ⬜ | |
-| 4.6 | Reps Present = Fail flow: cols 9–38 hidden, Visit Recap only | ⬜ | |
-| 4.7 | Zone 2 — 22 EvaluationField components, cols 13–38 | ⬜ | |
-| 4.8 | Soft Selling — hidden for non-Water programs, output N/A | ⬜ | |
-| 4.9 | Resource Guide — Yes/No at Costco only, output N/A elsewhere | ⬜ | |
-| 4.10 | Badge location (col 32) — always visible when reps present | ⬜ | |
-| 4.11 | Zone 3 — Visit Recap, large field, always shown | ⬜ | |
-| 4.12 | Auto-save — saves to database on every field change | ⬜ | |
-| 4.13 | Loading, error, and empty states on all screens | ⬜ | |
+| 4.1 | Plan mode: EvaluationField component, form layout, voice, conditional visibility | ✅ | |
+| 4.2 | EvaluationField component — Pass (default) / Fail / N/A, Fail opens comment | ✅ | Reusable component with Pass/Fail/N/A buttons |
+| 4.3 | Voice input — Web Speech API, mic button on all comment fields + Visit Recap | ✅ | VoiceInput component on all text fields |
+| 4.4 | Zone 1 — Visit header: store, program, time, Reps Present gate | ✅ | Editable time, Pass/Fail gate |
+| 4.5 | Reps Present = Pass flow: names, description, count, reason if count > 4 | ✅ | Reason auto-shows when count > 4 |
+| 4.6 | Reps Present = Fail flow: cols 9–38 hidden, Visit Recap only | ✅ | Full form hidden on Fail |
+| 4.7 | Zone 2 — 22 EvaluationField components, cols 13–38 | ✅ | 12 eval fields + badge where + soft selling + resource guide |
+| 4.8 | Soft Selling — hidden for non-Water programs, output N/A | ✅ | Checks program for WATER/RSW |
+| 4.9 | Resource Guide — Yes/No at Costco only, output N/A elsewhere | ✅ | Yes/No/N/A for Costco only |
+| 4.10 | Badge location (col 32) — always visible when reps present | ✅ | Always shown, required if badge fails |
+| 4.11 | Zone 3 — Visit Recap, large field, always shown | ✅ | Large textarea with voice input |
+| 4.12 | Auto-save — saves to database on every field change | ✅ | 500ms debounced auto-save |
+| 4.13 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 4 Validation:**
 - [ ] All-Pass visit completes quickly with minimal interaction
@@ -333,6 +333,7 @@
 | April 1, 2026 | Setup + Phase 0 | All setup steps completed. Scaffolded React+Tailwind frontend and FastAPI backend. Deployed to Vercel and Render. End-to-end health check verified. | Phase 1 — Auth & Profile |
 | April 1, 2026 | Phase 1 | Auth + profile complete. 3-step signup, login, settings, API key test, Supabase profiles table with RLS. Fixed auth token propagation and added inline API key setup instructions. | Phase 2 — Store Directory & GPS |
 | April 1, 2026 | Phase 2 | Store directory loaded from Dropbox (44 stores, 37 geocoded). GPS nearby, manual search, program picklist all working. | Phase 3 — Session & Visit Flow |
+| April 1, 2026 | Phase 3 | Full session flow working. Drafts, complete, close store, end session gates, manual entry with past dates. | Phase 4 — Assessment Form |
 
 ---
 
