@@ -1,8 +1,8 @@
 # ShopRight — Build Progress Tracker
 
-**Last Updated:** Setup — March 2026
-**Current Phase:** ⬜ Not Started — Complete Section 3 of Setup Guide first
-**Overall Status:** 🔵 Pre-Build Setup
+**Last Updated:** April 1, 2026
+**Current Phase:** 🟡 Phase 0 — Project Foundation
+**Overall Status:** 🟢 Active Build
 
 ---
 
@@ -26,25 +26,25 @@
 
 | # | Step | Status | Notes |
 |---|------|--------|-------|
-| S1 | Install Node.js | ⬜ | nodejs.org — LTS version |
-| S2 | Install Claude Code | ⬜ | npm install -g @anthropic-ai/claude-code |
-| S3 | Create Anthropic account + connect Claude Code | ⬜ | console.anthropic.com |
-| S4 | Install Git | ⬜ | git-scm.com or xcode-select --install |
-| S5 | Create GitHub account | ⬜ | github.com — free tier |
-| S6 | Create Vercel account | ⬜ | vercel.com — connect GitHub |
-| S7 | Create Render account | ⬜ | render.com — connect GitHub |
-| S8 | Create Supabase project | ⬜ | supabase.com — project name: shopright |
-| S9 | Create Stripe account | ⬜ | stripe.com — needed for Phase 7 |
-| S10 | Create Resend account | ⬜ | resend.com — get API key |
-| S11 | Create Dropbox config folder | ⬜ | Upload Book1.xlsx, ShopFile_Template.xlsx, Invoice_Template.xlsx |
-| S12 | Create ShopRight folder on Mac | ⬜ | Documents/ShopRight |
-| S13 | Copy PRD, CLAUDE.md, PROGRESS.md into folder | ⬜ | |
-| S14 | Create GitHub repo + push initial files | ⬜ | Repo name: shopright |
-| S15 | Create .env file with all credentials | ⬜ | See Setup Guide Section 3.4 |
-| S16 | Verify .gitignore includes .env | ⬜ | git status — .env must NOT appear |
-| S17 | Start Claude Code and verify it reads PRD | ⬜ | claude → paste context block → confirm it responds correctly |
+| S1 | Install Node.js | ✅ | |
+| S2 | Install Claude Code | ✅ | |
+| S3 | Create Anthropic account + connect Claude Code | ✅ | |
+| S4 | Install Git | ✅ | |
+| S5 | Create GitHub account | ✅ | jelipeterson-lgtm |
+| S6 | Create Vercel account | ✅ | Connected to GitHub |
+| S7 | Create Render account | ✅ | Connected to GitHub |
+| S8 | Create Supabase project | ✅ | Project: shopright |
+| S9 | Create Stripe account | ✅ | |
+| S10 | Create Resend account | ✅ | API key in .env |
+| S11 | Create Dropbox config folder | ✅ | Book1.xlsx + templates uploaded |
+| S12 | Create ShopRight folder on Mac | ✅ | Documents/ShopRight |
+| S13 | Copy PRD, CLAUDE.md, PROGRESS.md into folder | ✅ | |
+| S14 | Create GitHub repo + push initial files | ✅ | github.com/jelipeterson-lgtm/shopright |
+| S15 | Create .env file with all credentials | ✅ | |
+| S16 | Verify .gitignore includes .env | ✅ | Confirmed .env excluded from git |
+| S17 | Start Claude Code and verify it reads PRD | ✅ | |
 
-**Setup Sign-off:** ⬜ Eli confirms all setup steps complete — Date: ___________
+**Setup Sign-off:** ✅ Eli confirms all setup steps complete — Date: April 1, 2026
 
 ---
 
