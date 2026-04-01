@@ -73,6 +73,10 @@ function Visit() {
   }
 
   const handleEvalChange = (fieldId, value) => {
+    if (reviewState === 'flags') {
+      setReviewState('idle')
+      setFlags([])
+    }
     const updates = { [fieldId]: value }
     // Clear comment when switching away from Fail
     if (value !== 'Fail') {
