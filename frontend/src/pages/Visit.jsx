@@ -60,6 +60,11 @@ function Visit() {
   }, [id])
 
   const updateField = (field, value) => {
+    // If user edits while flags are showing, reset to allow re-review
+    if (reviewState === 'flags') {
+      setReviewState('idle')
+      setFlags([])
+    }
     setVisit((prev) => {
       const updated = { ...prev, [field]: value }
       autoSave({ [field]: value })
