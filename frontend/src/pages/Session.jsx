@@ -98,10 +98,13 @@ function Session() {
   }
 
   const handleAddVendor = (store) => {
+    // Get the store_id from the first visit at this store
+    const storeId = store.visits[0]?.store_id
     navigate('/new-store', {
       state: {
         sessionDate: today,
         preselectedStore: {
+          id: storeId,
           retailer_name: store.retailer_name,
           store_number: store.store_number,
           address: store.address,
