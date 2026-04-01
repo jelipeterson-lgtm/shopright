@@ -156,7 +156,22 @@ function NewStore() {
 
             {gpsStatus === 'denied' && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <p className="text-yellow-800 text-sm">Location access was denied. Use search below to find your store.</p>
+                <p className="text-yellow-800 text-sm font-medium">Location access was denied</p>
+                <p className="text-yellow-700 text-xs mt-1">
+                  To enable nearby store suggestions, allow location access in your browser settings:
+                </p>
+                <ul className="text-yellow-700 text-xs mt-1 list-disc list-inside space-y-0.5">
+                  <li><span className="font-medium">iPhone/iPad:</span> Settings &gt; Safari (or Chrome) &gt; Location &gt; Allow</li>
+                  <li><span className="font-medium">Android:</span> Settings &gt; Apps &gt; Chrome &gt; Permissions &gt; Location</li>
+                  <li><span className="font-medium">Desktop:</span> Click the lock icon in the address bar &gt; Location &gt; Allow</li>
+                </ul>
+                <p className="text-yellow-700 text-xs mt-2">Or use the search below to find your store manually.</p>
+                <button
+                  onClick={requestGPS}
+                  className="mt-2 text-yellow-800 text-xs font-medium underline"
+                >
+                  Try again
+                </button>
               </div>
             )}
 
