@@ -54,13 +54,13 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 0.1 | Create GitHub repo — monorepo with /frontend and /backend | ⬜ | |
-| 0.2 | Scaffold frontend — React + Tailwind, basic routing, placeholder home screen | ⬜ | |
-| 0.3 | Scaffold backend — FastAPI app, health check endpoint, requirements.txt | ⬜ | |
-| 0.4 | Connect Supabase — verify backend reaches database | ⬜ | |
-| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | ⬜ | |
-| 0.6 | Deploy backend to Render — confirm health check returns 200 | ⬜ | |
-| 0.7 | Frontend calls backend health check — full stack communicates end to end | ⬜ | |
+| 0.1 | Create GitHub repo — monorepo with /frontend and /backend | ✅ | github.com/jelipeterson-lgtm/shopright |
+| 0.2 | Scaffold frontend — React + Tailwind, basic routing, placeholder home screen | ✅ | Vite + React Router + Tailwind v4 |
+| 0.3 | Scaffold backend — FastAPI app, health check endpoint, requirements.txt | ✅ | /health returns 200 |
+| 0.4 | Connect Supabase — verify backend reaches database | ✅ | Auth health 200, db.py configured |
+| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | 🟡 | Pushed to GitHub — needs Vercel deploy config |
+| 0.6 | Deploy backend to Render — confirm health check returns 200 | 🟡 | Pushed to GitHub — needs Render deploy config |
+| 0.7 | Frontend calls backend health check — full stack communicates end to end | ⬜ | Blocked on 0.5 + 0.6 |
 
 **🛑 GATE — Phase 0 Validation:**
 - [ ] Vercel URL loads placeholder home screen in Chrome

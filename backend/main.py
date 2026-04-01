@@ -8,12 +8,15 @@ load_dotenv()
 app = FastAPI(title="ShopRight API")
 
 # CORS — allow frontend origins
+origins = [
+    "http://localhost:5173",
+    os.getenv("FRONTEND_URL", ""),
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        os.getenv("FRONTEND_URL", ""),
-    ],
+    allow_origins=origins,
+    allow_origin_regex=r"https://shopright.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
