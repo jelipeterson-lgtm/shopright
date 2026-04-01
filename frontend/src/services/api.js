@@ -2,12 +2,22 @@ import { supabase } from './supabase'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-async function getAuthHeaders() {
+// Token getter — set by AuthContext so API calls use the current session
+let _getAccessToken = async () => {
   const { data: { session } } = await supabase.auth.getSession()
-  if (!session) throw new Error('Not authenticated')
+  return session?.access_token ?? null
+}
+
+export function setTokenGetter(fn) {
+  _getAccessToken = fn
+}
+
+async function getAuthHeaders() {
+  const token = await _getAccessToken()
+  if (!token) throw new Error('Not authenticated')
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session.access_token}`,
+    'Authorization': `Bearer ${token}`,
   }
 }
 

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
+import { setTokenGetter } from './api'
 
 const AuthContext = createContext({})
 
@@ -39,6 +40,17 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
+
+  // Keep a ref to the latest session so the token getter always has it
+  const sessionRef = useRef(session)
+  useEffect(() => {
+    sessionRef.current = session
+    setTokenGetter(async () => {
+      if (sessionRef.current?.access_token) return sessionRef.current.access_token
+      const { data } = await supabase.auth.getSession()
+      return data.session?.access_token ?? null
+    })
+  }, [session])
 
   const value = { user, session, loading, signUp, signIn, signOut }
 

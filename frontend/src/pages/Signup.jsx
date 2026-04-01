@@ -50,6 +50,8 @@ function Signup() {
       if (!data.session) {
         await signIn(email, password)
       }
+      // Wait briefly for auth state to propagate to token getter
+      await new Promise(resolve => setTimeout(resolve, 500))
       setStep(2)
     } catch (err) {
       setError(err.message)
