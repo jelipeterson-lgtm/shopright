@@ -44,8 +44,12 @@ function Signup() {
     }
     setLoading(true)
     try {
-      await signUp(email, password)
-      await signIn(email, password)
+      const data = await signUp(email, password)
+      // With email confirmation disabled, signUp auto-creates a session.
+      // If it didn't (e.g. confirmation required), fall back to signIn.
+      if (!data.session) {
+        await signIn(email, password)
+      }
       setStep(2)
     } catch (err) {
       setError(err.message)
