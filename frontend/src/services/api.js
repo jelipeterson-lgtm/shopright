@@ -29,7 +29,15 @@ async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.detail || body.error || `Request failed: ${res.status}`)
+    let msg = body.error || `Request failed: ${res.status}`
+    if (body.detail) {
+      msg = typeof body.detail === 'string'
+        ? body.detail
+        : Array.isArray(body.detail)
+          ? body.detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+          : JSON.stringify(body.detail)
+    }
+    throw new Error(msg)
   }
   return res.json()
 }

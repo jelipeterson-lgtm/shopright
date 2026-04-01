@@ -119,7 +119,7 @@ function NewStore() {
         session_date: sessionDate,
       }
       const result = await api.createVisit(visitData)
-      navigate(`/visit/${result.data.id}`)
+      navigate(`/visit/${result.data.id}`, { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {

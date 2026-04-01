@@ -62,7 +62,7 @@ function ManualVisit() {
         session_date: visitDate,
         is_manual: true,
       })
-      navigate(`/visit/${result.data.id}`)
+      navigate(`/visit/${result.data.id}`, { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
