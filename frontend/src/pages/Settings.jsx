@@ -255,23 +255,39 @@ function Settings() {
 
           {showKeyInput && (
             <div className="space-y-3 pt-2 border-t border-gray-100">
+              <div className="bg-gray-50 rounded-md p-3">
+                <p className="text-xs font-medium text-gray-700 mb-2">How to get your API key:</p>
+                <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+                  <li>Go to <span className="font-medium">console.anthropic.com</span></li>
+                  <li>Create an account or sign in</li>
+                  <li>Click <span className="font-medium">API Keys</span> in the left sidebar</li>
+                  <li>Click <span className="font-medium">Create Key</span>, name it "ShopRight"</li>
+                  <li>Copy the key and paste it below</li>
+                </ol>
+                <p className="text-xs text-gray-400 mt-2">You'll need to add credits to your Anthropic account (minimum $5). Typical cost: $1–3/month.</p>
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Anthropic API Key</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
                 <input type="password" value={apiKey}
                   onChange={(e) => { setApiKey(e.target.value); setKeyTested(false) }}
                   placeholder="sk-ant-..."
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              {keyTested && keyValid && <p className="text-green-600 text-sm">API key is valid!</p>}
+              {keyTested && keyValid && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                  <p className="text-green-700 text-sm font-medium">API key is valid!</p>
+                  <p className="text-green-600 text-xs mt-1">Click "Save API Key" below to finish setup.</p>
+                </div>
+              )}
               {!keyTested || !keyValid ? (
                 <button onClick={handleTestKey} disabled={testingKey || !apiKey}
                   className="w-full bg-gray-100 text-gray-700 py-2 rounded-md text-sm font-medium hover:bg-gray-200 disabled:opacity-50">
-                  {testingKey ? 'Testing...' : 'Test Connection'}
+                  {testingKey ? 'Testing...' : 'Step 1: Test Connection'}
                 </button>
               ) : (
                 <button onClick={handleSaveKey} disabled={saving}
-                  className="w-full bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save API Key'}
+                  className="w-full bg-green-600 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-green-700 disabled:opacity-50">
+                  {saving ? 'Saving...' : 'Step 2: Save API Key'}
                 </button>
               )}
             </div>
