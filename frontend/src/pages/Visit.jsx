@@ -106,9 +106,9 @@ function Visit() {
           return
         }
       }
-      // Badge location comment required if badge_location_pass = Fail
-      if (visit.eval_badge_location_pass === 'Fail' && !visit.eval_badge_location_comment?.trim()) {
-        setError('Badge location comment required when badge location fails')
+      // "Where was badge located?" required if "Badge at shoulder height or lanyard?" = Fail
+      if (visit.eval_badge_location_pass === 'Fail' && !visit.eval_badge_where?.trim()) {
+        setError('Please describe where the badge was located')
         return
       }
       // Soft selling comment if Fail
