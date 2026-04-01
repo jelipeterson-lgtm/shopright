@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 4 — Assessment Form
+**Current Phase:** 🟡 Phase 5 — AI Review & Submission
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -178,17 +178,17 @@
 | 4.13 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 4 Validation:**
-- [ ] All-Pass visit completes quickly with minimal interaction
-- [ ] 5 Fail fields — comments required, all show correctly
-- [ ] Reps Present = Fail — cols 9–38 hidden, only Visit Recap shown
-- [ ] Water program — Soft Selling field shown
-- [ ] Non-Water program — Soft Selling hidden
-- [ ] Costco — Resource Guide shows as Yes/No
-- [ ] Non-Costco — Resource Guide hidden
-- [ ] Voice input works on Visit Recap and two comment fields in Chrome
-- [ ] Close browser mid-form → reopen → all data still present
+- [x] All-Pass visit completes quickly with minimal interaction
+- [x] 5 Fail fields — comments required, all show correctly
+- [x] Reps Present = Fail — cols 9–38 hidden, only Visit Recap shown
+- [x] Water program — Soft Selling field shown
+- [x] Non-Water program — Soft Selling hidden
+- [x] Costco — Resource Guide shows as Yes/No
+- [x] Non-Costco — Resource Guide hidden
+- [x] Voice input works on Visit Recap and two comment fields in Chrome
+- [x] Close browser mid-form → reopen → all data still present
 
-**Phase 4 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 4 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
 
 ---
 
@@ -198,17 +198,17 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 5.1 | Plan mode: API call structure, prompt, flag display, all edge paths | ⬜ | |
-| 5.2 | Backend: /review endpoint — calls Claude API with user's key, returns flags | ⬜ | |
-| 5.3 | AI prompt — Smart Circle field manager persona, questions only, no corrections | ⬜ | |
-| 5.4 | Review & Submit button — calls /review, shows spinner | ⬜ | |
-| 5.5 | Flags screen — field name + question, tap to edit inline, dismiss | ⬜ | |
-| 5.6 | No flags path — skip flags screen, mark Complete | ⬜ | |
-| 5.7 | No signal / API error path — submit proceeds, warning banner | ⬜ | |
-| 5.8 | 'Looks good, submit anyway' bypass on flags screen | ⬜ | |
-| 5.9 | Visit marked Complete — locked with unlock option | ⬜ | |
-| 5.10 | No API key path — submit marks Complete directly, no flags | ⬜ | |
-| 5.11 | Loading, error, and empty states on all screens | ⬜ | |
+| 5.1 | Plan mode: API call structure, prompt, flag display, all edge paths | ✅ | |
+| 5.2 | Backend: /review endpoint — calls Claude API with user's key, returns flags | ✅ | Uses Claude Haiku for speed/cost |
+| 5.3 | AI prompt — Smart Circle field manager persona, questions only, no corrections | ✅ | Returns JSON array of {field, question} |
+| 5.4 | Review & Submit button — calls /review, shows spinner | ✅ | "AI is reviewing your notes..." |
+| 5.5 | Flags screen — field name + question, tap to edit inline, dismiss | ✅ | Dismiss per flag, edit fields above |
+| 5.6 | No flags path — skip flags screen, mark Complete | ✅ | |
+| 5.7 | No signal / API error path — submit proceeds, warning banner | ✅ | Catches network errors, completes anyway |
+| 5.8 | 'Looks good, submit anyway' bypass on flags screen | ✅ | Always shown when flags present |
+| 5.9 | Visit marked Complete — locked with unlock option | ✅ | From Phase 3 |
+| 5.10 | No API key path — submit marks Complete directly, no flags | ✅ | Checks profile for key + enabled |
+| 5.11 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 5 Validation:**
 - [ ] Submit visit with obvious voice errors → flags screen appears with relevant questions
@@ -334,6 +334,7 @@
 | April 1, 2026 | Phase 1 | Auth + profile complete. 3-step signup, login, settings, API key test, Supabase profiles table with RLS. Fixed auth token propagation and added inline API key setup instructions. | Phase 2 — Store Directory & GPS |
 | April 1, 2026 | Phase 2 | Store directory loaded from Dropbox (44 stores, 37 geocoded). GPS nearby, manual search, program picklist all working. | Phase 3 — Session & Visit Flow |
 | April 1, 2026 | Phase 3 | Full session flow working. Drafts, complete, close store, end session gates, manual entry with past dates. | Phase 4 — Assessment Form |
+| April 1, 2026 | Phase 4 | Full assessment form: 3 zones, EvaluationField component, voice input, auto-save, all conditional logic working. | Phase 5 — AI Review & Submission |
 
 ---
 

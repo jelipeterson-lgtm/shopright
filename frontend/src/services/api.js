@@ -94,6 +94,11 @@ const api = {
     }),
 
   checkOpenStops: (sessionDate) => request(`/visits/check/open-stops?session_date=${sessionDate}`),
+
+  reviewVisit: (visitId) => request('/review', {
+    method: 'POST',
+    body: JSON.stringify({ visit_id: visitId }),
+  }),
 }
 
 export default api

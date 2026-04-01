@@ -27,6 +27,9 @@ function Visit() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [reviewState, setReviewState] = useState('idle') // idle, reviewing, flags, skipped
+  const [flags, setFlags] = useState([])
+  const [skipReason, setSkipReason] = useState(null)
   const saveTimerRef = useRef(null)
 
   useEffect(() => {
@@ -117,10 +120,53 @@ function Visit() {
 
     setSaving(true)
     setError(null)
+    setReviewState('reviewing')
     try {
       // Save any pending changes first
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
       await api.updateVisit(id, visit)
+
+      // Run AI review
+      const reviewResult = await api.reviewVisit(id)
+      const data = reviewResult.data
+
+      if (data.skipped) {
+        // No key, invalid key, or API error — skip review, mark complete
+        setSkipReason(data.reason)
+        setReviewState('skipped')
+        await api.completeVisit(id)
+        navigate('/session')
+        return
+      }
+
+      if (data.flags && data.flags.length > 0) {
+        // Show flags screen
+        setFlags(data.flags)
+        setReviewState('flags')
+      } else {
+        // No flags — mark complete
+        setReviewState('idle')
+        await api.completeVisit(id)
+        navigate('/session')
+      }
+    } catch (err) {
+      // Network error — submit anyway with warning
+      setReviewState('skipped')
+      setSkipReason('api_error')
+      try {
+        await api.completeVisit(id)
+        navigate('/session')
+      } catch (e) {
+        setError(e.message)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSubmitAnyway = async () => {
+    setSaving(true)
+    try {
       await api.completeVisit(id)
       navigate('/session')
     } catch (err) {
@@ -128,6 +174,10 @@ function Visit() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleDismissFlag = (index) => {
+    setFlags((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleUnlock = async () => {
@@ -397,10 +447,63 @@ function Visit() {
           </div>
         </div>
 
+        {/* AI Review Flags */}
+        {reviewState === 'flags' && flags.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <h2 className="text-sm font-semibold text-yellow-800 mb-2">AI Review — Questions</h2>
+            <p className="text-xs text-yellow-600 mb-3">The AI flagged these items. Tap a flag to edit that field, or dismiss when resolved.</p>
+            <div className="space-y-2">
+              {flags.map((flag, i) => (
+                <div key={i} className="bg-white rounded-md p-3 border border-yellow-200">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-yellow-700">{flag.field}</p>
+                      <p className="text-sm text-gray-700 mt-1">{flag.question}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDismissFlag(i)}
+                      className="text-xs text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skipped review banner */}
+        {reviewState === 'skipped' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <p className="text-yellow-700 text-sm">
+              {skipReason === 'no_key' && 'AI review skipped — no API key configured.'}
+              {skipReason === 'invalid_key' && 'AI review skipped — API key is invalid.'}
+              {skipReason === 'api_error' && 'AI review was skipped — no connection. Review your notes before sending your weekly report.'}
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
           <div className="max-w-lg mx-auto">
-            {!isComplete ? (
+            {reviewState === 'reviewing' ? (
+              <div className="text-center py-2">
+                <p className="text-gray-500 text-sm">AI is reviewing your notes...</p>
+              </div>
+            ) : reviewState === 'flags' ? (
+              <div className="space-y-2">
+                <button
+                  onClick={handleSubmitAnyway}
+                  disabled={saving}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  {flags.length === 0
+                    ? (saving ? 'Submitting...' : 'Submit')
+                    : (saving ? 'Submitting...' : 'Looks good, submit anyway')}
+                </button>
+              </div>
+            ) : !isComplete ? (
               <button
                 onClick={handleComplete}
                 disabled={saving}
