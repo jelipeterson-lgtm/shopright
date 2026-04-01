@@ -1,18 +1,27 @@
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from db import supabase, supabase_admin
+from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY
 import anthropic
+import httpx
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def get_user_id(authorization: str = Header(...)) -> str:
-    """Extract and verify user from Supabase JWT."""
+    """Extract and verify user from Supabase JWT via direct API call."""
     token = authorization.replace("Bearer ", "")
     try:
-        res = supabase.auth.get_user(token)
-        return res.user.id
+        r = httpx.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "apikey": SUPABASE_ANON_KEY,
+            },
+        )
+        if r.status_code != 200:
+            raise ValueError(f"Auth failed: {r.status_code}")
+        return r.json()["id"]
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
