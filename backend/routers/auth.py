@@ -20,10 +20,15 @@ def get_user_id(authorization: str = Header(...)) -> str:
             },
         )
         if r.status_code != 200:
-            raise ValueError(f"Auth failed: {r.status_code}")
+            raise HTTPException(
+                status_code=401,
+                detail=f"Supabase auth returned {r.status_code}: {r.text[:200]}"
+            )
         return r.json()["id"]
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Auth error: {type(e).__name__}: {str(e)}")
 
 
 class ProfileUpdate(BaseModel):
