@@ -24,35 +24,12 @@ app.add_middleware(
 
 
 from routers.auth import router as auth_router
+from routers.stores import router as stores_router
 
 app.include_router(auth_router)
+app.include_router(stores_router)
 
 
 @app.get("/health")
 def health_check():
     return {"success": True, "data": "ShopRight API is running", "error": None}
-
-
-from fastapi import Header
-from db import SUPABASE_URL, SUPABASE_ANON_KEY
-import httpx
-
-
-@app.get("/debug/auth")
-def debug_auth(authorization: str = Header(default="")):
-    """Temporary debug endpoint — remove after Phase 1."""
-    token = authorization.replace("Bearer ", "") if authorization else ""
-    if not token:
-        return {"error": "No token provided", "supabase_url_set": bool(SUPABASE_URL), "anon_key_set": bool(SUPABASE_ANON_KEY)}
-    try:
-        r = httpx.get(
-            f"{SUPABASE_URL}/auth/v1/user",
-            headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_ANON_KEY},
-        )
-        return {
-            "supabase_status": r.status_code,
-            "supabase_response": r.json() if r.status_code == 200 else r.text[:300],
-            "token_preview": f"{token[:20]}...{token[-10:]}",
-        }
-    except Exception as e:
-        return {"error": str(e)}

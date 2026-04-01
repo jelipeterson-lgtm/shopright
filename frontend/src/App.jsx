@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Settings from './pages/Settings'
+import NewStore from './pages/NewStore'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -38,6 +39,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/new-store" element={<ProtectedRoute><NewStore /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

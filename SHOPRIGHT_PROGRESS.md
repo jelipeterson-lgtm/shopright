@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 1 — Auth & Profile
+**Current Phase:** 🟡 Phase 2 — Store Directory & GPS
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -77,23 +77,23 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 1.1 | Plan mode: auth flow, user model, profile fields, API key storage | ⬜ | |
-| 1.2 | Supabase Auth integration — email + password signup, login, logout, sessions | ⬜ | |
-| 1.3 | Account creation Step 1 — email + password | ⬜ | |
-| 1.4 | Account creation Step 2 — profile fields | ⬜ | Name, email, phone, home address, mileage rate, invoice number start |
-| 1.5 | Account creation Step 3 — AI review setup (Yes path) | ⬜ | Guide + API key entry + connection test + encrypted storage |
-| 1.6 | Account creation Step 3 — AI review setup (Skip path) | ⬜ | AI features hidden, enable later from Settings |
-| 1.7 | Settings screen — edit all profile fields, update API key, change password | ⬜ | |
-| 1.8 | Loading, error, and empty states on all screens | ⬜ | |
+| 1.1 | Plan mode: auth flow, user model, profile fields, API key storage | ✅ | Profiles table + RLS + auto-create trigger in Supabase |
+| 1.2 | Supabase Auth integration — email + password signup, login, logout, sessions | ✅ | AuthContext + Supabase JS client |
+| 1.3 | Account creation Step 1 — email + password | ✅ | Signup page step 1 |
+| 1.4 | Account creation Step 2 — profile fields | ✅ | Name, report email, phone, address, mileage rate, invoice # start |
+| 1.5 | Account creation Step 3 — AI review setup (Yes path) | ✅ | Guide + key entry + connection test via Claude Haiku |
+| 1.6 | Account creation Step 3 — AI review setup (Skip path) | ✅ | Skips to home, AI disabled, enable from Settings |
+| 1.7 | Settings screen — edit all profile fields, update API key, change password | ✅ | Full settings with profile, AI, password sections |
+| 1.8 | Loading, error, and empty states on all screens | ✅ | All screens have loading/error states |
 
 **🛑 GATE — Phase 1 Validation:**
-- [ ] Create new account with email + password
-- [ ] Complete profile — all fields save correctly
-- [ ] Configure API key — connection test passes
-- [ ] Log out → log back in → profile data persists
-- [ ] Skip API key at signup → no AI features shown → enable from Settings
+- [x] Create new account with email + password
+- [x] Complete profile — all fields save correctly
+- [x] Configure API key — connection test passes
+- [x] Log out → log back in → profile data persists
+- [x] Skip API key at signup → no AI features shown → enable from Settings
 
-**Phase 1 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 1 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
 
 ---
 
@@ -103,16 +103,16 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 2.1 | Plan mode: store ingest, Haversine calculation, search | ⬜ | |
-| 2.2 | Backend: poll Dropbox HEAD on launch — download Book1.xlsx if newer | ⬜ | |
-| 2.3 | Backend: parse Book1.xlsx into database | ⬜ | Retailer Name, Store #, Program, Address, City, State, Zip |
-| 2.4 | Backend: /stores/nearby — Haversine, returns up to 3 within 1 mile | ⬜ | |
-| 2.5 | Backend: /stores/search — text query, retailer name or store number | ⬜ | |
-| 2.6 | Frontend: New Store — fires GPS, calls /stores/nearby, shows list with distances | ⬜ | |
-| 2.7 | Frontend: no stores within 1 mile → auto-show search input | ⬜ | |
-| 2.8 | Frontend: 'Search Instead' always available | ⬜ | |
-| 2.9 | Frontend: confirm store → program picklist filtered to that store | ⬜ | |
-| 2.10 | Loading, error, and empty states on all screens | ⬜ | |
+| 2.1 | Plan mode: store ingest, Haversine calculation, search | ✅ | Stores table, geocoding, Haversine math |
+| 2.2 | Backend: poll Dropbox HEAD on launch — download Book1.xlsx if newer | ✅ | ingest_stores.py downloads and parses |
+| 2.3 | Backend: parse Book1.xlsx into database | ✅ | 44 stores loaded, 37 geocoded, deduped |
+| 2.4 | Backend: /stores/nearby — Haversine, returns up to 3 within 1 mile | ✅ | |
+| 2.5 | Backend: /stores/search — text query, retailer name or store number | ✅ | |
+| 2.6 | Frontend: New Store — fires GPS, calls /stores/nearby, shows list with distances | ✅ | |
+| 2.7 | Frontend: no stores within 1 mile → auto-show search input | ✅ | |
+| 2.8 | Frontend: 'Search Instead' always available | ✅ | |
+| 2.9 | Frontend: confirm store → program picklist filtered to that store | ✅ | |
+| 2.10 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 2 Validation:**
 - [ ] Backend pulls Book1.xlsx from Dropbox — stores visible in database
@@ -331,6 +331,7 @@
 |------|-------|---------------|-----------|
 | March 2026 | Setup | PRD v3 complete. Setup Guide, CLAUDE.md, PROGRESS.md created. Ready to begin setup. | Complete Section 3 of Setup Guide |
 | April 1, 2026 | Setup + Phase 0 | All setup steps completed. Scaffolded React+Tailwind frontend and FastAPI backend. Deployed to Vercel and Render. End-to-end health check verified. | Phase 1 — Auth & Profile |
+| April 1, 2026 | Phase 1 | Auth + profile complete. 3-step signup, login, settings, API key test, Supabase profiles table with RLS. Fixed auth token propagation and added inline API key setup instructions. | Phase 2 — Store Directory & GPS |
 
 ---
 

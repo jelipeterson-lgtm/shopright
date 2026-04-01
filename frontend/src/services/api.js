@@ -48,6 +48,13 @@ const api = {
     method: 'POST',
     body: JSON.stringify({ api_key: apiKey }),
   }),
+
+  getNearbyStores: (lat, lng) => request(`/stores/nearby?lat=${lat}&lng=${lng}`),
+
+  searchStores: (query) => request(`/stores/search?q=${encodeURIComponent(query)}`),
+
+  getStorePrograms: (storeNumber, retailerName) =>
+    request(`/stores/programs?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}`),
 }
 
 export default api
