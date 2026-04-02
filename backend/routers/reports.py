@@ -177,7 +177,9 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
         {"next_invoice_number": invoice_num + 1}
     ).eq("id", user_id).execute()
 
-    filename = f"Invoice {invoice_num}.xlsx"
+    month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December']
+    filename = f"Invoice {month_names[body.month]} {body.year}.xlsx"
 
     return StreamingResponse(
         output,
@@ -230,7 +232,9 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
         {"next_invoice_number": invoice_num + 1}
     ).eq("id", user_id).execute()
 
-    filename = f"Invoice {invoice_num}.xlsx"
+    month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December']
+    filename = f"Invoice {month_names[body.month]} {body.year}.xlsx"
 
     try:
         result = resend.Emails.send({
