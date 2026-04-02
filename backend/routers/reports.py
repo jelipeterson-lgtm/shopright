@@ -119,7 +119,7 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
 
     try:
         result = resend.Emails.send({
-            "from": "ShopRight <reports@shopright.app>",
+            "from": "ShopRight <onboarding@resend.dev>",
             "to": [body.recipient_email],
             "subject": filename.replace(".xlsx", ""),
             "html": f"<p>Weekly Shop File attached: {filename}</p>",
@@ -234,7 +234,7 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
 
     try:
         result = resend.Emails.send({
-            "from": "ShopRight <reports@shopright.app>",
+            "from": "ShopRight <onboarding@resend.dev>",
             "to": [body.recipient_email],
             "subject": filename.replace(".xlsx", ""),
             "html": f"<p>Monthly Invoice attached: {filename}</p>",
