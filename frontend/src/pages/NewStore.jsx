@@ -274,22 +274,31 @@ function NewStore() {
               <p className="text-red-500 text-sm">No active programs found for this store.</p>
             ) : (
               <>
-                <h2 className="text-sm font-medium text-gray-700 mb-2">Select Program</h2>
-                <div className="space-y-2 mb-4">
-                  {programs.map((prog) => (
-                    <button
-                      key={prog}
-                      onClick={() => setSelectedProgram(prog)}
-                      className={`w-full text-left p-3 rounded-lg border transition text-sm ${
-                        selectedProgram === prog
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                          : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
-                      }`}
-                    >
-                      {prog}
-                    </button>
-                  ))}
-                </div>
+                {programs.length === 1 ? (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500">Program</p>
+                    <p className="text-sm font-medium text-gray-800">{programs[0]}</p>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-sm font-medium text-gray-700 mb-2">Select Program</h2>
+                    <div className="space-y-2 mb-4">
+                      {programs.map((prog) => (
+                        <button
+                          key={prog}
+                          onClick={() => setSelectedProgram(prog)}
+                          className={`w-full text-left p-3 rounded-lg border transition text-sm ${
+                            selectedProgram === prog
+                              ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                              : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                          }`}
+                        >
+                          {prog}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 <button
                   onClick={handleConfirm}

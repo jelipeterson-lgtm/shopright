@@ -167,10 +167,26 @@ function Visit() {
         setFlags(data.flags)
         const highlighted = new Set()
         for (const flag of data.flags) {
+          // Direct map lookup
           const mapped = FLAG_FIELD_MAP[flag.field]
           if (mapped) highlighted.add(mapped)
-          // Also try lowercase match
-          highlighted.add(flag.field.toLowerCase().replace(/\s+/g, '_'))
+          // Lowercase key match
+          const lowerKey = flag.field.toLowerCase().replace(/\s+/g, '_')
+          highlighted.add(lowerKey)
+          // Also check if field name contains known keywords
+          const fieldLower = flag.field.toLowerCase()
+          if (fieldLower.includes('recap')) highlighted.add('visit_recap')
+          if (fieldLower.includes('rep name')) highlighted.add('rep_names')
+          if (fieldLower.includes('rep desc')) highlighted.add('rep_description')
+          if (fieldLower.includes('engaging')) highlighted.add('eval_engaging')
+          if (fieldLower.includes('greeting')) highlighted.add('eval_greeting')
+          if (fieldLower.includes('badge')) highlighted.add('eval_badge_location_pass')
+          if (fieldLower.includes('dress')) highlighted.add('eval_dress_code')
+          if (fieldLower.includes('pushy')) highlighted.add('eval_pushy')
+          if (fieldLower.includes('clog')) highlighted.add('eval_clogging')
+          if (fieldLower.includes('lean')) highlighted.add('eval_leaning')
+          if (fieldLower.includes('food') || fieldLower.includes('drink')) highlighted.add('eval_food_drink')
+          if (fieldLower.includes('soft sell')) highlighted.add('eval_soft_selling')
         }
         setFlaggedFields(highlighted)
         setReviewState('flags')
@@ -516,11 +532,11 @@ function Visit() {
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); handleComplete() }}
+                    onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); setTimeout(handleComplete, 100) }}
                     disabled={saving}
                     className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {saving ? 'Reviewing...' : 'Re-Review with AI'}
+                    {saving ? 'Reviewing...' : 'Review with AI Again'}
                   </button>
                   <button
                     onClick={handleSubmitAnyway}
@@ -531,10 +547,10 @@ function Visit() {
                   </button>
                 </div>
                 <button
-                  onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle') }}
-                  className="w-full text-gray-500 text-sm py-2 hover:text-gray-700"
+                  onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); navigate('/session') }}
+                  className="w-full bg-gray-100 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200"
                 >
-                  Cancel — keep editing
+                  Cancel Vendor Review
                 </button>
               </div>
             ) : !isComplete ? (
