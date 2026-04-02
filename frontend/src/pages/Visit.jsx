@@ -283,7 +283,16 @@ function Visit() {
               {visit.status}
             </span>
           </div>
-          <p className="text-sm text-gray-500">{visit.program}</p>
+          <div className="mt-1">
+            <label className="block text-xs text-gray-400">Program</label>
+            <input
+              type="text"
+              value={visit.program || ''}
+              onChange={(e) => updateField('program', e.target.value)}
+              disabled={isComplete}
+              className="text-sm text-gray-700 border border-gray-200 rounded px-2 py-0.5 w-full disabled:bg-gray-50"
+            />
+          </div>
           <div className="flex gap-4 mt-2">
             <div>
               <label className="block text-xs text-gray-400">Date</label>
