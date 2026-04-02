@@ -63,6 +63,23 @@ function Home() {
           </button>
         </div>
 
+        {/* Reports */}
+        <div className="space-y-2 mb-6">
+          <h2 className="text-sm font-semibold text-gray-700">Reports</h2>
+          <button
+            onClick={() => navigate('/weekly-report')}
+            className="w-full bg-white text-gray-700 py-3 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50"
+          >
+            Weekly Shop File
+          </button>
+          <button
+            onClick={() => navigate('/monthly-invoice')}
+            className="w-full bg-white text-gray-700 py-3 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50"
+          >
+            Monthly Invoice
+          </button>
+        </div>
+
         {/* Empty state */}
         {!loading && !hasVisits && (
           <div className="bg-white rounded-lg shadow p-6 text-center">

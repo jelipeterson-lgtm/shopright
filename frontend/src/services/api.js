@@ -95,6 +95,27 @@ const api = {
 
   checkOpenStops: (sessionDate) => request(`/visits/check/open-stops?session_date=${sessionDate}`),
 
+  // Reports
+  getWeeklyVisits: (year, week) => request(`/reports/weekly?year=${year}&week=${week}`),
+
+  generateShopFile: (year, week) =>
+    `${API_BASE}/reports/generate/shopfile?year=${year}&week=${week}`,
+
+  sendShopFile: (data) => request('/reports/send/shopfile', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  generateInvoice: (data) => request('/reports/generate/invoice', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  sendInvoice: (data) => request('/reports/send/invoice', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
   reviewVisit: (visitId) => request('/review', {
     method: 'POST',
     body: JSON.stringify({ visit_id: visitId }),

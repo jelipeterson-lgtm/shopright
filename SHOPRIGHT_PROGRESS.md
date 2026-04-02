@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 5 — AI Review & Submission
+**Current Phase:** 🟡 Phase 6 — Report & Invoice Generation
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -211,13 +211,13 @@
 | 5.11 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 5 Validation:**
-- [ ] Submit visit with obvious voice errors → flags screen appears with relevant questions
-- [ ] Edit a flagged item inline → dismiss → submit → Complete
-- [ ] Submit clean visit → no flags screen → straight to Complete
-- [ ] Disconnect network → submit → warning banner → visit still marked Complete
-- [ ] Account with no API key → submit → straight to Complete, no flags shown
+- [x] Submit visit with obvious voice errors → flags screen appears with relevant questions
+- [x] Edit a flagged item inline → dismiss → submit → Complete
+- [x] Submit clean visit → no flags screen → straight to Complete
+- [x] Disconnect network → submit → warning banner → visit still marked Complete
+- [x] Account with no API key → submit → straight to Complete, no flags shown
 
-**Phase 5 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 5 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
 
 ---
 
@@ -227,23 +227,23 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 6.1 | Plan mode: Excel generation, cell mapping audit, email delivery | ⬜ | |
-| 6.2 | Eli provides Shop File template + Invoice template → upload to Dropbox | ⬜ | Eli action required |
-| 6.3 | Audit Shop File template — document every cell position, width, color, font | ⬜ | |
-| 6.4 | Audit Invoice template — same | ⬜ | |
-| 6.5 | Backend: /generate/shopfile — copy template, write rows, calculate Fail Count | ⬜ | |
-| 6.6 | Weekly summary screen — visits grouped by day, second-chance edit | ⬜ | |
-| 6.7 | File naming — 'Shop File [First Name] mm.dd.yy' | ⬜ | Date = last shopping day of ISO week |
-| 6.8 | Backend: /send/shopfile — Resend, attach .xlsx, send to Smart Circle | ⬜ | |
-| 6.9 | Send confirmation screen | ⬜ | |
-| 6.10 | Sent reports archive — read-only, downloadable | ⬜ | |
-| 6.11 | Backend: /generate/invoice — copy template, vendor rows + mileage rows | ⬜ | |
-| 6.12 | Monthly summary screen — visits by day, mileage entry per day | ⬜ | |
-| 6.13 | Invoice numbering — auto-increment, overrideable | ⬜ | |
-| 6.14 | Backend: /send/invoice — same pattern as Shop File | ⬜ | |
-| 6.15 | Validate Shop File output vs Kelsey's real submission | ⬜ | Open in Excel on Mac — zero discrepancies |
-| 6.16 | Validate Invoice output vs Kelsey's real submission | ⬜ | Same |
-| 6.17 | Loading, error, and empty states on all screens | ⬜ | |
+| 6.1 | Plan mode: Excel generation, cell mapping audit, email delivery | ✅ | Audited both templates |
+| 6.2 | Eli provides Shop File template + Invoice template → upload to Dropbox | ✅ | Both in Dropbox |
+| 6.3 | Audit Shop File template — document every cell position, width, color, font | ✅ | 40 columns mapped |
+| 6.4 | Audit Invoice template — same | ✅ | Mileage rows + vendor rows + formulas |
+| 6.5 | Backend: /generate/shopfile — copy template, write rows, calculate Fail Count | ✅ | Template-copy, fail count auto-calculated |
+| 6.6 | Weekly summary screen — visits grouped by day, second-chance edit | ✅ | Review link per visit |
+| 6.7 | File naming — 'Shop File [First Name] mm.dd.yy' | ✅ | Last shopping day of ISO week |
+| 6.8 | Backend: /send/shopfile — Resend, attach .xlsx, send to Smart Circle | ✅ | |
+| 6.9 | Send confirmation screen | ✅ | Success message with recipient |
+| 6.10 | Sent reports archive — read-only, downloadable | 🟡 | Download works, archive TBD |
+| 6.11 | Backend: /generate/invoice — copy template, vendor rows + mileage rows | ✅ | $50/$15 pricing, mileage with rate formula |
+| 6.12 | Monthly summary screen — visits by day, mileage entry per day | ✅ | Mileage per shopping day, totals |
+| 6.13 | Invoice numbering — auto-increment, overrideable | ✅ | Auto-increments in profiles table |
+| 6.14 | Backend: /send/invoice — same pattern as Shop File | ✅ | |
+| 6.15 | Validate Shop File output vs Kelsey's real submission | ⬜ | Needs Eli validation |
+| 6.16 | Validate Invoice output vs Kelsey's real submission | ⬜ | Needs Eli validation |
+| 6.17 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 6 Validation:**
 - [ ] Generate Shop File for a week with visits on 2 days
@@ -335,6 +335,7 @@
 | April 1, 2026 | Phase 2 | Store directory loaded from Dropbox (44 stores, 37 geocoded). GPS nearby, manual search, program picklist all working. | Phase 3 — Session & Visit Flow |
 | April 1, 2026 | Phase 3 | Full session flow working. Drafts, complete, close store, end session gates, manual entry with past dates. | Phase 4 — Assessment Form |
 | April 1, 2026 | Phase 4 | Full assessment form: 3 zones, EvaluationField component, voice input, auto-save, all conditional logic working. | Phase 5 — AI Review & Submission |
+| April 1, 2026 | Phase 5 | AI review with Claude Haiku, flags with field highlighting, re-review loop, submit anyway, cancel/discard. Editable program field. N/A blue highlight. | Phase 6 — Report & Invoice Generation |
 
 ---
 

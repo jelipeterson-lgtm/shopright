@@ -8,6 +8,8 @@ import NewStore from './pages/NewStore'
 import Session from './pages/Session'
 import Visit from './pages/Visit'
 import ManualVisit from './pages/ManualVisit'
+import WeeklyReport from './pages/WeeklyReport'
+import MonthlyInvoice from './pages/MonthlyInvoice'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -46,6 +48,8 @@ function App() {
           <Route path="/session" element={<ProtectedRoute><Session /></ProtectedRoute>} />
           <Route path="/visit/:id" element={<ProtectedRoute><Visit /></ProtectedRoute>} />
           <Route path="/manual-visit" element={<ProtectedRoute><ManualVisit /></ProtectedRoute>} />
+          <Route path="/weekly-report" element={<ProtectedRoute><WeeklyReport /></ProtectedRoute>} />
+          <Route path="/monthly-invoice" element={<ProtectedRoute><MonthlyInvoice /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
