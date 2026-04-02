@@ -280,4 +280,4 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
     wb.save(output)
     output.seek(0)
 
-    return output, invoice_num
+    return output, invoice_id

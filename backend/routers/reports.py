@@ -170,12 +170,7 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
     profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
     mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
 
-    output, invoice_num = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
-
-    # Increment invoice number
-    supabase_admin.table("profiles").update(
-        {"next_invoice_number": invoice_num + 1}
-    ).eq("id", user_id).execute()
+    output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
