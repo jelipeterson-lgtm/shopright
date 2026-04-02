@@ -116,6 +116,7 @@ function Session() {
   }
 
   const handleDiscardVisit = async (visitId) => {
+    if (!confirm('Delete this visit? This cannot be undone.')) return
     setActionLoading(true)
     try {
       await api.discardVisit(visitId)
@@ -208,12 +209,20 @@ function Session() {
                       </div>
                     )}
                     {visit.status === 'Complete' && (
-                      <button
-                        onClick={() => navigate(`/visit/${visit.id}`)}
-                        className="text-xs text-gray-500 hover:underline"
-                      >
-                        View
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => navigate(`/visit/${visit.id}`)}
+                          className="text-xs text-gray-500 hover:underline"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleDiscardVisit(visit.id)}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

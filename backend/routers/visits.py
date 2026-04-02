@@ -221,19 +221,8 @@ def check_open_stops(session_date: str = Query(...), authorization: str = Header
 
 @router.delete("/{visit_id}")
 def discard_visit(visit_id: str, authorization: str = Header(...)):
-    """Discard a Draft visit."""
+    """Delete a visit (Draft or Complete)."""
     user_id = get_user_id(authorization)
-    # Only allow deleting Draft visits
-    visit = (
-        supabase_admin.table("vendor_visits")
-        .select("status")
-        .eq("id", visit_id)
-        .eq("user_id", user_id)
-        .single()
-        .execute()
-    )
-    if visit.data and visit.data["status"] != "Draft":
-        return {"success": False, "data": None, "error": "Can only discard Draft visits"}
 
     supabase_admin.table("vendor_visits").delete().eq("id", visit_id).eq("user_id", user_id).execute()
     return {"success": True, "data": "Visit discarded", "error": None}
