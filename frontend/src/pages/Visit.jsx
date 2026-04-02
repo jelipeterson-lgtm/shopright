@@ -513,20 +513,28 @@ function Visit() {
                 <p className="text-gray-500 text-sm">AI is reviewing your notes...</p>
               </div>
             ) : reviewState === 'flags' ? (
-              <div className="flex gap-2">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); handleComplete() }}
+                    disabled={saving}
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Reviewing...' : 'Re-Review with AI'}
+                  </button>
+                  <button
+                    onClick={handleSubmitAnyway}
+                    disabled={saving}
+                    className="flex-1 bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Submitting...' : 'Submit Anyway'}
+                  </button>
+                </div>
                 <button
-                  onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); handleComplete() }}
-                  disabled={saving}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle') }}
+                  className="w-full text-gray-500 text-sm py-2 hover:text-gray-700"
                 >
-                  {saving ? 'Reviewing...' : 'Re-Review with AI'}
-                </button>
-                <button
-                  onClick={handleSubmitAnyway}
-                  disabled={saving}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
-                >
-                  {saving ? 'Submitting...' : 'Submit Anyway'}
+                  Cancel — keep editing
                 </button>
               </div>
             ) : !isComplete ? (
