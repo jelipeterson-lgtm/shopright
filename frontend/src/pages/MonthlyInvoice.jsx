@@ -131,6 +131,13 @@ function MonthlyInvoice() {
   const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December']
 
+  const formatDate = (d) => {
+    if (!d) return ''
+    const parts = d.split('-')
+    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`
+    return d
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
@@ -174,7 +181,7 @@ function MonthlyInvoice() {
               <div className="space-y-2">
                 {sortedDates.map((date) => (
                   <div key={date} className="flex items-center gap-3">
-                    <p className="text-sm text-gray-700 w-28">{date}</p>
+                    <p className="text-sm text-gray-700 w-28">{formatDate(date)}</p>
                     <input
                       type="number"
                       min="0"
@@ -193,7 +200,7 @@ function MonthlyInvoice() {
             {sortedDates.map((date) => (
               <div key={date} className="bg-white rounded-lg shadow mb-3 overflow-hidden">
                 <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-700">{date}</p>
+                  <p className="text-sm font-medium text-gray-700">{formatDate(date)}</p>
                 </div>
                 <div className="divide-y divide-gray-50">
                   {byDate[date].map((v) => (
