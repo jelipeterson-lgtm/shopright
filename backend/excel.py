@@ -183,7 +183,7 @@ def _format_phone(phone):
     return phone
 
 
-def generate_invoice(visits, mileage_entries, profile):
+def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
     """
     Generate Invoice .xlsx.
     visits: list of Complete visits for the month
@@ -207,9 +207,13 @@ def generate_invoice(visits, mileage_entries, profile):
     phone = _format_phone(profile.get("phone", ""))
     email = profile.get("report_email", "")
 
-    # Row 1: Invoice number
-    invoice_num = profile.get("next_invoice_number", 1)
-    ws.cell(1, 2, f"INVOICE #{invoice_num}")
+    # Row 1: Invoice number as YYMM
+    if year and month:
+        invoice_id = f"{year % 100:02d}{month:02d}"
+    else:
+        now = datetime.now()
+        invoice_id = f"{now.year % 100:02d}{now.month:02d}"
+    ws.cell(1, 2, f"INVOICE #{invoice_id}")
 
     # Rows 2-4: User info (keep original template fonts)
     ws.cell(2, 2, full_name)
