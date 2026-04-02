@@ -219,13 +219,8 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
     profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
     mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
 
-    output, invoice_num = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
+    output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
     file_bytes = output.read()
-
-    # Increment invoice number
-    supabase_admin.table("profiles").update(
-        {"next_invoice_number": invoice_num + 1}
-    ).eq("id", user_id).execute()
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
