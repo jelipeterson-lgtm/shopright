@@ -441,58 +441,44 @@ function Visit() {
               </div>
             ))}
 
-            {/* Soft Selling */}
-            <div className="py-3 border-b border-gray-100">
-              {isWaterProgram ? (
-                <EvaluationField
-                  label="Soft Selling"
-                  fieldId="eval_soft_selling"
-                  value={visit.eval_soft_selling}
-                  comment={visit.eval_soft_selling_comment}
-                  onValueChange={handleEvalChange}
-                  onCommentChange={handleCommentChange}
-                  disabled={isComplete}
-                />
-              ) : (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-400">Soft Selling</p>
-                  <span className="text-xs text-gray-400">N/A — Water programs only</span>
-                </div>
-              )}
-            </div>
+            {/* Soft Selling — editable for Water, N/A default for others */}
+            <EvaluationField
+              label={isWaterProgram ? 'Soft Selling' : 'Soft Selling (Water programs only)'}
+              fieldId="eval_soft_selling"
+              value={visit.eval_soft_selling || 'N/A'}
+              comment={visit.eval_soft_selling_comment}
+              onValueChange={handleEvalChange}
+              onCommentChange={handleCommentChange}
+              disabled={isComplete || !isWaterProgram}
+            />
 
-            {/* Resource Guide */}
+            {/* Resource Guide — editable for Costco, N/A default for others */}
             <div className="py-3">
-              {isCostco ? (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-800">Costco Resource Guide Present</p>
-                  <div className="flex gap-1">
-                    {['Yes', 'No', 'N/A'].map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => !isComplete && updateField('eval_resource_guide', opt)}
-                        disabled={isComplete}
-                        className={`px-3 py-1 text-xs rounded-full font-medium transition ${
-                          visit.eval_resource_guide === opt
-                            ? opt === 'Yes'
-                              ? 'bg-green-100 text-green-700'
-                              : opt === 'No'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                        } ${isComplete ? 'opacity-50' : ''}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
+              <div className="flex items-center justify-between mb-1">
+                <p className={`text-sm ${isCostco ? 'text-gray-800' : 'text-gray-400'}`}>
+                  {isCostco ? 'Costco Resource Guide Present' : 'Resource Guide (Costco only)'}
+                </p>
+                <div className="flex gap-1">
+                  {['Yes', 'No', 'N/A'].map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => !isComplete && isCostco && updateField('eval_resource_guide', opt)}
+                      disabled={isComplete || !isCostco}
+                      className={`px-3 py-1 text-xs rounded-full font-medium transition ${
+                        (visit.eval_resource_guide || 'N/A') === opt
+                          ? opt === 'Yes'
+                            ? 'bg-green-100 text-green-700'
+                            : opt === 'No'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                      } ${isComplete || !isCostco ? 'opacity-50' : ''}`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-400">Costco Resource Guide</p>
-                  <span className="text-xs text-gray-400">N/A — Costco only</span>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}
@@ -597,6 +583,17 @@ function Visit() {
                   className="w-full bg-gray-100 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200"
                 >
                   Save Draft & Go Back
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Delete this visit? This cannot be undone.')) {
+                      try { await api.discardVisit(id) } catch (e) {}
+                      navigate('/session')
+                    }
+                  }}
+                  className="w-full text-red-500 py-2 text-sm font-medium hover:text-red-700"
+                >
+                  Delete Visit
                 </button>
               </div>
             ) : (
