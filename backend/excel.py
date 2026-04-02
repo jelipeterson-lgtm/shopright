@@ -171,12 +171,16 @@ def generate_shop_file(visits, first_name):
     return output, filename
 
 
-def _set_cell(ws, row, col, value, font_name='Arial', font_size=10):
-    """Set cell value and match template font."""
-    from openpyxl.styles import Font
-    cell = ws.cell(row, col, value)
-    cell.font = Font(name=font_name, size=font_size)
-    return cell
+def _format_phone(phone):
+    """Format phone number to (555) 555-5555."""
+    if not phone:
+        return ""
+    digits = ''.join(c for c in phone if c.isdigit())
+    if len(digits) == 10:
+        return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+    if len(digits) == 11 and digits[0] == '1':
+        return f"({digits[1:4]}) {digits[4:7]}-{digits[7:]}"
+    return phone
 
 
 def generate_invoice(visits, mileage_entries, profile):
@@ -186,12 +190,21 @@ def generate_invoice(visits, mileage_entries, profile):
     mileage_entries: list of {date: str, miles: number}
     profile: user profile dict
     """
+    from openpyxl.styles import Font, Border, Side
+
     template = _download_template(DROPBOX_INVOICE_URL, "invoice")
     wb = load_workbook(template)
     ws = wb.active
 
+    data_font = Font(name='Arial', size=10)
+    thin_border = Border(
+        top=Side(style='thin'),
+        bottom=Side(style='thin'),
+    )
+    no_border = Border()
+
     full_name = profile.get("full_name", "")
-    phone = profile.get("phone", "")
+    phone = _format_phone(profile.get("phone", ""))
     email = profile.get("report_email", "")
 
     # Row 1: Invoice number
@@ -206,17 +219,19 @@ def generate_invoice(visits, mileage_entries, profile):
     # Row 6: Date (mm/dd/yyyy format)
     ws.cell(6, 3, datetime.now().strftime("%m/%d/%Y"))
 
-    # Row 82: "Make all checks payable to" — update Company_Name reference
-    # The template uses a formula referencing Company_Name. Override with direct text.
+    # Row 82: "Make all checks payable to"
     ws.cell(82, 2, f"Make all checks payable to {full_name}")
 
-    # Row 84: Contact info
+    # Row 84: Contact info with formatted phone
     ws.cell(84, 2, f"{full_name}, {phone}, {email}")
 
-    # Clear ALL existing mileage and vendor rows (rows 14 through 76)
+    # Clear ALL existing mileage and vendor rows — values AND borders
     for row in range(14, 77):
         for col in range(1, 11):
-            ws.cell(row, col).value = None
+            cell = ws.cell(row, col)
+            cell.value = None
+            cell.border = no_border
+            cell.font = data_font
 
     current_row = 14
 
@@ -224,10 +239,12 @@ def generate_invoice(visits, mileage_entries, profile):
     mileage_rate = profile.get("mileage_rate", 0.70)
     total_miles = sum(e.get("miles", 0) for e in mileage_entries if e.get("miles", 0) > 0)
     if total_miles > 0:
-        _set_cell(ws, current_row, 5, "Mileage")
-        _set_cell(ws, current_row, 8, mileage_rate)
-        _set_cell(ws, current_row, 9, total_miles)
-        ws.cell(current_row, 10, f"=I{current_row}*H{current_row}")
+        for col in range(2, 11):
+            ws.cell(current_row, col).border = thin_border
+        ws.cell(current_row, 5, "Mileage").font = data_font
+        ws.cell(current_row, 8, mileage_rate).font = data_font
+        ws.cell(current_row, 9, total_miles).font = data_font
+        ws.cell(current_row, 10, f"=I{current_row}*H{current_row}").font = data_font
         current_row += 1
 
     # Blank separator row
@@ -244,12 +261,15 @@ def generate_invoice(visits, mileage_entries, profile):
     for (visit_date, store_num, retailer), stop_visits in sorted_stops:
         for j, v in enumerate(stop_visits):
             price = 50 if j == 0 else 15
-            _set_cell(ws, current_row, 2, store_num)
-            _set_cell(ws, current_row, 3, v.get("city", ""))
-            _set_cell(ws, current_row, 4, v.get("retailer_name", ""))
-            _set_cell(ws, current_row, 5, v.get("program", ""))
-            _set_cell(ws, current_row, 6, _format_date(visit_date))
-            _set_cell(ws, current_row, 10, price)
+            # Apply consistent thin borders across all columns
+            for col in range(2, 11):
+                ws.cell(current_row, col).border = thin_border
+            ws.cell(current_row, 2, store_num).font = data_font
+            ws.cell(current_row, 3, v.get("city", "")).font = data_font
+            ws.cell(current_row, 4, v.get("retailer_name", "")).font = data_font
+            ws.cell(current_row, 5, v.get("program", "")).font = data_font
+            ws.cell(current_row, 6, _format_date(visit_date)).font = data_font
+            ws.cell(current_row, 10, price).font = data_font
             current_row += 1
 
     # Update subtotal formula
