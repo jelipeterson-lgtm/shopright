@@ -196,13 +196,13 @@ function Session() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => navigate(`/visit/${visit.id}`)}
-                          className="text-xs text-blue-600 hover:underline"
+                          className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md border border-blue-200 hover:bg-blue-100 active:bg-blue-200"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDiscardVisit(visit.id)}
-                          className="text-xs text-red-500 hover:underline"
+                          className="px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 rounded-md border border-red-200 hover:bg-red-100 active:bg-red-200"
                         >
                           Discard
                         </button>
@@ -212,13 +212,13 @@ function Session() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => navigate(`/visit/${visit.id}`)}
-                          className="text-xs text-gray-500 hover:underline"
+                          className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleDiscardVisit(visit.id)}
-                          className="text-xs text-red-500 hover:underline"
+                          className="px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 rounded-md border border-red-200 hover:bg-red-100 active:bg-red-200"
                         >
                           Delete
                         </button>

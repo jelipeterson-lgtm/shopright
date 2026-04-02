@@ -584,13 +584,21 @@ function Visit() {
                 </button>
               </div>
             ) : !isComplete ? (
-              <button
-                onClick={handleComplete}
-                disabled={saving}
-                className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Review & Submit'}
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={handleComplete}
+                  disabled={saving}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Review & Submit'}
+                </button>
+                <button
+                  onClick={() => navigate('/session')}
+                  className="w-full bg-gray-100 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200"
+                >
+                  Save Draft & Go Back
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleUnlock}
