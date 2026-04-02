@@ -214,7 +214,7 @@ def generate_invoice(visits, mileage_entries, profile):
     # Rows 2-4: User info (keep original template fonts)
     ws.cell(2, 2, full_name)
     ws.cell(3, 2, profile.get("home_address", ""))
-    ws.cell(4, 2, f"{phone}  {email}".strip())
+    ws.cell(4, 2, f"{phone}  {email}")
 
     # Row 6: Date (mm/dd/yyyy format)
     ws.cell(6, 3, datetime.now().strftime("%m/%d/%Y"))
@@ -246,9 +246,6 @@ def generate_invoice(visits, mileage_entries, profile):
         ws.cell(current_row, 9, total_miles).font = data_font
         ws.cell(current_row, 10, f"=I{current_row}*H{current_row}").font = data_font
         current_row += 1
-
-    # Blank separator row
-    current_row += 2
 
     # Calculate vendor pricing: $50 first vendor per stop per day, $15 additional
     stops = defaultdict(list)
