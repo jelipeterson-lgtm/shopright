@@ -176,8 +176,9 @@ function Visit() {
           // Also check if field name contains known keywords
           const fieldLower = flag.field.toLowerCase()
           if (fieldLower.includes('recap')) highlighted.add('visit_recap')
-          if (fieldLower.includes('rep name')) highlighted.add('rep_names')
+          if (fieldLower.includes('rep name') || fieldLower.includes('first name')) highlighted.add('rep_names')
           if (fieldLower.includes('rep desc')) highlighted.add('rep_description')
+          if (fieldLower.includes('rep count') || fieldLower.includes('how many') || fieldLower.includes('reps present')) { highlighted.add('rep_count'); highlighted.add('rep_names') }
           if (fieldLower.includes('engaging')) highlighted.add('eval_engaging')
           if (fieldLower.includes('greeting')) highlighted.add('eval_greeting')
           if (fieldLower.includes('badge')) highlighted.add('eval_badge_location_pass')
@@ -329,8 +330,8 @@ function Visit() {
 
           {showFullForm && (
             <div className="space-y-3 mt-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Rep(s) First Names <span className="text-gray-400">(optional)</span></label>
+              <div className={flaggedFields.has('rep_names') ? 'bg-yellow-50 -mx-4 px-4 py-2 border-l-4 border-l-yellow-400 rounded-r-md' : ''}>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Rep(s) First Names <span className="text-gray-400">(optional)</span> {flaggedFields.has('rep_names') && <span className="text-yellow-600">— flagged by AI</span>}</label>
                 <input
                   type="text"
                   value={visit.rep_names || ''}
@@ -355,8 +356,8 @@ function Visit() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">How many reps present? <span className="text-red-400">*</span></label>
+              <div className={flaggedFields.has('rep_count') ? 'bg-yellow-50 -mx-4 px-4 py-2 border-l-4 border-l-yellow-400 rounded-r-md' : ''}>
+                <label className="block text-xs font-medium text-gray-600 mb-1">How many reps present? <span className="text-red-400">*</span> {flaggedFields.has('rep_count') && <span className="text-yellow-600">— flagged by AI</span>}</label>
                 <input
                   type="number"
                   min="0"
@@ -547,8 +548,14 @@ function Visit() {
                   </button>
                 </div>
                 <button
-                  onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); navigate('/session') }}
-                  className="w-full bg-gray-100 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200"
+                  onClick={async () => {
+                    if (confirm('This will discard this vendor visit. Are you sure?')) {
+                      try { await api.discardVisit(id) } catch (e) {}
+                      navigate('/session')
+                    }
+                  }}
+                  disabled={saving}
+                  className="w-full bg-red-50 text-red-600 py-2.5 rounded-lg text-sm font-medium border border-red-200 hover:bg-red-100 disabled:opacity-50"
                 >
                   Cancel Vendor Review
                 </button>
