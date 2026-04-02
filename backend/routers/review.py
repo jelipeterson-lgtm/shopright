@@ -10,17 +10,21 @@ router = APIRouter(prefix="/review", tags=["review"])
 
 REVIEW_PROMPT = """You are a Smart Circle International field manager reviewing a secret shopper's visit report. Your job is to flag anything that would confuse or concern someone reading this report cold — contradictions, vague descriptions, missing context, or statements that don't make sense.
 
-Return ONLY questions — no corrections, no rewrites, no suggestions. Each question should reference the specific field and ask what's unclear.
-
-If everything looks clear and professional, return an empty list.
+Rules:
+- Return ONLY questions — no corrections, no rewrites, no suggestions.
+- Each question should reference the specific field and ask what's unclear.
+- Do NOT question the format of structured fields. "Reps Present" uses Pass/Fail (not Yes/No) — this is correct. All evaluation fields use Pass/Fail/N/A — this is correct. Do not flag these formats.
+- Focus on the shopper's written comments and Visit Recap — look for contradictions between what they wrote and how they marked fields, vague descriptions, or anything that wouldn't make sense to a reader.
+- If everything looks clear and professional, return an empty list.
 
 Visit details:
 - Retailer: {retailer_name}
 - Store #: {store_number}
 - Program: {program}
-- Reps Present: {reps_present}
+- Reps Present: {reps_present} (Pass = reps were there, Fail = no reps present)
 - Rep Count: {rep_count}
 
+Shopper's notes:
 {field_notes}
 
 Return your response as a JSON array of objects, each with "field" (the field name) and "question" (your question). Example:
