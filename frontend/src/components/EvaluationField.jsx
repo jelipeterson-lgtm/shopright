@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import VoiceInput from './VoiceInput'
 
-function EvaluationField({ label, fieldId, value, comment, onValueChange, onCommentChange, disabled }) {
+function EvaluationField({ label, fieldId, value, comment, onValueChange, onCommentChange, disabled, highlighted }) {
   const currentValue = value || 'Pass'
 
   return (
-    <div className="py-3 border-b border-gray-100 last:border-b-0">
+    <div className={`py-3 border-b border-gray-100 last:border-b-0 ${highlighted ? 'bg-yellow-50 -mx-4 px-4 border-l-4 border-l-yellow-400 rounded-r-md' : ''}`}>
       <div className="flex items-center justify-between mb-1">
         <p className="text-sm text-gray-800">{label}</p>
         <div className="flex gap-1">

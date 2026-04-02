@@ -29,8 +29,31 @@ function Visit() {
   const [error, setError] = useState(null)
   const [reviewState, setReviewState] = useState('idle') // idle, reviewing, flags, skipped
   const [flags, setFlags] = useState([])
+  const [flaggedFields, setFlaggedFields] = useState(new Set())
   const [skipReason, setSkipReason] = useState(null)
   const saveTimerRef = useRef(null)
+
+  // Map AI flag field names to form field IDs for highlighting
+  const FLAG_FIELD_MAP = {
+    'Visit Recap': 'visit_recap',
+    'Rep Names': 'rep_names',
+    'Rep Description': 'rep_description',
+    'Rep Count Reason': 'rep_count_reason',
+    'Engaging Comment': 'eval_engaging',
+    'Greeting Comment': 'eval_greeting',
+    'One No Comment': 'eval_one_no',
+    'Pushy Comment': 'eval_pushy',
+    'Clogging Comment': 'eval_clogging',
+    'Leaning Comment': 'eval_leaning',
+    'Food/Drink Comment': 'eval_food_drink',
+    'Dress Code Comment': 'eval_dress_code',
+    'Name Badge Comment': 'eval_name_badge',
+    'Badge Location Comment': 'eval_badge_location_pass',
+    'Badge Where': 'eval_badge_where',
+    'Other Area Comment': 'eval_other_area',
+    'Other Store Areas Comment': 'eval_other_store_areas',
+    'Soft Selling Comment': 'eval_soft_selling',
+  }
 
   useEffect(() => {
     loadVisit()
@@ -60,11 +83,6 @@ function Visit() {
   }, [id])
 
   const updateField = (field, value) => {
-    // If user edits while flags are showing, reset to allow re-review
-    if (reviewState === 'flags') {
-      setReviewState('idle')
-      setFlags([])
-    }
     setVisit((prev) => {
       const updated = { ...prev, [field]: value }
       autoSave({ [field]: value })
@@ -73,10 +91,6 @@ function Visit() {
   }
 
   const handleEvalChange = (fieldId, value) => {
-    if (reviewState === 'flags') {
-      setReviewState('idle')
-      setFlags([])
-    }
     const updates = { [fieldId]: value }
     // Clear comment when switching away from Fail
     if (value !== 'Fail') {
@@ -149,8 +163,16 @@ function Visit() {
       }
 
       if (data.flags && data.flags.length > 0) {
-        // Show flags screen
+        // Show flags and highlight flagged fields
         setFlags(data.flags)
+        const highlighted = new Set()
+        for (const flag of data.flags) {
+          const mapped = FLAG_FIELD_MAP[flag.field]
+          if (mapped) highlighted.add(mapped)
+          // Also try lowercase match
+          highlighted.add(flag.field.toLowerCase().replace(/\s+/g, '_'))
+        }
+        setFlaggedFields(highlighted)
         setReviewState('flags')
       } else {
         // No flags — mark complete
@@ -365,6 +387,7 @@ function Visit() {
                 comment={visit[fieldId + '_comment']}
                 onValueChange={handleEvalChange}
                 onCommentChange={handleCommentChange}
+                highlighted={flaggedFields.has(fieldId)}
                 disabled={isComplete}
               />
             ))}
@@ -435,8 +458,8 @@ function Visit() {
         )}
 
         {/* Zone 3 — Visit Recap (always shown) */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">Visit Recap</h2>
+        <div className={`bg-white rounded-lg shadow p-4 mb-4 ${flaggedFields.has('visit_recap') ? 'ring-2 ring-yellow-400' : ''}`}>
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Visit Recap {flaggedFields.has('visit_recap') && <span className="text-yellow-600 text-xs font-normal ml-1">— flagged by AI</span>}</h2>
           <div className="flex items-start gap-2">
             <textarea
               value={visit.visit_recap || ''}
@@ -458,7 +481,7 @@ function Visit() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <h2 className="text-sm font-semibold text-yellow-800 mb-2">AI Review — {flags.length} question{flags.length !== 1 ? 's' : ''}</h2>
             <p className="text-xs text-yellow-600 mb-3">
-              Review the questions below. Tap "Edit My Notes" to go back and update your responses, then submit again for a fresh review.
+              Flagged fields are highlighted above. Scroll up to edit, then tap "Re-Review with AI" for a fresh review.
             </p>
             <div className="space-y-2">
               {flags.map((flag, i) => (
@@ -492,10 +515,11 @@ function Visit() {
             ) : reviewState === 'flags' ? (
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setReviewState('idle'); setFlags([]); window.scrollTo(0, 0) }}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700"
+                  onClick={() => { setFlags([]); setFlaggedFields(new Set()); setReviewState('idle'); handleComplete() }}
+                  disabled={saving}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Edit My Notes
+                  {saving ? 'Reviewing...' : 'Re-Review with AI'}
                 </button>
                 <button
                   onClick={handleSubmitAnyway}
