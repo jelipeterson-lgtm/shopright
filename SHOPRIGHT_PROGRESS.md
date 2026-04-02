@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 6 — Report & Invoice Generation
+**Current Phase:** ⬜ Phase 7 — Payments (ready to start)
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -246,14 +246,14 @@
 | 6.17 | Loading, error, and empty states on all screens | ✅ | |
 
 **🛑 GATE — Phase 6 Validation:**
-- [ ] Generate Shop File for a week with visits on 2 days
-- [ ] Open generated file in Excel on Mac
-- [ ] Compare every column to Kelsey's real submission — zero discrepancies
-- [ ] Confirm email arrives at test address with correct attachment and subject
-- [ ] Generate Invoice with mileage entries → pricing correct ($50/$15 rule)
-- [ ] Open Invoice in Excel → matches Kelsey's real invoice
+- [x] Generate Shop File for a week with visits on 2 days
+- [x] Open generated file in Excel on Mac
+- [x] Compare every column to Kelsey's real submission — zero discrepancies
+- [x] Confirm email arrives at test address with correct attachment and subject
+- [x] Generate Invoice with mileage entries → pricing correct ($50/$15 rule)
+- [x] Open Invoice in Excel → matches Kelsey's real invoice
 
-**Phase 6 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 6 Sign-off:** ✅ Validated by Eli — Date: April 2, 2026
 
 ---
 
@@ -336,6 +336,7 @@
 | April 1, 2026 | Phase 3 | Full session flow working. Drafts, complete, close store, end session gates, manual entry with past dates. | Phase 4 — Assessment Form |
 | April 1, 2026 | Phase 4 | Full assessment form: 3 zones, EvaluationField component, voice input, auto-save, all conditional logic working. | Phase 5 — AI Review & Submission |
 | April 1, 2026 | Phase 5 | AI review with Claude Haiku, flags with field highlighting, re-review loop, submit anyway, cancel/discard. Editable program field. N/A blue highlight. | Phase 6 — Report & Invoice Generation |
+| April 2, 2026 | Phase 6 | Shop File and Invoice generation with template-copy. Email via Resend. Weekly/monthly screens. Excel formatting validated. Invoice: YYMM numbering, single mileage line, uniform borders, phone formatting, date formatting. Numerous UX fixes across all phases. | Phase 7 — Payments |
 
 ---
 
