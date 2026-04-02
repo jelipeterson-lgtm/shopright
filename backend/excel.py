@@ -171,6 +171,14 @@ def generate_shop_file(visits, first_name):
     return output, filename
 
 
+def _set_cell(ws, row, col, value, font_name='Arial', font_size=10):
+    """Set cell value and match template font."""
+    from openpyxl.styles import Font
+    cell = ws.cell(row, col, value)
+    cell.font = Font(name=font_name, size=font_size)
+    return cell
+
+
 def generate_invoice(visits, mileage_entries, profile):
     """
     Generate Invoice .xlsx.
@@ -182,62 +190,69 @@ def generate_invoice(visits, mileage_entries, profile):
     wb = load_workbook(template)
     ws = wb.active
 
+    full_name = profile.get("full_name", "")
+    phone = profile.get("phone", "")
+    email = profile.get("report_email", "")
+
     # Row 1: Invoice number
     invoice_num = profile.get("next_invoice_number", 1)
     ws.cell(1, 2, f"INVOICE #{invoice_num}")
 
-    # Rows 2-4: User info
-    ws.cell(2, 2, profile.get("full_name", ""))
+    # Rows 2-4: User info (keep original template fonts)
+    ws.cell(2, 2, full_name)
     ws.cell(3, 2, profile.get("home_address", ""))
-    contact = f"{profile.get('phone', '')}  {profile.get('report_email', '')}".strip()
-    ws.cell(4, 2, contact)
+    ws.cell(4, 2, f"{phone}  {email}".strip())
 
-    # Row 6: Date
-    ws.cell(6, 3, datetime.now().strftime("%Y-%m-%d"))
+    # Row 6: Date (mm/dd/yyyy format)
+    ws.cell(6, 3, datetime.now().strftime("%m/%d/%Y"))
 
-    # Clear existing mileage and vendor rows
+    # Row 82: "Make all checks payable to" — update Company_Name reference
+    # The template uses a formula referencing Company_Name. Override with direct text.
+    ws.cell(82, 2, f"Make all checks payable to {full_name}")
+
+    # Row 84: Contact info
+    ws.cell(84, 2, f"{full_name}, {phone}, {email}")
+
+    # Clear ALL existing mileage and vendor rows (rows 14 through 76)
     for row in range(14, 77):
-        for col in range(2, 11):
-            ws.cell(row, col, None)
+        for col in range(1, 11):
+            ws.cell(row, col).value = None
 
     current_row = 14
 
-    # Write mileage rows
+    # Write single mileage line — total miles for the month
     mileage_rate = profile.get("mileage_rate", 0.70)
-    for entry in mileage_entries:
-        if entry.get("miles", 0) > 0:
-            ws.cell(current_row, 5, "Mileage")
-            ws.cell(current_row, 6, entry["date"])
-            ws.cell(current_row, 8, mileage_rate)
-            ws.cell(current_row, 9, entry["miles"])
-            ws.cell(current_row, 10, f"=I{current_row}*H{current_row}")
-            current_row += 1
+    total_miles = sum(e.get("miles", 0) for e in mileage_entries if e.get("miles", 0) > 0)
+    if total_miles > 0:
+        _set_cell(ws, current_row, 5, "Mileage")
+        _set_cell(ws, current_row, 8, mileage_rate)
+        _set_cell(ws, current_row, 9, total_miles)
+        ws.cell(current_row, 10, f"=I{current_row}*H{current_row}")
+        current_row += 1
 
     # Blank separator row
     current_row += 2
 
     # Calculate vendor pricing: $50 first vendor per stop per day, $15 additional
-    # Group visits by (date, store_number, retailer_name) to determine stop
     stops = defaultdict(list)
     for v in visits:
         key = (v.get("visit_date", ""), v.get("store_number", ""), v.get("retailer_name", ""))
         stops[key].append(v)
 
-    # Sort by date then store
     sorted_stops = sorted(stops.items(), key=lambda x: (x[0][0], x[0][2], x[0][1]))
 
     for (visit_date, store_num, retailer), stop_visits in sorted_stops:
         for j, v in enumerate(stop_visits):
             price = 50 if j == 0 else 15
-            ws.cell(current_row, 2, store_num)
-            ws.cell(current_row, 3, v.get("city", ""))
-            ws.cell(current_row, 4, v.get("retailer_name", ""))
-            ws.cell(current_row, 5, v.get("program", ""))
-            ws.cell(current_row, 6, visit_date)
-            ws.cell(current_row, 10, price)
+            _set_cell(ws, current_row, 2, store_num)
+            _set_cell(ws, current_row, 3, v.get("city", ""))
+            _set_cell(ws, current_row, 4, v.get("retailer_name", ""))
+            _set_cell(ws, current_row, 5, v.get("program", ""))
+            _set_cell(ws, current_row, 6, _format_date(visit_date))
+            _set_cell(ws, current_row, 10, price)
             current_row += 1
 
-    # Update subtotal formula to cover all data rows
+    # Update subtotal formula
     ws.cell(77, 10, f"=SUM(J14:J{current_row - 1})")
 
     output = io.BytesIO()
