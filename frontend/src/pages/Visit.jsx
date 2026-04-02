@@ -441,16 +441,32 @@ function Visit() {
               </div>
             ))}
 
-            {/* Soft Selling — editable for Water, N/A default for others */}
-            <EvaluationField
-              label={isWaterProgram ? 'Soft Selling' : 'Soft Selling (Water programs only)'}
-              fieldId="eval_soft_selling"
-              value={visit.eval_soft_selling || 'N/A'}
-              comment={visit.eval_soft_selling_comment}
-              onValueChange={handleEvalChange}
-              onCommentChange={handleCommentChange}
-              disabled={isComplete || !isWaterProgram}
-            />
+            {/* Soft Selling — editable for Water, locked N/A for others */}
+            <div className="py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm text-gray-800">Soft Selling {!isWaterProgram && <span className="text-xs text-gray-400 ml-1">(Water only)</span>}</p>
+                <div className="flex gap-1">
+                  {['Pass', 'Fail', 'N/A'].map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => !isComplete && isWaterProgram && handleEvalChange('eval_soft_selling', opt)}
+                      disabled={isComplete || !isWaterProgram}
+                      className={`px-3 py-1 text-xs rounded-full font-medium transition ${
+                        (visit.eval_soft_selling || 'N/A') === opt
+                          ? opt === 'Pass'
+                            ? 'bg-green-100 text-green-700'
+                            : opt === 'Fail'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-50 text-gray-400'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Resource Guide — editable for Costco, N/A default for others */}
             <div className="py-3">
@@ -586,14 +602,14 @@ function Visit() {
                 </button>
                 <button
                   onClick={async () => {
-                    if (confirm('Delete this visit? This cannot be undone.')) {
+                    if (confirm('Delete this vendor entry? This cannot be undone.')) {
                       try { await api.discardVisit(id) } catch (e) {}
                       navigate('/session')
                     }
                   }}
                   className="w-full text-red-500 py-2 text-sm font-medium hover:text-red-700"
                 >
-                  Delete Visit
+                  Delete Vendor Entry
                 </button>
               </div>
             ) : (
