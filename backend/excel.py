@@ -6,6 +6,7 @@ import os
 import io
 import httpx
 from openpyxl import load_workbook
+from openpyxl.styles import Alignment
 from datetime import datetime, date
 from collections import defaultdict
 
@@ -85,13 +86,17 @@ def generate_shop_file(visits, first_name):
         if fail_count > 0:
             ws.cell(row, 1, fail_count)
 
+        right_align = Alignment(horizontal='right')
+
         ws.cell(row, 2, v.get("retailer_name") or "")
         ws.cell(row, 3, v.get("program") or "")
         ws.cell(row, 4, v.get("store_number") or "")
         ws.cell(row, 5, v.get("city") or "")
         ws.cell(row, 6, v.get("state") or "")
-        ws.cell(row, 7, _format_date(v.get("visit_date")))
-        ws.cell(row, 8, _format_time(v.get("visit_time")))
+        date_cell = ws.cell(row, 7, _format_date(v.get("visit_date")))
+        date_cell.alignment = right_align
+        time_cell = ws.cell(row, 8, _format_time(v.get("visit_time")))
+        time_cell.alignment = right_align
 
         reps = v.get("reps_present") or ""
         ws.cell(row, 9, reps)
@@ -113,9 +118,10 @@ def generate_shop_file(visits, first_name):
         if rep_count is not None:
             reason = v.get("rep_count_reason") or ""
             if rep_count > 4 and reason:
-                ws.cell(row, 13, f"{rep_count} - {reason}")
+                count_cell = ws.cell(row, 13, f"{rep_count} - {reason}")
             else:
-                ws.cell(row, 13, str(rep_count))
+                count_cell = ws.cell(row, 13, str(rep_count))
+            count_cell.alignment = right_align
 
         ws.cell(row, 14, v.get("eval_engaging") or "Pass")
         ws.cell(row, 15, v.get("eval_engaging_comment") or "")

@@ -405,56 +405,65 @@ function Visit() {
             <p className="text-xs text-gray-400 mb-3">All fields default to Pass. Only tap Fail or N/A for exceptions.</p>
 
             {EVAL_FIELDS.map(([fieldId, label]) => (
-              <EvaluationField
-                key={fieldId}
-                label={label}
-                fieldId={fieldId}
-                value={visit[fieldId]}
-                comment={visit[fieldId + '_comment']}
-                onValueChange={handleEvalChange}
-                onCommentChange={handleCommentChange}
-                highlighted={flaggedFields.has(fieldId)}
-                disabled={isComplete}
-              />
+              <div key={fieldId}>
+                <EvaluationField
+                  label={label}
+                  fieldId={fieldId}
+                  value={visit[fieldId]}
+                  comment={visit[fieldId + '_comment']}
+                  onValueChange={handleEvalChange}
+                  onCommentChange={handleCommentChange}
+                  highlighted={flaggedFields.has(fieldId)}
+                  disabled={isComplete}
+                />
+                {/* Badge location — right after badge_location_pass */}
+                {fieldId === 'eval_badge_location_pass' && (
+                  <div className={`py-3 border-b border-gray-100 ${flaggedFields.has('eval_badge_where') ? 'bg-yellow-50 -mx-4 px-4 border-l-4 border-l-yellow-400 rounded-r-md' : ''}`}>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Where was badge located? {visit.eval_badge_location_pass === 'Fail' && <span className="text-red-400">*</span>}
+                    </label>
+                    <div className="flex items-start gap-2">
+                      <textarea
+                        value={visit.eval_badge_where || ''}
+                        onChange={(e) => updateField('eval_badge_where', e.target.value)}
+                        disabled={isComplete}
+                        rows={1}
+                        placeholder={visit.eval_badge_location_pass === 'Fail' ? 'Required — where was it?' : 'Optional note'}
+                        className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+                      />
+                      <VoiceInput
+                        onTranscript={(text) => updateField('eval_badge_where', (visit.eval_badge_where || '') + ' ' + text)}
+                        disabled={isComplete}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
 
-            {/* Badge location — always shown when reps present */}
+            {/* Soft Selling */}
             <div className="py-3 border-b border-gray-100">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Where was badge located? {visit.eval_badge_location_pass === 'Fail' && <span className="text-red-400">*</span>}
-              </label>
-              <div className="flex items-start gap-2">
-                <textarea
-                  value={visit.eval_badge_where || ''}
-                  onChange={(e) => updateField('eval_badge_where', e.target.value)}
-                  disabled={isComplete}
-                  rows={1}
-                  placeholder={visit.eval_badge_location_pass === 'Fail' ? 'Required — where was it?' : 'Optional note'}
-                  className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
-                />
-                <VoiceInput
-                  onTranscript={(text) => updateField('eval_badge_where', (visit.eval_badge_where || '') + ' ' + text)}
+              {isWaterProgram ? (
+                <EvaluationField
+                  label="Soft Selling"
+                  fieldId="eval_soft_selling"
+                  value={visit.eval_soft_selling}
+                  comment={visit.eval_soft_selling_comment}
+                  onValueChange={handleEvalChange}
+                  onCommentChange={handleCommentChange}
                   disabled={isComplete}
                 />
-              </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-400">Soft Selling</p>
+                  <span className="text-xs text-gray-400">N/A — Water programs only</span>
+                </div>
+              )}
             </div>
 
-            {/* Soft Selling — Water programs only */}
-            {isWaterProgram && (
-              <EvaluationField
-                label="Soft Selling"
-                fieldId="eval_soft_selling"
-                value={visit.eval_soft_selling}
-                comment={visit.eval_soft_selling_comment}
-                onValueChange={handleEvalChange}
-                onCommentChange={handleCommentChange}
-                disabled={isComplete}
-              />
-            )}
-
-            {/* Resource Guide — Costco only */}
-            {isCostco && (
-              <div className="py-3">
+            {/* Resource Guide */}
+            <div className="py-3">
+              {isCostco ? (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-800">Costco Resource Guide Present</p>
                   <div className="flex gap-1">
@@ -478,8 +487,13 @@ function Visit() {
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-400">Costco Resource Guide</p>
+                  <span className="text-xs text-gray-400">N/A — Costco only</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
