@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../services/AuthContext'
 import api from '../services/api'
-import BottomNav from '../components/BottomNav'
 
 function Profile() {
   const { user } = useAuth()
@@ -61,7 +60,7 @@ function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-100 px-6 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <img src="/Logo.png" alt="ShopRight" className="w-10 h-10 rounded-lg" />
@@ -118,7 +117,6 @@ function Profile() {
         </form>
       </div>
 
-      <BottomNav />
     </div>
   )
 }

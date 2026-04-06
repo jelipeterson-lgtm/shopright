@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../services/AuthContext'
 import api from '../services/api'
 import Paywall from './Paywall'
-import BottomNav from '../components/BottomNav'
 
 function Home() {
   const { user } = useAuth()
@@ -44,7 +43,7 @@ function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-6 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
@@ -147,7 +146,6 @@ function Home() {
         )}
       </div>
 
-      <BottomNav />
     </div>
   )
 }

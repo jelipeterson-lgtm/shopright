@@ -13,6 +13,7 @@ import MonthlyInvoice from './pages/MonthlyInvoice'
 import Landing from './pages/Landing'
 import Profile from './pages/Profile'
 import HelpChat from './components/HelpChat'
+import BottomNav from './components/BottomNav'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -23,7 +24,7 @@ function ProtectedRoute({ children }) {
       </div>
     )
   }
-  return user ? children : <Navigate to="/login" />
+  return user ? <><div className="pb-16">{children}</div><BottomNav /></> : <Navigate to="/login" />
 }
 
 function PublicRoute({ children }) {
