@@ -8,7 +8,7 @@ import stripe
 import os
 
 load_dotenv()
-stripe.api_key = os.getenv("STRIPE_TEST_SECRET_KEY") or os.getenv("STRIPE_SECRET_KEY")
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_TEST_SECRET_KEY")
 
 MONTHLY_PRICE_ID = os.getenv("STRIPE_MONTHLY_PRICE_ID", "price_1TJJFLRsPFnm3irYAcJCEFOO")
 ANNUAL_PRICE_ID = os.getenv("STRIPE_ANNUAL_PRICE_ID", "price_1TJJG2RsPFnm3irYWWUYfogX")
@@ -167,7 +167,7 @@ async def stripe_webhook(request: Request):
     """Handle Stripe webhook events."""
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
-    webhook_secret = os.getenv("STRIPE_TEST_WEBHOOK_SECRET") or os.getenv("STRIPE_WEBHOOK_SECRET")
+    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET") or os.getenv("STRIPE_TEST_WEBHOOK_SECRET")
 
     try:
         if webhook_secret:
