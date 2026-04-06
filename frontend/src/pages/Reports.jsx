@@ -6,7 +6,7 @@ function Reports() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="Reports" size="small" />
+      <PageHeader title="Reports" />
 
       <div className="max-w-lg mx-auto px-6 py-4 space-y-3">
         <button

@@ -65,7 +65,7 @@ function HelpGuide() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-100">
-        <PageHeader title="Help Guide" size="small" />
+        <PageHeader title="Help Guide" />
         <button onClick={() => navigate('/settings')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100">Back</button>
       </div>
 

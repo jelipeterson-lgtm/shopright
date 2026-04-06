@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../services/AuthContext'
 import { supabase } from '../services/supabase'
 import api from '../services/api'
+import PageHeader from '../components/PageHeader'
 
 function SubscriptionSection() {
   const [status, setStatus] = useState(null)
@@ -163,12 +164,7 @@ function Settings() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          <img src="/Logo.png" alt="ShopRight" className="w-10 h-10 rounded-lg" />
-          <h1 className="text-lg font-bold text-gray-900">Settings</h1>
-        </div>
-      </div>
+      <PageHeader title="Settings" />
 
       <div className="max-w-lg mx-auto px-6 py-4 pb-8 space-y-4">
         {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}

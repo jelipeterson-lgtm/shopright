@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../services/AuthContext'
 import api from '../services/api'
 import Paywall from './Paywall'
+import PageHeader from '../components/PageHeader'
 
 function Home() {
   const { user } = useAuth()
@@ -45,21 +46,16 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gray-50 px-6 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          <img src="/Logo.png" alt="ShopRight" className="w-10 h-10 rounded-lg cursor-pointer" onClick={() => navigate('/app')} />
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Welcome, {firstName}</h1>
-            <p className="text-xs text-gray-400">
-              {subReason === 'free_account' && 'Free Account'}
-              {subReason === 'subscribed' && trialInfo && `Next renewal: ${trialInfo}`}
-              {subReason === 'subscribed' && !trialInfo && 'Active Subscription'}
-              {subReason === 'trial' && trialInfo && `Free trial ends in ${Math.max(0, Math.ceil((new Date(trialInfo) - new Date()) / 86400000))} days (${new Date(trialInfo).toLocaleDateString()})`}
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={`Welcome, ${firstName}`}
+        subtitle={
+          subReason === 'free_account' ? 'Free Account' :
+          subReason === 'subscribed' && trialInfo ? `Next renewal: ${trialInfo}` :
+          subReason === 'subscribed' ? 'Active Subscription' :
+          subReason === 'trial' && trialInfo ? `Free trial ends in ${Math.max(0, Math.ceil((new Date(trialInfo) - new Date()) / 86400000))} days (${new Date(trialInfo).toLocaleDateString()})` :
+          null
+        }
+      />
 
       <div className="max-w-lg mx-auto px-6 py-4">
         {/* Payment success banner */}
