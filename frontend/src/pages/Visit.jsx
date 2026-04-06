@@ -601,7 +601,7 @@ function Visit() {
                 </button>
                 <button
                   onClick={() => navigate('/session')}
-                  className="w-full bg-gray-100 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200"
+                  className="w-full bg-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-300"
                 >
                   Save Draft & Go Back
                 </button>
