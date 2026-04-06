@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { supabase } from '../services/supabase'
+import PageHeader from '../components/PageHeader'
 
 function getISOWeekNumber(date) {
   const d = new Date(date)
@@ -114,7 +115,7 @@ function WeeklyReport() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Weekly Report</h1>
+          <PageHeader title="Weekly Report" size="small" />
           <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Home</button>
         </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import PageHeader from '../components/PageHeader'
 
 function ManualVisit() {
   const navigate = useNavigate()
@@ -74,7 +75,7 @@ function ManualVisit() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Add Visit Manually</h1>
+          <PageHeader title="Add Visit Manually" size="small" />
           <button onClick={() => navigate('/session')} className="text-blue-600 text-sm hover:underline">Cancel</button>
         </div>
 

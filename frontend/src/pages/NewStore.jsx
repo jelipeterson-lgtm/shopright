@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api from '../services/api'
+import PageHeader from '../components/PageHeader'
 
 function NewStore() {
   const navigate = useNavigate()
@@ -156,7 +157,7 @@ function NewStore() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">New Store</h1>
+          <PageHeader title="New Store" size="small" />
           <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Cancel</button>
         </div>
 

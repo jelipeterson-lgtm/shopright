@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import EvaluationField from '../components/EvaluationField'
 import VoiceInput from '../components/VoiceInput'
+import PageHeader from '../components/PageHeader'
 
 // All 22 evaluation fields: [fieldId, label, commentFieldId]
 const EVAL_FIELDS = [
@@ -263,7 +264,7 @@ function Visit() {
     <div className="min-h-screen bg-gray-50 p-6 pb-24">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-gray-900">Assessment</h1>
+          <PageHeader title="Assessment" size="small" />
           <button onClick={() => navigate('/session')} className="text-blue-600 text-sm hover:underline">Back</button>
         </div>
 
