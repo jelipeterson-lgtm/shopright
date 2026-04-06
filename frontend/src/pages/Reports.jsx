@@ -8,7 +8,7 @@ function Reports() {
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="Reports" rightButton={<button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Home</button>} />
 
-      <div className="max-w-lg mx-auto px-6 py-4 space-y-3">
+      <div className="px-4 py-4 space-y-3">
         <button
           onClick={() => navigate('/weekly-report')}
           className="w-full bg-white rounded-xl border border-gray-100 p-5 text-left hover:shadow-sm transition"

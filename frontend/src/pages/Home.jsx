@@ -57,7 +57,7 @@ function Home() {
         }
       />
 
-      <div className="max-w-lg mx-auto px-6 py-4">
+      <div className="px-4 py-4">
         {/* Payment success banner */}
         {searchParams.get('payment') === 'success' && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">

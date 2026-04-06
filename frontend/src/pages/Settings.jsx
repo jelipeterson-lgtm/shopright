@@ -166,7 +166,7 @@ function Settings() {
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="Settings" />
 
-      <div className="max-w-lg mx-auto px-6 py-4 pb-8 space-y-4">
+      <div className="px-4 py-4 pb-8 space-y-4">
         {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
         {success && <p className="text-green-600 text-sm bg-green-50 p-3 rounded-lg">{success}</p>}
 
