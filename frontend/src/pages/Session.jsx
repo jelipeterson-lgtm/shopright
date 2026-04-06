@@ -175,12 +175,13 @@ function Session() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
+                  <p className="text-xs text-gray-400">{store.address}</p>
                   <p className="text-xs text-gray-400">{store.city}, {store.state}</p>
                 </div>
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                   store.stop_open
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-green-100 text-green-700'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-blue-100 text-blue-700'
                 }`}>
                   {store.stop_open ? 'Open' : 'Completed'}
                 </span>
@@ -196,8 +197,8 @@ function Session() {
                       <p className="text-sm font-medium text-gray-900">{visit.program}</p>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                         visit.status === 'Draft'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-green-100 text-green-700'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-100 text-blue-700'
                       }`}>
                         {visit.status === 'Draft' ? 'Open' : 'Completed'}
                       </span>
