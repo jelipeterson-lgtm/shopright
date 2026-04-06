@@ -338,6 +338,7 @@
 | April 1, 2026 | Phase 5 | AI review with Claude Haiku, flags with field highlighting, re-review loop, submit anyway, cancel/discard. Editable program field. N/A blue highlight. | Phase 6 — Report & Invoice Generation |
 | April 2, 2026 | Phase 6 | Shop File and Invoice generation with template-copy. Email via Resend. Weekly/monthly screens. Excel formatting validated. Invoice: YYMM numbering, single mileage line, uniform borders, phone formatting, date formatting. Numerous UX fixes across all phases. | Phase 7 — Payments |
 | April 6, 2026 | Phase 7 | Stripe test mode checkout, webhooks, paywall, 14-day trial, promo codes, free accounts. Landing page for Eli Peterson Consulting LLC. | Phase 8 — Polish & Launch |
+| April 6, 2026 | Phase 8 | Major UX overhaul: dashboard with logo, bottom nav, profile/settings split, AI help chatbot, consistent Store/Vendor terminology, Open/Completed statuses, date formatting, clean assessment header, empty store handling. | Final validation |
 
 ---
 
