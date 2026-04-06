@@ -13,6 +13,7 @@ import MonthlyInvoice from './pages/MonthlyInvoice'
 import Landing from './pages/Landing'
 import Profile from './pages/Profile'
 import HelpGuide from './pages/HelpGuide'
+import Reports from './pages/Reports'
 import HelpChat from './components/HelpChat'
 import BottomNav from './components/BottomNav'
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/help" element={<ProtectedRoute><HelpGuide /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/new-store" element={<ProtectedRoute><NewStore /></ProtectedRoute>} />
           <Route path="/session" element={<ProtectedRoute><Session /></ProtectedRoute>} />
           <Route path="/visit/:id" element={<ProtectedRoute><Visit /></ProtectedRoute>} />
