@@ -187,10 +187,7 @@ function Session() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Assessments" subtitle={todayLong} />
-          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Home</button>
-        </div>
+        <PageHeader title="Assessments" subtitle={todayLong} rightButton={<button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Home</button>} />
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">

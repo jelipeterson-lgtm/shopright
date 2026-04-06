@@ -263,10 +263,7 @@ function Visit() {
   return (
     <div className="min-h-screen bg-gray-50 p-6 pb-64">
       <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <PageHeader title="Assessment" />
-          <button onClick={() => navigate('/session')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>
-        </div>
+        <PageHeader title="Assessment" rightButton={<button onClick={() => navigate('/session')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
