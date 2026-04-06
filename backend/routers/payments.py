@@ -3,13 +3,15 @@ from pydantic import BaseModel
 from typing import Optional
 from db import supabase_admin
 from routers.auth import get_user_id
+from dotenv import load_dotenv
 import stripe
 import os
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+load_dotenv()
+stripe.api_key = os.getenv("STRIPE_TEST_SECRET_KEY") or os.getenv("STRIPE_SECRET_KEY")
 
-MONTHLY_PRICE_ID = "price_1TJIMBRsPFnm3irYLta8jhrl"
-ANNUAL_PRICE_ID = "price_1TJIMBRsPFnm3irY4NJddmvd"
+MONTHLY_PRICE_ID = os.getenv("STRIPE_MONTHLY_PRICE_ID", "price_1TJJFLRsPFnm3irYAcJCEFOO")
+ANNUAL_PRICE_ID = os.getenv("STRIPE_ANNUAL_PRICE_ID", "price_1TJJG2RsPFnm3irYWWUYfogX")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 router = APIRouter(prefix="/payments", tags=["payments"])

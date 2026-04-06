@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
-function Paywall({ onAccessGranted }) {
+function Paywall({ onAccessGranted, monthlyPriceId, annualPriceId }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -53,14 +53,14 @@ function Paywall({ onAccessGranted }) {
 
       <div className="w-full max-w-sm space-y-3">
         <button
-          onClick={() => handleCheckout('price_1TJIMBRsPFnm3irYLta8jhrl')}
+          onClick={() => handleCheckout(monthlyPriceId)}
           disabled={loading}
           className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
         >
           Subscribe Monthly — $10/mo
         </button>
         <button
-          onClick={() => handleCheckout('price_1TJIMBRsPFnm3irY4NJddmvd')}
+          onClick={() => handleCheckout(annualPriceId)}
           disabled={loading}
           className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
         >

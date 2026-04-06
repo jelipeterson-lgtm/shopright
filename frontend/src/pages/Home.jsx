@@ -13,6 +13,7 @@ function Home() {
   const [loading, setLoading] = useState(true)
   const [hasAccess, setHasAccess] = useState(true)
   const [trialInfo, setTrialInfo] = useState(null)
+  const [priceIds, setPriceIds] = useState({})
 
   useEffect(() => {
     Promise.all([
@@ -23,6 +24,7 @@ function Home() {
       const sub = subResult.data
       setHasAccess(sub.access)
       if (sub.reason === 'trial') setTrialInfo(sub.trial_ends_at)
+      if (sub.monthly_price) setPriceIds({ monthly: sub.monthly_price, annual: sub.annual_price })
     }).catch(() => {}).finally(() => setLoading(false))
   }, [today])
 
@@ -30,7 +32,7 @@ function Home() {
   const hasVisits = todayVisits.length > 0
 
   if (!loading && !hasAccess) {
-    return <Paywall onAccessGranted={() => setHasAccess(true)} />
+    return <Paywall onAccessGranted={() => setHasAccess(true)} monthlyPriceId={priceIds.monthly} annualPriceId={priceIds.annual} />
   }
 
   return (
