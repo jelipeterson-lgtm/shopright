@@ -261,7 +261,7 @@ function Visit() {
   const isCostco = visit.retailer_name?.toLowerCase().includes('costco')
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 pb-24">
+    <div className="min-h-screen bg-gray-50 p-6 pb-64">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
           <PageHeader title="Assessment" size="small" />
