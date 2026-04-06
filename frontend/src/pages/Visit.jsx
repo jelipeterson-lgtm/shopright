@@ -265,7 +265,7 @@ function Visit() {
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
           <PageHeader title="Assessment" size="small" />
-          <button onClick={() => navigate('/session')} className="text-blue-600 text-sm hover:underline">Back</button>
+          <button onClick={() => navigate('/session')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Back</button>
         </div>
 
         {error && (

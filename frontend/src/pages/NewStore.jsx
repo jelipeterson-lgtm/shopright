@@ -158,7 +158,7 @@ function NewStore() {
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
           <PageHeader title="Add Store" size="small" />
-          <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Cancel</button>
+          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Cancel</button>
         </div>
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
