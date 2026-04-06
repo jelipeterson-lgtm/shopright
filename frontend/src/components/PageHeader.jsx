@@ -5,7 +5,7 @@ function PageHeader({ title, subtitle, rightButton }) {
 
   return (
     <div className="bg-gray-50 px-4 py-3">
-      <div className="flex items-center justify-between">
+      <div className="max-w-lg mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img
             src="/Logo.png"

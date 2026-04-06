@@ -66,7 +66,7 @@ function HelpGuide() {
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="Help Guide" rightButton={<button onClick={() => navigate('/settings')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {sections.map((section) => (
           <div key={section.title} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-100">
