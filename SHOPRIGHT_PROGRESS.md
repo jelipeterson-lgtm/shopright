@@ -1,7 +1,7 @@
 # ShopRight — Build Progress Tracker
 
 **Last Updated:** April 1, 2026
-**Current Phase:** ⬜ Phase 7 — Payments (ready to start)
+**Current Phase:** 🟡 Phase 8 — Polish & Real-World Launch
 **Overall Status:** 🟢 Active Build
 
 ---
@@ -263,21 +263,21 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 7.1 | Stripe account setup — monthly + annual subscription products | ⬜ | Eli creates products in Stripe dashboard |
-| 7.2 | Stripe hosted checkout integration | ⬜ | |
-| 7.3 | 14-day free trial on signup | ⬜ | |
-| 7.4 | Subscription gate — paywall after trial | ⬜ | |
-| 7.5 | Manual free accounts — exempt flag in Supabase | ⬜ | Eli creates these directly in Supabase |
-| 7.6 | Subscription management in Settings | ⬜ | |
-| 7.7 | Graceful expiry — data readable, new visits blocked | ⬜ | |
+| 7.1 | Stripe account setup — monthly + annual subscription products | ✅ | $10/mo + $100/yr |
+| 7.2 | Stripe hosted checkout integration | ✅ | Checkout session + webhook |
+| 7.3 | 14-day free trial on signup | ✅ | DB trigger sets trial_ends_at |
+| 7.4 | Subscription gate — paywall after trial | ✅ | Paywall with monthly/annual/promo |
+| 7.5 | Manual free accounts — exempt flag in Supabase | ✅ | is_free_account + promo codes |
+| 7.6 | Subscription management in Settings | ✅ | Stripe Customer Portal |
+| 7.7 | Graceful expiry — data readable, new visits blocked | ✅ | Paywall blocks app, data preserved |
 
 **🛑 GATE — Phase 7 Validation:**
-- [ ] New user signup → 14-day trial → full access
-- [ ] Trial expires (test mode) → paywall shown
-- [ ] Subscribe via Stripe → full access restored
-- [ ] Kelsey's manually-created account → never sees paywall
+- [x] New user signup → 14-day trial → full access
+- [x] Trial expires (test mode) → paywall shown
+- [x] Subscribe via Stripe → full access restored
+- [x] Kelsey's manually-created account → never sees paywall
 
-**Phase 7 Sign-off:** ⬜ Validated by Eli — Date: ___________
+**Phase 7 Sign-off:** ✅ Validated by Eli — Date: April 6, 2026
 
 ---
 
@@ -287,10 +287,10 @@
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 8.1 | Responsive design audit — iPhone, Android, Chromebook, desktop Chrome | ⬜ | |
-| 8.2 | PWA setup — manifest.json, service worker, Add to Home Screen prompt | ⬜ | |
-| 8.3 | Empty states on all screens | ⬜ | |
-| 8.4 | Accessibility — keyboard nav, ARIA labels, color contrast | ⬜ | |
+| 8.1 | Responsive design audit — iPhone, Android, Chromebook, desktop Chrome | ✅ | Viewport meta, 16px inputs, overflow hidden |
+| 8.2 | PWA setup — manifest.json, service worker, Add to Home Screen prompt | ✅ | manifest.json, sw.js, apple-mobile-web-app meta |
+| 8.3 | Empty states on all screens | ✅ | All screens have empty/loading/error states |
+| 8.4 | Accessibility — keyboard nav, ARIA labels, color contrast | ✅ | Semantic HTML, proper labels, contrast |
 | 8.5 | Real-world use — Kelsey uses app on a real shopping day | ⬜ | Eli + Kelsey |
 | 8.6 | Output validation — generated report accepted by Smart Circle | ⬜ | |
 | 8.7 | Error monitoring setup — Sentry or equivalent | ⬜ | |
@@ -337,6 +337,7 @@
 | April 1, 2026 | Phase 4 | Full assessment form: 3 zones, EvaluationField component, voice input, auto-save, all conditional logic working. | Phase 5 — AI Review & Submission |
 | April 1, 2026 | Phase 5 | AI review with Claude Haiku, flags with field highlighting, re-review loop, submit anyway, cancel/discard. Editable program field. N/A blue highlight. | Phase 6 — Report & Invoice Generation |
 | April 2, 2026 | Phase 6 | Shop File and Invoice generation with template-copy. Email via Resend. Weekly/monthly screens. Excel formatting validated. Invoice: YYMM numbering, single mileage line, uniform borders, phone formatting, date formatting. Numerous UX fixes across all phases. | Phase 7 — Payments |
+| April 6, 2026 | Phase 7 | Stripe test mode checkout, webhooks, paywall, 14-day trial, promo codes, free accounts. Landing page for Eli Peterson Consulting LLC. | Phase 8 — Polish & Launch |
 
 ---
 
