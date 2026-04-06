@@ -93,8 +93,14 @@ function Paywall({ onAccessGranted, monthlyPriceId, annualPriceId }) {
           </form>
         )}
 
-        <div className="text-center pt-2">
+        <div className="text-center pt-4 space-y-2">
           <p className="text-xs text-gray-400">Your data is still here — subscribe to pick up where you left off.</p>
+          <button
+            onClick={() => navigate('/settings')}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Settings
+          </button>
         </div>
       </div>
     </div>
