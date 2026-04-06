@@ -39,3 +39,30 @@ app.include_router(reports_router)
 @app.get("/health")
 def health_check():
     return {"success": True, "data": "ShopRight API is running", "error": None}
+
+
+from pydantic import BaseModel
+import resend
+
+resend.api_key = os.getenv("RESEND_API_KEY")
+
+
+class ContactForm(BaseModel):
+    name: str
+    email: str
+    message: str
+
+
+@app.post("/contact")
+def send_contact(body: ContactForm):
+    try:
+        resend.Emails.send({
+            "from": "Contact Form <onboarding@resend.dev>",
+            "to": ["j.eli.peterson@gmail.com"],
+            "subject": f"Contact from {body.name} — Eli Peterson Consulting",
+            "html": f"<p><strong>From:</strong> {body.name} ({body.email})</p><p>{body.message}</p>",
+            "reply_to": body.email,
+        })
+        return {"success": True}
+    except Exception:
+        return {"success": False}

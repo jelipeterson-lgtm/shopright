@@ -89,7 +89,7 @@ function Session() {
         setError(`Close out ${stop.retailer_name} #${stop.store_number} before ending session.`)
         return
       }
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -141,7 +141,7 @@ function Session() {
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Today's Session</h1>
-          <button onClick={() => navigate('/')} className="text-blue-600 text-sm hover:underline">Home</button>
+          <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Home</button>
         </div>
 
         {error && (

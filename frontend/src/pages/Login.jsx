@@ -16,7 +16,7 @@ function Login() {
     setLoading(true)
     try {
       await signIn(email, password)
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err.message)
     } finally {

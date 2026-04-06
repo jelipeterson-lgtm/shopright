@@ -111,7 +111,7 @@ function Signup() {
         anthropic_api_key: apiKey,
         ai_review_enabled: true,
       })
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -123,7 +123,7 @@ function Signup() {
     setLoading(true)
     try {
       await api.updateProfile({ ai_review_enabled: false })
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err.message)
     } finally {

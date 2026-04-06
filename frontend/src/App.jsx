@@ -10,6 +10,7 @@ import Visit from './pages/Visit'
 import ManualVisit from './pages/ManualVisit'
 import WeeklyReport from './pages/WeeklyReport'
 import MonthlyInvoice from './pages/MonthlyInvoice'
+import Landing from './pages/Landing'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -32,7 +33,7 @@ function PublicRoute({ children }) {
       </div>
     )
   }
-  return user ? <Navigate to="/" /> : children
+  return user ? <Navigate to="/app" /> : children
 }
 
 function App() {
@@ -40,9 +41,10 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/new-store" element={<ProtectedRoute><NewStore /></ProtectedRoute>} />
           <Route path="/session" element={<ProtectedRoute><Session /></ProtectedRoute>} />

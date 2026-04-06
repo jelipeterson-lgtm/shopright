@@ -143,7 +143,7 @@ function MonthlyInvoice() {
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Monthly Invoice</h1>
-          <button onClick={() => navigate('/')} className="text-blue-600 text-sm hover:underline">Home</button>
+          <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Home</button>
         </div>
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
