@@ -163,8 +163,8 @@ function Session() {
             {/* Vendors at this store */}
             <div className="divide-y divide-gray-50">
               {store.visits.map((visit) => (
-                <div key={visit.id} className="p-4">
-                  <div className="flex items-center justify-between mb-2">
+                <div key={visit.id} className="p-4 flex items-center justify-between">
+                  <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm text-gray-800">{visit.program}</p>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -175,7 +175,7 @@ function Session() {
                         {visit.status}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400">{visit.visit_time}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Vendor — {visit.visit_time}</p>
                   </div>
                   <div className="flex gap-1">
                     {visit.status === 'Draft' && (
