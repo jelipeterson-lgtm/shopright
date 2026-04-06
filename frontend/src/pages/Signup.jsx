@@ -133,6 +133,7 @@ function Signup() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+      <img src="/Logo.png" alt="ShopRight" className="w-24 h-24 rounded-2xl mb-6" />
       <h1 className="text-3xl font-bold text-gray-900 mb-1">ShopRight</h1>
       <p className="text-gray-500 mb-2">Create your account</p>
       <p className="text-sm text-gray-400 mb-6">Step {step} of 3</p>

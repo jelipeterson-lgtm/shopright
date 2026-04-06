@@ -46,6 +46,7 @@ function Paywall({ onAccessGranted, monthlyPriceId, annualPriceId }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+      <img src="/Logo.png" alt="ShopRight" className="w-24 h-24 rounded-2xl mb-6" />
       <h1 className="text-3xl font-bold text-gray-900 mb-2">ShopRight</h1>
       <p className="text-gray-500 mb-8">Your free trial has ended. Subscribe to continue.</p>
 
