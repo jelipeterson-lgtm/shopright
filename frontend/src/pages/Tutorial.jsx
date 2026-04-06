@@ -5,149 +5,121 @@ import PageHeader from '../components/PageHeader'
 const steps = [
   {
     title: 'Welcome to ShopRight',
-    content: 'ShopRight helps you record store visits, fill out vendor assessments, and generate reports — all from your phone. This guide walks you through everything.',
-    dos: [],
-    donts: [],
+    content: 'ShopRight is your all-in-one tool for recording store visits, filling out vendor assessments, and sending reports to Smart Circle — right from your phone.\n\nThis guide walks you through the entire process, step by step.',
+    tips: [],
   },
   {
-    title: 'Step 1: Start Your Shopping Day',
-    content: 'From the Home page, tap "Start Shopping" to go to the Stores page. This is where you\'ll manage all your store visits for the day.',
-    dos: [
-      'Start your session before arriving at the first store',
-      'Make sure GPS/location is enabled on your phone',
-    ],
-    donts: [
-      'Don\'t worry about ending a session — just close each store when done',
+    title: 'Adding a Store',
+    content: 'When you arrive at a store, open ShopRight and tap "Start Shopping" on the Home page, then tap "Add Store."\n\nThe app will ask to use your location to find nearby stores. If you allow it, you\'ll see up to 3 stores within 1 mile. Tap the correct one.\n\nIf your store doesn\'t appear, or if you prefer not to use GPS, tap "Search instead" and type the store number (like "63") or retailer name (like "Costco").\n\nOnce you select a store, confirm the address is correct before continuing.',
+    tips: [
+      'GPS works best when you\'re at or near the store',
+      'Searching by store number is the fastest way to find a specific store',
+      'You can only have one store open at a time — finish or close your current store before adding another',
     ],
   },
   {
-    title: 'Step 2: Add a Store',
-    content: 'Tap "Add Store" on the Stores page. The app will try to find nearby stores using GPS. If your store doesn\'t appear, tap "Search instead" and search by store number or retailer name.',
-    dos: [
-      'Allow location access when prompted for faster store finding',
-      'Search by store number (e.g., "63") for the fastest results',
-      'Verify the store address matches where you are',
-    ],
-    donts: [
-      'Don\'t select the wrong store — check the address before confirming',
-      'Don\'t open a new store before closing your current one',
+    title: 'Adding a Vendor',
+    content: 'After selecting a store, you\'ll see a field for the vendor program code (like RTL-ATT-EDM). If the store has a known program, it will auto-fill for you. You can also type any program code.\n\nTap "Confirm Store & Add Vendor" to open the assessment form.\n\nYou can add multiple vendors at the same store. After completing one vendor\'s assessment, tap "Add Another Vendor" on the Stores page to add the next one.',
+    tips: [
+      'Each vendor at a store gets its own assessment form',
+      'The program code identifies which vendor or brand you\'re assessing',
     ],
   },
   {
-    title: 'Step 3: Add a Vendor',
-    content: 'After confirming a store, enter the vendor program code (e.g., RTL-ATT-EDM). The known program will auto-fill, but you can type any program code. Tap "Confirm Store & Add Vendor" to open the assessment form.',
-    dos: [
-      'Double-check the vendor program code is correct',
-      'You can add multiple vendors at the same store',
-    ],
-    donts: [
-      'Don\'t leave the program field empty',
+    title: 'The Assessment Form — Reps Present',
+    content: 'The first question on every assessment is "Reps Present?" — are the vendor\'s representatives at the store?\n\nIf reps ARE present, select Pass. You\'ll then need to:\n• Enter how many reps are present (required)\n• Optionally add their names and descriptions\n\nIf reps are NOT present, select Fail. The form will skip straight to the Visit Recap section at the bottom — just describe what you observed.',
+    tips: [
+      'This is the most important field — it determines which sections of the form appear',
+      'If more than 4 reps are present, you\'ll be asked to explain why (e.g., shift change)',
     ],
   },
   {
-    title: 'Step 4: Fill Out the Assessment',
-    content: 'The assessment form has three sections:\n\n1. Reps Present — Are reps at the store? Pass or Fail.\n2. Evaluation Fields — 12 questions, all default to Pass. Only tap Fail or N/A for exceptions.\n3. Visit Recap — Describe the overall visit.',
-    dos: [
-      'Set "Reps Present" first — it controls the rest of the form',
-      'If Reps Present = Pass, enter the rep count (required)',
-      'Use the microphone button for voice input on any text field',
-      'Scroll through the evaluation fields — only change what needs changing',
-      'Write a clear Visit Recap — Smart Circle reads this',
-    ],
-    donts: [
-      'Don\'t skip the rep count when reps are present',
-      'Don\'t mark Fail without adding a comment — it\'s required',
-      'Don\'t worry about losing work — the form auto-saves every change',
-      'Don\'t rush the Visit Recap — it\'s the most important field',
+    title: 'The Assessment Form — Evaluation Fields',
+    content: 'When reps are present, you\'ll see 12 evaluation questions like "Following approved greeting script?" and "Proper dress code?"\n\nEvery field starts at Pass. You only need to interact with fields where something was wrong.\n\n• Tap Fail if there was an issue — a comment box will appear where you describe what happened (required)\n• Tap N/A if the question doesn\'t apply\n• Leave it on Pass if everything was fine\n\nTwo special fields:\n• Soft Selling — only applies to Water programs. Shows as N/A for everything else.\n• Resource Guide — only applies to Costco. Shows as N/A for other retailers.',
+    tips: [
+      'Think of this as an exception log — you\'re only noting what went wrong',
+      'On a good visit, you can scroll past everything without tapping',
+      'Use the microphone icon next to any text field to speak instead of type',
     ],
   },
   {
-    title: 'Step 5: Submit the Assessment',
-    content: 'Tap "Review & Submit" at the bottom. If AI Review is enabled, the AI will check your notes for issues. If it finds anything, you\'ll see flagged items highlighted in yellow.\n\nYou can edit the flagged fields, tap "Review with AI Again" for a fresh check, or tap "Submit Anyway" to skip.',
-    dos: [
-      'Review AI flags — they often catch real issues',
-      'Edit your notes if the AI question makes sense',
-      'Tap "Submit Anyway" if you\'re confident your notes are fine',
-    ],
-    donts: [
-      'Don\'t panic if the AI flags something — it\'s just asking questions',
-      'Don\'t ignore every flag — some may be legitimate issues',
+    title: 'The Assessment Form — Visit Recap',
+    content: 'At the bottom of every assessment is the Visit Recap — a large text field where you describe the overall visit in your own words.\n\nThis appears on every assessment, whether reps were present or not. Smart Circle reads this section closely, so be clear and specific.\n\nYou can type or use the microphone icon for voice input.',
+    tips: [
+      'This is the most-read part of your report — take a moment to write clearly',
+      'Mention anything noteworthy, even if you marked everything as Pass above',
+      'Your form auto-saves every change, so you won\'t lose your work if the browser closes',
     ],
   },
   {
-    title: 'Step 6: Add More Vendors or Close the Store',
-    content: 'After submitting, you\'re back on the Stores page. You can:\n\n• "Add Another Vendor" — add another vendor program at the same store\n• "Close Store" — mark this store as done\n\nYou must close a store before adding a new one.',
-    dos: [
-      'Add all vendors at a store before closing it',
-      'Close the store when you\'re done with all vendors there',
-    ],
-    donts: [
-      'Don\'t try to add a new store before closing the current one',
-      'Don\'t close a store if you still have open (unsubmitted) vendors',
+    title: 'Submitting Your Assessment',
+    content: 'When you\'re done, tap "Review & Submit" at the bottom of the form.\n\nIf you have AI Review enabled (optional), the app will scan your notes and may flag items that seem unclear or contradictory. Flagged fields will be highlighted in yellow so you can find and edit them.\n\nAfter editing, you can:\n• "Review with AI Again" — run another check on your updated notes\n• "Submit Anyway" — submit as-is if you\'re confident\n• "Cancel Vendor Review" — delete this assessment entirely\n\nIf AI Review is not set up, the assessment submits directly.',
+    tips: [
+      'AI Review is optional — the app works fine without it',
+      'AI flags are questions, not corrections — use your judgment',
+      'You can also tap "Save Draft & Go Back" to return later without submitting',
     ],
   },
   {
-    title: 'Step 7: Send Your Weekly Report',
-    content: 'At the end of the week, tap "Reports" in the bottom nav, then "Weekly Shop File". You\'ll see all your completed vendors for the week grouped by day.\n\nReview them, enter the recipient email, and tap "Send Shop File". The report is an Excel file emailed directly to Smart Circle.',
-    dos: [
-      'Review your vendors before sending — you can tap any to edit',
-      'Send the report at the end of your last shopping day of the week',
-      'Check your email to confirm the report was sent',
-    ],
-    donts: [
-      'Don\'t send the report before all vendors for the week are submitted',
-      'Don\'t change the file format — it matches Smart Circle\'s template exactly',
+    title: 'Closing a Store',
+    content: 'When you\'ve assessed all vendors at a store, tap "Close Store" on the Stores page.\n\nThe app will check that all vendor assessments at this store have been submitted. If any are still open (not yet submitted), you\'ll need to submit or delete them first.\n\nOnce closed, the store shows as "Completed." You can then add a new store.',
+    tips: [
+      'You can close a store from anywhere — you don\'t need to be at the store location',
+      'A closed store can\'t be reopened, but you can still view completed assessments',
+      'You must close your current store before adding a new one',
     ],
   },
   {
-    title: 'Step 8: Send Your Monthly Invoice',
-    content: 'At the end of the month, tap "Reports" > "Monthly Invoice". You\'ll see all vendors grouped by day with a mileage field for each shopping day.\n\nEnter your miles driven each day. Pricing is automatic:\n• $50 for the first vendor at each store per day\n• $15 for each additional vendor at the same store\n\nTap "Generate & Send Invoice" to email it.',
-    dos: [
-      'Enter mileage for every shopping day',
-      'Double-check the pricing totals make sense',
-      'Send the invoice at the end of each month',
-    ],
-    donts: [
-      'Don\'t forget to enter mileage — it\'s not calculated automatically',
-      'Don\'t send the invoice before the month is complete',
+    title: 'Adding a Store & Vendor Manually',
+    content: 'If you need to add an assessment after the fact — for a store you visited yesterday, or one you forgot to log — tap "Add Store & Vendor Manually" from the Home page or Stores page.\n\nThis lets you search for any store (no GPS required) and set the date and time yourself. The assessment form is exactly the same.',
+    tips: [
+      'The date defaults to today and time to right now — change them if needed',
+      'Manual entries appear in your weekly report based on the date you set',
     ],
   },
   {
-    title: 'Setting Up AI Review (Optional)',
-    content: 'AI Review checks your assessment notes before submission, catching unclear or contradictory statements. It\'s optional but recommended.\n\nTo set up:\n1. Go to Settings\n2. Tap "Enable" under AI Review\n3. Go to console.anthropic.com in your browser\n4. Create an account and add $5 credits\n5. Go to API Keys > Create Key > name it "ShopRight"\n6. Copy the key, paste it in Settings\n7. Test the connection, then Save',
-    dos: [
-      'Set up AI Review — it catches mistakes you\'ll miss',
-      'Add at least $5 in credits to your Anthropic account',
-      'Copy the API key immediately — you can\'t see it again',
-    ],
-    donts: [
-      'Don\'t share your API key with anyone',
-      'Don\'t worry about cost — typical usage is $1-3/month',
-      'Don\'t skip this just because it seems technical — follow the steps above',
+    title: 'Sending Your Weekly Report',
+    content: 'At the end of your last shopping day each week, tap "Reports" in the bottom menu, then "Weekly Shop File."\n\nYou\'ll see all your completed assessments for the week grouped by day. Review them — you can tap any assessment to make last-minute edits.\n\nEnter the recipient email address and tap "Send Shop File." The report is generated as an Excel file matching Smart Circle\'s exact format and emailed directly.',
+    tips: [
+      'Make sure all your assessments for the week are submitted before sending',
+      'You can also download the file to review it yourself before sending',
+      'The file is named "Shop File [Your Name] [Date].xlsx" automatically',
     ],
   },
   {
-    title: 'Tips & Tricks',
-    content: 'A few things to make your life easier:',
-    dos: [
-      'Use voice input — tap the mic icon next to any text field',
-      'Tap the ShopRight logo on any page to go Home',
-      'Use the bottom nav bar to jump between pages',
-      'Tap the blue ? button for AI-powered help on any page',
-      'Add the app to your home screen for quick access (Share > Add to Home Screen)',
-      'Your work auto-saves — close the browser anytime without losing data',
-    ],
-    donts: [
-      'Don\'t use the browser back button — use the in-app navigation instead',
-      'Don\'t delete a vendor by accident — the confirmation dialog is there for a reason',
-      'Don\'t forget to close each store before moving to the next',
+    title: 'Sending Your Monthly Invoice',
+    content: 'At the end of each month, tap "Reports" then "Monthly Invoice."\n\nYou\'ll see all your completed assessments for the month. For each shopping day, enter the total miles you drove in the mileage field.\n\nPricing is calculated automatically:\n• $50 for the first vendor at each store that day\n• $15 for each additional vendor at the same store that day\n\nReview the totals, enter the recipient email, and tap "Generate & Send Invoice."',
+    tips: [
+      'Enter mileage for every day you shopped — it\'s not tracked automatically',
+      'The invoice number is generated automatically based on the year and month',
     ],
   },
   {
-    title: 'You\'re Ready!',
-    content: 'That\'s everything you need to know. Start shopping, fill out assessments, and send your reports. If you need help, tap the ? button on any page.\n\nHappy shopping!',
-    dos: [],
-    donts: [],
+    title: 'Setting Up AI Review',
+    content: 'AI Review is an optional feature that checks your assessment notes before you submit, catching unclear or contradictory statements.\n\nTo set it up:\n\n1. Go to Settings (bottom menu)\n2. Find "AI Review" and tap Enable\n3. Open console.anthropic.com in your browser\n4. Create a free account\n5. Go to Settings > Billing and add $5 in credits\n6. Go to API Keys (left sidebar)\n7. Tap "Create Key" and name it "ShopRight"\n8. Copy the key immediately — it won\'t be shown again\n9. Go back to ShopRight Settings and paste the key\n10. Tap "Step 1: Test Connection"\n11. When it says "API key is valid!", tap "Step 2: Save API Key"\n\nThat\'s it! AI Review will now run every time you submit an assessment.',
+    tips: [
+      'The $5 in credits typically lasts 2-3 months of regular use',
+      'You can disable AI Review anytime in Settings',
+      'The app works perfectly without AI Review — it\'s just an extra safety net',
+    ],
+  },
+  {
+    title: 'Helpful Tips',
+    content: 'A few things that will make ShopRight easier to use:',
+    tips: [
+      'Tap the ShopRight logo at the top of any page to go back to Home',
+      'Use the bottom menu to navigate: Home, Stores, Reports, Profile, Settings',
+      'Tap the blue ? button on any page for instant help from our AI assistant',
+      'Use voice input — the microphone icon appears next to every text field',
+      'Add ShopRight to your home screen for quick access: tap Share > Add to Home Screen',
+      'Your work saves automatically — you can close the browser anytime without losing anything',
+      'If the app seems slow on first load, wait 30 seconds — the server may be waking up',
+    ],
+  },
+  {
+    title: 'You\'re All Set!',
+    content: 'You now know everything you need to use ShopRight. Here\'s the quick version:\n\n1. Add a store when you arrive\n2. Add a vendor and fill out the assessment\n3. Submit, then add more vendors or close the store\n4. Send your weekly report on your last shopping day\n5. Send your monthly invoice at the end of the month\n\nIf you ever get stuck, tap the ? button for help. Happy shopping!',
+    tips: [],
   },
 ]
 
@@ -163,8 +135,8 @@ function Tutorial() {
       <PageHeader
         title="Getting Started"
         rightButton={
-          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">
-            Skip
+          <button onClick={() => navigate(-1)} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">
+            Close
           </button>
         }
       />
@@ -189,29 +161,14 @@ function Tutorial() {
           <p className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">{step.content}</p>
         </div>
 
-        {/* Do's */}
-        {step.dos.length > 0 && (
-          <div className="bg-green-50 rounded-xl border border-green-200 p-4 mb-3">
-            <p className="text-xs font-semibold text-green-700 mb-2">DO</p>
-            <ul className="space-y-1.5">
-              {step.dos.map((item, i) => (
-                <li key={i} className="flex gap-2 text-sm text-green-800">
-                  <span className="text-green-500 flex-shrink-0">+</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Don'ts */}
-        {step.donts.length > 0 && (
-          <div className="bg-red-50 rounded-xl border border-red-200 p-4 mb-6">
-            <p className="text-xs font-semibold text-red-700 mb-2">DON'T</p>
-            <ul className="space-y-1.5">
-              {step.donts.map((item, i) => (
-                <li key={i} className="flex gap-2 text-sm text-red-800">
-                  <span className="text-red-500 flex-shrink-0">-</span>
+        {/* Tips */}
+        {step.tips.length > 0 && (
+          <div className="bg-blue-50 rounded-xl border border-blue-100 p-4 mb-6">
+            <p className="text-xs font-semibold text-blue-700 mb-2">Good to know</p>
+            <ul className="space-y-2">
+              {step.tips.map((item, i) => (
+                <li key={i} className="flex gap-2 text-sm text-blue-800">
+                  <span className="text-blue-400 flex-shrink-0 mt-0.5">•</span>
                   {item}
                 </li>
               ))}
