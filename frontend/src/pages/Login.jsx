@@ -68,8 +68,8 @@ function Login() {
         </p>
       </form>
 
-      <Link to="/tutorial" className="mt-6 text-sm text-blue-600 hover:underline">
-        New here? View the Getting Started guide
+      <Link to="/tutorial" className="mt-6 w-full max-w-sm block text-center bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700">
+        New here? Getting Started Guide
       </Link>
     </div>
   )
