@@ -163,21 +163,23 @@ function Session() {
             {/* Vendors at this store */}
             <div className="divide-y divide-gray-50">
               {store.visits.map((visit) => (
-                <div key={visit.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-800">{visit.program}</p>
-                    <p className="text-xs text-gray-400">Vendor — {visit.visit_time}</p>
+                <div key={visit.id} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-800">{visit.program}</p>
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        visit.status === 'Draft'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {visit.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">{visit.visit_time}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      visit.status === 'Draft'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-green-100 text-green-700'
-                    }`}>
-                      {visit.status}
-                    </span>
+                  <div className="flex gap-1">
                     {visit.status === 'Draft' && (
-                      <div className="flex gap-1">
+                      <>
                         <button
                           onClick={() => navigate(`/visit/${visit.id}`)}
                           className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md border border-blue-200 hover:bg-blue-100 active:bg-blue-200"
@@ -190,10 +192,10 @@ function Session() {
                         >
                           Discard
                         </button>
-                      </div>
+                      </>
                     )}
                     {visit.status === 'Complete' && (
-                      <div className="flex gap-1">
+                      <>
                         <button
                           onClick={() => navigate(`/visit/${visit.id}`)}
                           className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200"
@@ -206,7 +208,7 @@ function Session() {
                         >
                           Delete
                         </button>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
