@@ -116,7 +116,7 @@ function WeeklyReport() {
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
           <PageHeader title="Weekly Report" size="small" />
-          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Home</button>
+          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Home</button>
         </div>
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}

@@ -13,7 +13,7 @@ function BottomNav() {
   const location = useLocation()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+    <nav className="fixed bottom-0 left-0 right-0 bg-blue-600 z-40">
       <div className="max-w-lg mx-auto flex">
         {tabs.map((tab) => {
           const active = location.pathname === tab.path ||
@@ -23,13 +23,13 @@ function BottomNav() {
               key={tab.path}
               onClick={() => navigate(tab.path)}
               className={`flex-1 flex flex-col items-center py-2 ${
-                active ? 'text-blue-600' : 'text-gray-400'
+                active ? 'text-white' : 'text-blue-200'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2 : 1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
               </svg>
-              <span className="text-[10px] mt-0.5">{tab.label}</span>
+              <span className={`text-[10px] mt-0.5 ${active ? 'font-semibold' : ''}`}>{tab.label}</span>
             </button>
           )
         })}

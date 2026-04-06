@@ -189,7 +189,7 @@ function Session() {
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
           <PageHeader title="Assessments" subtitle={todayLong} size="small" />
-          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Home</button>
+          <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Home</button>
         </div>
 
         {error && (
@@ -263,7 +263,7 @@ function Session() {
                       <>
                         <button
                           onClick={() => navigate(`/visit/${visit.id}`)}
-                          className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200"
+                          className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm"
                         >
                           View
                         </button>

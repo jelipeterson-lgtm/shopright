@@ -6,7 +6,7 @@ function PageHeader({ title, subtitle, size = 'default' }) {
   const textSize = size === 'small' ? 'text-base' : 'text-lg'
 
   return (
-    <div className="bg-white border-b border-gray-100 px-6 py-3">
+    <div className="bg-gray-50 px-6 py-3">
       <div className="max-w-lg mx-auto flex items-center gap-3">
         <img
           src="/Logo.png"
