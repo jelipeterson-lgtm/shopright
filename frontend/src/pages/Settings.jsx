@@ -4,6 +4,49 @@ import { useAuth } from '../services/AuthContext'
 import { supabase } from '../services/supabase'
 import api from '../services/api'
 
+function SubscriptionSection() {
+  const [status, setStatus] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.getSubscriptionStatus()
+      .then((r) => setStatus(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleManage = async () => {
+    try {
+      const result = await api.createPortalSession()
+      if (result.success) window.location.href = result.data.url
+    } catch (e) {}
+  }
+
+  if (loading) return <p className="text-gray-400 text-sm">Loading...</p>
+  if (!status) return null
+
+  if (status.reason === 'free_account') {
+    return <p className="text-sm text-green-600">Free account — no subscription required</p>
+  }
+
+  if (status.reason === 'subscribed') {
+    return (
+      <div>
+        <p className="text-sm text-green-600 mb-2">Active subscription</p>
+        <button onClick={handleManage}
+          className="text-sm text-blue-600 hover:underline">Manage subscription</button>
+      </div>
+    )
+  }
+
+  if (status.reason === 'trial') {
+    const endDate = new Date(status.trial_ends_at).toLocaleDateString()
+    return <p className="text-sm text-blue-600">Free trial — expires {endDate}</p>
+  }
+
+  return <p className="text-sm text-red-600">Subscription expired</p>
+}
+
 function Settings() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
@@ -297,6 +340,12 @@ function Settings() {
             <button onClick={() => setShowKeyInput(true)}
               className="text-sm text-gray-500 hover:underline">Update API key</button>
           )}
+        </div>
+
+        {/* Subscription Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-800">Subscription</h2>
+          <SubscriptionSection />
         </div>
 
         {/* Password Section */}

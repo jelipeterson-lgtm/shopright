@@ -116,6 +116,21 @@ const api = {
     body: JSON.stringify(data),
   }),
 
+  // Payments
+  getSubscriptionStatus: () => request('/payments/status'),
+
+  createCheckout: (priceId) => request('/payments/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ price_id: priceId }),
+  }),
+
+  createPortalSession: () => request('/payments/portal', { method: 'POST' }),
+
+  redeemPromoCode: (code) => request('/payments/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  }),
+
   reviewVisit: (visitId) => request('/review', {
     method: 'POST',
     body: JSON.stringify({ visit_id: visitId }),

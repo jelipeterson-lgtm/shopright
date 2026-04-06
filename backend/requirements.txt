@@ -6,3 +6,4 @@ httpx==0.27.2
 openpyxl==3.1.5
 anthropic==0.34.1
 resend==2.4.0
+stripe==10.12.0

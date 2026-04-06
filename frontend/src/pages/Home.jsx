@@ -1,24 +1,37 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../services/AuthContext'
 import api from '../services/api'
+import Paywall from './Paywall'
 
 function Home() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const today = new Date().toISOString().split('T')[0]
   const [todayVisits, setTodayVisits] = useState([])
   const [loading, setLoading] = useState(true)
+  const [hasAccess, setHasAccess] = useState(true)
+  const [trialInfo, setTrialInfo] = useState(null)
 
   useEffect(() => {
-    api.getVisits({ session_date: today })
-      .then((result) => setTodayVisits(result.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    Promise.all([
+      api.getVisits({ session_date: today }),
+      api.getSubscriptionStatus(),
+    ]).then(([visitsResult, subResult]) => {
+      setTodayVisits(visitsResult.data)
+      const sub = subResult.data
+      setHasAccess(sub.access)
+      if (sub.reason === 'trial') setTrialInfo(sub.trial_ends_at)
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [today])
 
   const hasDrafts = todayVisits.some((v) => v.status === 'Draft')
   const hasVisits = todayVisits.length > 0
+
+  if (!loading && !hasAccess) {
+    return <Paywall onAccessGranted={() => setHasAccess(true)} />
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
