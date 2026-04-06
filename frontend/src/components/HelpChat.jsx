@@ -66,7 +66,7 @@ function HelpChat() {
       const result = await api.helpChat(userMsg, getPageContext())
       setMessages((prev) => [...prev, { role: 'assistant', text: result.data }])
     } catch (err) {
-      setMessages((prev) => [...prev, { role: 'assistant', text: 'Sorry, I couldn\'t process that. Try again or check the Help guide in Settings.' }])
+      setMessages((prev) => [...prev, { role: 'assistant', text: 'Sorry, I couldn\'t process that. Try again in a moment, or check the Help Guide in Settings for common questions.' }])
     } finally {
       setLoading(false)
     }
