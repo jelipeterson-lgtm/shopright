@@ -3,9 +3,29 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import PageHeader from '../components/PageHeader'
 
+function formatDate(d) {
+  if (!d) return ''
+  const parts = d.split('-')
+  if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0].slice(2)}`
+  return d
+}
+
+function formatTime(t) {
+  if (!t) return ''
+  const parts = t.replace(':00', '').split(':')
+  if (parts.length < 2) return t
+  let hour = parseInt(parts[0])
+  const min = parts[1]
+  const period = hour < 12 ? 'AM' : 'PM'
+  if (hour === 0) hour = 12
+  else if (hour > 12) hour -= 12
+  return `${hour}:${min} ${period}`
+}
+
 function Session() {
   const navigate = useNavigate()
   const today = new Date().toISOString().split('T')[0]
+  const todayFormatted = formatDate(today)
   const [visits, setVisits] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -124,7 +144,7 @@ function Session() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Today's Stores" size="small" />
+          <PageHeader title="Today's Stores" subtitle={todayFormatted} size="small" />
           <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Home</button>
         </div>
 
@@ -175,7 +195,7 @@ function Session() {
                         {visit.status}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">Vendor — {visit.visit_time}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{formatDate(visit.visit_date)} {formatTime(visit.visit_time)}</p>
                   </div>
                   <div className="flex gap-1">
                     {visit.status === 'Draft' && (
