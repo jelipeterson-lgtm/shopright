@@ -212,7 +212,7 @@ function Session() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
-                  <p className="text-xs text-gray-400">{store.address}</p>
+                  {store.address && <p className="text-xs text-gray-400">{store.address}</p>}
                   <p className="text-xs text-gray-400">{store.city}, {store.state}</p>
                 </div>
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${

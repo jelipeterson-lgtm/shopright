@@ -282,7 +282,7 @@ function NewStore() {
                     placeholder="Enter vendor program code"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  {programs.length > 0 && (
+                  {programs.length > 1 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {programs.map((prog) => (
                         <button

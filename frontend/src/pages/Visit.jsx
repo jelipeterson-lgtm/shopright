@@ -275,27 +275,27 @@ function Visit() {
         )}
 
         {/* Store + Vendor header */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
           <div className="flex items-center justify-between mb-1">
             <div>
-              <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Store</p>
-              <p className="text-lg font-bold text-gray-900">{visit.retailer_name} #{visit.store_number}</p>
-              <p className="text-xs text-gray-500">{visit.city}, {visit.state}</p>
+              <p className="text-sm font-semibold text-gray-900">{visit.retailer_name} #{visit.store_number}</p>
+              <p className="text-xs text-gray-400">{visit.address}</p>
+              <p className="text-xs text-gray-400">{visit.city}, {visit.state}</p>
             </div>
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-              isComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+              isComplete ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
             }`}>
-              {visit.status}
+              {isComplete ? 'Completed' : 'Open'}
             </span>
           </div>
-          <div className="mt-2 pt-2 border-t border-blue-200">
-            <label className="block text-xs font-medium text-blue-600 uppercase tracking-wide">Vendor Program</label>
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <label className="block text-xs text-gray-400 mb-1">Vendor Program</label>
             <input
               type="text"
               value={visit.program || ''}
               onChange={(e) => updateField('program', e.target.value)}
               disabled={isComplete}
-              className="text-sm text-gray-700 border border-gray-200 rounded px-2 py-0.5 w-full disabled:bg-gray-50"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 disabled:bg-gray-50"
             />
           </div>
           <div className="flex gap-4 mt-2">
