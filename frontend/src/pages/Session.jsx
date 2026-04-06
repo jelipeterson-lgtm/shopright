@@ -34,6 +34,7 @@ function Session() {
   const today = new Date().toISOString().split('T')[0]
   const todayLong = formatLongDate(today)
   const [visits, setVisits] = useState([])
+  const [emptyStores, setEmptyStores] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -68,6 +69,13 @@ function Session() {
     }
     stores[key].visits.push(visit)
     if (visit.stop_open) stores[key].stop_open = true
+  }
+  // Include empty stores (where all vendors were discarded)
+  for (const es of emptyStores) {
+    const key = `${es.retailer_name}|${es.store_number}`
+    if (!stores[key]) {
+      stores[key] = { ...es, visits: [] }
+    }
   }
   const storeList = Object.values(stores)
 
@@ -109,8 +117,7 @@ function Session() {
 
 
   const handleAddVendor = (store) => {
-    // Get the store_id from the first visit at this store
-    const storeId = store.visits[0]?.store_id
+    const storeId = store.visits?.[0]?.store_id || store.store_id
     navigate('/new-store', {
       state: {
         sessionDate: today,
@@ -128,15 +135,45 @@ function Session() {
 
   const handleDiscardVisit = async (visitId) => {
     if (!confirm('Delete this vendor entry? This cannot be undone.')) return
+    // Find the visit to check if it's the last at this store
+    const visit = visits.find((v) => v.id === visitId)
+    const storeKey = visit ? `${visit.retailer_name}|${visit.store_number}` : null
+    const siblingsAtStore = visit ? visits.filter(
+      (v) => v.retailer_name === visit.retailer_name && v.store_number === visit.store_number && v.id !== visitId
+    ) : []
+
     setActionLoading(true)
     try {
       await api.discardVisit(visitId)
+      // If this was the last vendor at the store, keep the store visible
+      if (visit && siblingsAtStore.length === 0) {
+        setEmptyStores((prev) => {
+          const exists = prev.some((s) => s.retailer_name === visit.retailer_name && s.store_number === visit.store_number)
+          if (exists) return prev
+          return [...prev, {
+            retailer_name: visit.retailer_name,
+            store_number: visit.store_number,
+            address: visit.address,
+            city: visit.city,
+            state: visit.state,
+            store_id: visit.store_id,
+            stop_open: true,
+          }]
+        })
+      }
       await loadVisits()
     } catch (err) {
       setError(err.message)
     } finally {
       setActionLoading(false)
     }
+  }
+
+  const handleDeleteStore = (store) => {
+    if (!confirm(`Delete ${store.retailer_name} #${store.store_number} from today? This cannot be undone.`)) return
+    setEmptyStores((prev) => prev.filter(
+      (s) => !(s.retailer_name === store.retailer_name && s.store_number === store.store_number)
+    ))
   }
 
   if (loading) {
@@ -243,6 +280,13 @@ function Session() {
               ))}
             </div>
 
+            {/* Empty store message */}
+            {store.visits.length === 0 && (
+              <div className="p-4 text-center">
+                <p className="text-sm text-gray-400">No vendors at this store</p>
+              </div>
+            )}
+
             {/* Store actions */}
             {store.stop_open && (
               <div className="p-4 border-t border-gray-100 flex gap-2">
@@ -250,8 +294,16 @@ function Session() {
                   onClick={() => handleAddVendor(store)}
                   className="flex-1 bg-blue-50 text-blue-700 py-2 rounded-md text-xs font-medium hover:bg-blue-100"
                 >
-                  Add Another Vendor
+                  {store.visits.length === 0 ? 'Add Vendor' : 'Add Another Vendor'}
                 </button>
+                {store.visits.length === 0 ? (
+                  <button
+                    onClick={() => handleDeleteStore(store)}
+                    className="flex-1 bg-red-50 text-red-600 py-2 rounded-md text-xs font-medium hover:bg-red-100"
+                  >
+                    Delete Store
+                  </button>
+                ) : (
                 <button
                   onClick={() => handleCloseStop(store)}
                   disabled={actionLoading}
@@ -259,6 +311,7 @@ function Session() {
                 >
                   Close Store
                 </button>
+                )}
               </div>
             )}
           </div>
