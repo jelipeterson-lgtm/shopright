@@ -80,23 +80,6 @@ function Session() {
     }
   }
 
-  const handleEndSession = async () => {
-    setError(null)
-    setActionLoading(true)
-    try {
-      const result = await api.checkOpenStops(today)
-      if (result.data.length > 0) {
-        const stop = result.data[0]
-        setError(`Close out ${stop.retailer_name} #${stop.store_number} before ending session.`)
-        return
-      }
-      navigate('/app')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setActionLoading(false)
-    }
-  }
 
   const handleAddVendor = (store) => {
     // Get the store_id from the first visit at this store
@@ -141,7 +124,7 @@ function Session() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Today's Session" size="small" />
+          <PageHeader title="Today's Stores" size="small" />
           <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Home</button>
         </div>
 
@@ -266,15 +249,6 @@ function Session() {
           >
             Add Store & Vendor Manually
           </button>
-          {visits.length > 0 && (
-            <button
-              onClick={handleEndSession}
-              disabled={actionLoading}
-              className="w-full bg-gray-800 text-white py-3 rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50"
-            >
-              End Session
-            </button>
-          )}
         </div>
       </div>
     </div>

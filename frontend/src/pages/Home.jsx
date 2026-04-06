@@ -84,7 +84,7 @@ function Home() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-900">Today's Session</p>
+                <p className="text-sm font-semibold text-gray-900">Today's Stores</p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {completeCount} vendor{completeCount !== 1 ? 's' : ''} complete, {todayVisits.length - completeCount} in progress
                 </p>
@@ -100,7 +100,7 @@ function Home() {
             onClick={() => navigate('/session')}
             className="w-full bg-blue-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm"
           >
-            {hasVisits ? 'Continue Session' : 'Start Session'}
+            {hasVisits ? 'View Today\'s Stores' : 'Start Shopping'}
           </button>
           <button
             onClick={() => navigate('/manual-visit')}
@@ -135,7 +135,7 @@ function Home() {
         {!loading && !hasVisits && (
           <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
             <p className="text-gray-400 text-sm">No stores visited today</p>
-            <p className="text-gray-300 text-xs mt-1">Start a session to begin your shopping day</p>
+            <p className="text-gray-300 text-xs mt-1">Tap "Start Shopping" to add your first store</p>
           </div>
         )}
 
