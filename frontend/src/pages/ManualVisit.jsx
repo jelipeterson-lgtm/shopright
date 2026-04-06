@@ -10,8 +10,8 @@ function ManualVisit() {
   const [selectedStore, setSelectedStore] = useState(null)
   const [programs, setPrograms] = useState([])
   const [selectedProgram, setSelectedProgram] = useState(null)
-  const [visitDate, setVisitDate] = useState('')
-  const [visitTime, setVisitTime] = useState('')
+  const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0])
+  const [visitTime, setVisitTime] = useState(new Date().toTimeString().slice(0, 5))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
