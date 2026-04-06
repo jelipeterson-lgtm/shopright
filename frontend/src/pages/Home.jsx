@@ -28,6 +28,7 @@ function Home() {
       setHasAccess(sub.access)
       setSubReason(sub.reason)
       if (sub.reason === 'trial') setTrialInfo(sub.trial_ends_at)
+      if (sub.reason === 'subscribed' && sub.renewal_date) setTrialInfo(sub.renewal_date)
       if (sub.monthly_price) setPriceIds({ monthly: sub.monthly_price, annual: sub.annual_price })
       setProfile(profileResult.data)
     }).catch(() => {}).finally(() => setLoading(false))
@@ -52,8 +53,9 @@ function Home() {
             <h1 className="text-lg font-bold text-gray-900">Welcome, {firstName}</h1>
             <p className="text-xs text-gray-400">
               {subReason === 'free_account' && 'Free Account'}
-              {subReason === 'subscribed' && 'Active Subscription'}
-              {subReason === 'trial' && `Trial ends ${new Date(trialInfo).toLocaleDateString()}`}
+              {subReason === 'subscribed' && trialInfo && `Next renewal: ${trialInfo}`}
+              {subReason === 'subscribed' && !trialInfo && 'Active Subscription'}
+              {subReason === 'trial' && trialInfo && `Free trial ends in ${Math.max(0, Math.ceil((new Date(trialInfo) - new Date()) / 86400000))} days (${new Date(trialInfo).toLocaleDateString()})`}
             </p>
           </div>
         </div>

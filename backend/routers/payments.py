@@ -35,9 +35,20 @@ def get_subscription_status(authorization: str = Header(...)):
     if p.get("is_free_account"):
         return {"success": True, "data": {"access": True, "reason": "free_account"}, "error": None}
 
-    # Active subscription
+    # Active subscription — fetch renewal date from Stripe
     if p.get("subscription_status") == "active":
-        return {"success": True, "data": {"access": True, "reason": "subscribed"}, "error": None}
+        renewal_date = None
+        customer_id = p.get("stripe_customer_id")
+        if customer_id:
+            try:
+                subs = stripe.Subscription.list(customer=customer_id, status="active", limit=1)
+                if subs.data:
+                    import datetime as dt
+                    renewal_ts = subs.data[0].current_period_end
+                    renewal_date = dt.datetime.fromtimestamp(renewal_ts).strftime("%m/%d/%Y")
+            except Exception:
+                pass
+        return {"success": True, "data": {"access": True, "reason": "subscribed", "renewal_date": renewal_date}, "error": None}
 
     # Check trial
     trial_end = p.get("trial_ends_at")
