@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import PageHeader from '../components/PageHeader'
 
-function formatDate(d) {
+function formatShortDate(d) {
   if (!d) return ''
   const parts = d.split('-')
   if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0].slice(2)}`
@@ -12,7 +12,7 @@ function formatDate(d) {
 
 function formatTime(t) {
   if (!t) return ''
-  const parts = t.replace(':00', '').split(':')
+  const parts = t.replace(/:00$/, '').split(':')
   if (parts.length < 2) return t
   let hour = parseInt(parts[0])
   const min = parts[1]
@@ -22,10 +22,17 @@ function formatTime(t) {
   return `${hour}:${min} ${period}`
 }
 
+function formatLongDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00')
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
+}
+
 function Session() {
   const navigate = useNavigate()
   const today = new Date().toISOString().split('T')[0]
-  const todayFormatted = formatDate(today)
+  const todayLong = formatLongDate(today)
   const [visits, setVisits] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -144,7 +151,7 @@ function Session() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Today's Stores" subtitle={todayFormatted} size="small" />
+          <PageHeader title={`${todayLong} — Assessments`} size="small" />
           <button onClick={() => navigate('/app')} className="px-3 py-1.5 text-xs font-medium bg-gray-50 text-gray-700 rounded-md border border-gray-200 hover:bg-gray-100 active:bg-gray-200">Home</button>
         </div>
 
@@ -167,15 +174,15 @@ function Session() {
             <div className="p-4 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">{store.retailer_name} #{store.store_number}</p>
-                  <p className="text-xs text-gray-500">{store.city}, {store.state}</p>
+                  <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
+                  <p className="text-xs text-gray-400">{store.city}, {store.state}</p>
                 </div>
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                   store.stop_open
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-500'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-green-100 text-green-700'
                 }`}>
-                  {store.stop_open ? 'Open' : 'Closed'}
+                  {store.stop_open ? 'Open' : 'Completed'}
                 </span>
               </div>
             </div>
@@ -186,16 +193,16 @@ function Session() {
                 <div key={visit.id} className="p-4 flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm text-gray-800">{visit.program}</p>
+                      <p className="text-sm font-medium text-gray-900">{visit.program}</p>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                         visit.status === 'Draft'
-                          ? 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-blue-100 text-blue-700'
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {visit.status}
+                        {visit.status === 'Draft' ? 'Open' : 'Completed'}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">{formatDate(visit.visit_date)} {formatTime(visit.visit_time)}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Assessment Date: {formatShortDate(visit.visit_date)} — Start Time: {formatTime(visit.visit_time)}</p>
                   </div>
                   <div className="flex gap-1">
                     {visit.status === 'Draft' && (
