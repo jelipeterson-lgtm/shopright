@@ -67,6 +67,10 @@ function Login() {
           Don't have an account? <Link to="/signup" className="text-blue-600 hover:underline">Create one</Link>
         </p>
       </form>
+
+      <Link to="/tutorial" className="mt-6 text-sm text-blue-600 hover:underline">
+        New here? View the Getting Started guide
+      </Link>
     </div>
   )
 }

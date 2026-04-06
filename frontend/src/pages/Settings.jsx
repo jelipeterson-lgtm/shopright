@@ -267,6 +267,11 @@ function Settings() {
           Help Guide
         </button>
 
+        <button onClick={() => navigate('/tutorial')}
+          className="w-full bg-white text-gray-700 py-3 rounded-xl text-sm font-medium border border-gray-200 hover:bg-gray-50 shadow-sm mb-4">
+          Getting Started Tutorial
+        </button>
+
         {/* Sign Out */}
         <button onClick={handleSignOut}
           className="w-full bg-red-50 text-red-600 py-3 rounded-xl text-sm font-medium border border-red-200 hover:bg-red-100">
