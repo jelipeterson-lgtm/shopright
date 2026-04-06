@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../services/AuthContext'
 import { supabase } from '../services/supabase'
 import api from '../services/api'
+import BottomNav from '../components/BottomNav'
 
 function SubscriptionSection() {
   const [status, setStatus] = useState(null)
@@ -28,99 +29,55 @@ function SubscriptionSection() {
   if (status.reason === 'free_account') {
     return <p className="text-sm text-green-600">Free account — no subscription required</p>
   }
-
   if (status.reason === 'subscribed') {
     return (
       <div>
         <p className="text-sm text-green-600 mb-2">Active subscription</p>
         <button onClick={handleManage}
-          className="text-sm text-blue-600 hover:underline">Manage subscription</button>
+          className="px-4 py-2 bg-gray-50 text-gray-700 text-sm rounded-lg border border-gray-200 hover:bg-gray-100">
+          Manage Subscription
+        </button>
       </div>
     )
   }
-
   if (status.reason === 'trial') {
     const endDate = new Date(status.trial_ends_at).toLocaleDateString()
     return <p className="text-sm text-blue-600">Free trial — expires {endDate}</p>
   }
-
   return <p className="text-sm text-red-600">Subscription expired</p>
 }
 
 function Settings() {
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const [fullName, setFullName] = useState('')
-  const [reportEmail, setReportEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [homeAddress, setHomeAddress] = useState('')
-  const [mileageRate, setMileageRate] = useState('')
-  const [invoiceNumberStart, setInvoiceNumberStart] = useState('')
+  // AI Review
   const [aiEnabled, setAiEnabled] = useState(false)
   const [hasApiKey, setHasApiKey] = useState(false)
-
-  // API key section
   const [showKeyInput, setShowKeyInput] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [keyTested, setKeyTested] = useState(false)
   const [keyValid, setKeyValid] = useState(false)
   const [testingKey, setTestingKey] = useState(false)
 
-  // Password section
+  // Password
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordSaving, setPasswordSaving] = useState(false)
 
   useEffect(() => {
-    loadProfile()
-  }, [])
-
-  const loadProfile = async () => {
-    try {
-      const result = await api.getProfile()
+    api.getProfile().then((result) => {
       const p = result.data
-      setFullName(p.full_name || '')
-      setReportEmail(p.report_email || '')
-      setPhone(p.phone || '')
-      setHomeAddress(p.home_address || '')
-      setMileageRate(p.mileage_rate?.toString() || '0.700')
-      setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
       setAiEnabled(p.ai_review_enabled || false)
       setHasApiKey(!!p.anthropic_api_key)
-    } catch (err) {
-      setError('Failed to load profile')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSaveProfile = async (e) => {
-    e.preventDefault()
-    setError(null)
-    setSuccess(null)
-    setSaving(true)
-    try {
-      await api.updateProfile({
-        full_name: fullName,
-        report_email: reportEmail,
-        phone,
-        home_address: homeAddress,
-        mileage_rate: parseFloat(mileageRate),
-        invoice_number_start: parseInt(invoiceNumberStart),
-      })
-      setSuccess('Profile saved')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
-  }
+    }).catch(() => setError('Failed to load settings'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleTestKey = async () => {
     setError(null)
@@ -142,21 +99,15 @@ function Settings() {
   const handleSaveKey = async () => {
     setSaving(true)
     try {
-      await api.updateProfile({
-        anthropic_api_key: apiKey,
-        ai_review_enabled: true,
-      })
+      await api.updateProfile({ anthropic_api_key: apiKey, ai_review_enabled: true })
       setAiEnabled(true)
       setHasApiKey(true)
       setShowKeyInput(false)
       setApiKey('')
       setKeyTested(false)
       setSuccess('API key saved and AI review enabled')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { setError(err.message) }
+    finally { setSaving(false) }
   }
 
   const handleDisableAi = async () => {
@@ -165,42 +116,27 @@ function Settings() {
       await api.updateProfile({ ai_review_enabled: false })
       setAiEnabled(false)
       setSuccess('AI review disabled')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { setError(err.message) }
+    finally { setSaving(false) }
   }
 
   const handleEnableAi = async () => {
-    if (!hasApiKey) {
-      setShowKeyInput(true)
-      return
-    }
+    if (!hasApiKey) { setShowKeyInput(true); return }
     setSaving(true)
     try {
       await api.updateProfile({ ai_review_enabled: true })
       setAiEnabled(true)
       setSuccess('AI review enabled')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { setError(err.message) }
+    finally { setSaving(false) }
   }
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
     setError(null)
     setSuccess(null)
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
+    if (newPassword !== confirmPassword) { setError('Passwords do not match'); return }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return }
     setPasswordSaving(true)
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
@@ -209,11 +145,8 @@ function Settings() {
       setShowPasswordChange(false)
       setNewPassword('')
       setConfirmPassword('')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setPasswordSaving(false)
-    }
+    } catch (err) { setError(err.message) }
+    finally { setPasswordSaving(false) }
   }
 
   const handleSignOut = async () => {
@@ -224,81 +157,50 @@ function Settings() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400">Loading settings...</p>
+        <p className="text-gray-400">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Back</button>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="bg-white border-b border-gray-100 px-6 py-4">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <img src="/Logo.png" alt="ShopRight" className="w-10 h-10 rounded-lg" />
+          <h1 className="text-lg font-bold text-gray-900">Settings</h1>
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-6 py-4 space-y-4">
+        {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
+        {success && <p className="text-green-600 text-sm bg-green-50 p-3 rounded-lg">{success}</p>}
+
+        {/* Subscription */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <h2 className="text-sm font-semibold text-gray-800 mb-3">Subscription</h2>
+          <SubscriptionSection />
         </div>
 
-        {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
-        {success && <p className="text-green-600 text-sm mb-4 bg-green-50 p-3 rounded-md">{success}</p>}
-
-        {/* Profile Section */}
-        <form onSubmit={handleSaveProfile} className="bg-white rounded-lg shadow p-6 mb-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Profile</h2>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email for Reports</label>
-            <input type="email" value={reportEmail} onChange={(e) => setReportEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Home Address</label>
-            <input type="text" value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Rate ($/mile)</label>
-            <input type="number" step="0.001" value={mileageRate} onChange={(e) => setMileageRate(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Starting Invoice Number</label>
-            <input type="number" min="1" value={invoiceNumberStart} onChange={(e) => setInvoiceNumberStart(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <button type="submit" disabled={saving}
-            className="w-full bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-            {saving ? 'Saving...' : 'Save Profile'}
-          </button>
-        </form>
-
-        {/* AI Review Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">AI Review</h2>
+        {/* AI Review */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-800">AI Review</h2>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-700">Status: {aiEnabled ? 'Enabled' : 'Disabled'}</p>
+              <p className="text-sm text-gray-700">{aiEnabled ? 'Enabled' : 'Disabled'}</p>
               {hasApiKey && <p className="text-xs text-gray-400">API key configured</p>}
             </div>
             {aiEnabled ? (
               <button onClick={handleDisableAi} disabled={saving}
-                className="text-sm text-red-600 hover:underline disabled:opacity-50">Disable</button>
+                className="px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 rounded-md border border-red-200 hover:bg-red-100">Disable</button>
             ) : (
               <button onClick={handleEnableAi} disabled={saving}
-                className="text-sm text-blue-600 hover:underline disabled:opacity-50">Enable</button>
+                className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 rounded-md border border-blue-200 hover:bg-blue-100">Enable</button>
             )}
           </div>
 
           {showKeyInput && (
-            <div className="space-y-3 pt-2 border-t border-gray-100">
-              <div className="bg-gray-50 rounded-md p-3">
+            <div className="space-y-3 pt-3 border-t border-gray-100">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs font-medium text-gray-700 mb-2">How to get your API key:</p>
                 <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
                   <li>Go to <span className="font-medium">console.anthropic.com</span></li>
@@ -307,67 +209,55 @@ function Settings() {
                   <li>Click <span className="font-medium">Create Key</span>, name it "ShopRight"</li>
                   <li>Copy the key and paste it below</li>
                 </ol>
-                <p className="text-xs text-gray-400 mt-2">You'll need to add credits to your Anthropic account (minimum $5). Typical cost: $1–3/month.</p>
+                <p className="text-xs text-gray-400 mt-2">You'll need to add credits ($5 minimum). Typical cost: $1–3/month.</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-                <input type="password" value={apiKey}
-                  onChange={(e) => { setApiKey(e.target.value); setKeyTested(false) }}
-                  placeholder="sk-ant-..."
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              <input type="password" value={apiKey}
+                onChange={(e) => { setApiKey(e.target.value); setKeyTested(false) }}
+                placeholder="sk-ant-..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               {keyTested && keyValid && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <p className="text-green-700 text-sm font-medium">API key is valid!</p>
-                  <p className="text-green-600 text-xs mt-1">Click "Save API Key" below to finish setup.</p>
+                  <p className="text-green-600 text-xs mt-1">Click "Save API Key" below to finish.</p>
                 </div>
               )}
               {!keyTested || !keyValid ? (
                 <button onClick={handleTestKey} disabled={testingKey || !apiKey}
-                  className="w-full bg-gray-100 text-gray-700 py-2 rounded-md text-sm font-medium hover:bg-gray-200 disabled:opacity-50">
+                  className="w-full bg-gray-100 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50">
                   {testingKey ? 'Testing...' : 'Step 1: Test Connection'}
                 </button>
               ) : (
                 <button onClick={handleSaveKey} disabled={saving}
-                  className="w-full bg-green-600 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-green-700 disabled:opacity-50">
+                  className="w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50">
                   {saving ? 'Saving...' : 'Step 2: Save API Key'}
                 </button>
               )}
             </div>
           )}
-
           {hasApiKey && !showKeyInput && (
             <button onClick={() => setShowKeyInput(true)}
-              className="text-sm text-gray-500 hover:underline">Update API key</button>
+              className="text-xs text-gray-500 hover:underline">Update API key</button>
           )}
         </div>
 
-        {/* Subscription Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Subscription</h2>
-          <SubscriptionSection />
-        </div>
-
-        {/* Password Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Password</h2>
+        {/* Password */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-800">Password</h2>
           {!showPasswordChange ? (
             <button onClick={() => setShowPasswordChange(true)}
-              className="text-sm text-blue-600 hover:underline">Change password</button>
+              className="px-4 py-2 bg-gray-50 text-gray-700 text-sm rounded-lg border border-gray-200 hover:bg-gray-100">
+              Change Password
+            </button>
           ) : (
             <form onSubmit={handleChangePassword} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New password"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <button type="submit" disabled={passwordSaving}
-                className="w-full bg-blue-600 text-white py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                 {passwordSaving ? 'Updating...' : 'Update Password'}
               </button>
               <button type="button" onClick={() => { setShowPasswordChange(false); setNewPassword(''); setConfirmPassword('') }}
@@ -378,10 +268,12 @@ function Settings() {
 
         {/* Sign Out */}
         <button onClick={handleSignOut}
-          className="w-full bg-red-50 text-red-600 py-3 rounded-lg text-sm font-medium hover:bg-red-100">
+          className="w-full bg-red-50 text-red-600 py-3 rounded-xl text-sm font-medium border border-red-200 hover:bg-red-100">
           Sign Out
         </button>
       </div>
+
+      <BottomNav />
     </div>
   )
 }

@@ -131,6 +131,11 @@ const api = {
     body: JSON.stringify({ code }),
   }),
 
+  helpChat: (message, pageContext) => request('/help/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, page_context: pageContext }),
+  }),
+
   reviewVisit: (visitId) => request('/review', {
     method: 'POST',
     body: JSON.stringify({ visit_id: visitId }),

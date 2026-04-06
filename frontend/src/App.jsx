@@ -11,6 +11,8 @@ import ManualVisit from './pages/ManualVisit'
 import WeeklyReport from './pages/WeeklyReport'
 import MonthlyInvoice from './pages/MonthlyInvoice'
 import Landing from './pages/Landing'
+import Profile from './pages/Profile'
+import HelpChat from './components/HelpChat'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -36,6 +38,12 @@ function PublicRoute({ children }) {
   return user ? <Navigate to="/app" /> : children
 }
 
+function AuthenticatedHelpChat() {
+  const { user } = useAuth()
+  if (!user) return null
+  return <HelpChat />
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -45,6 +53,7 @@ function App() {
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/new-store" element={<ProtectedRoute><NewStore /></ProtectedRoute>} />
           <Route path="/session" element={<ProtectedRoute><Session /></ProtectedRoute>} />
@@ -53,6 +62,7 @@ function App() {
           <Route path="/weekly-report" element={<ProtectedRoute><WeeklyReport /></ProtectedRoute>} />
           <Route path="/monthly-invoice" element={<ProtectedRoute><MonthlyInvoice /></ProtectedRoute>} />
         </Routes>
+        <AuthenticatedHelpChat />
       </AuthProvider>
     </BrowserRouter>
   )
