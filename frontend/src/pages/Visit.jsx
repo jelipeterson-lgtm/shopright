@@ -275,12 +275,12 @@ function Visit() {
         )}
 
         {/* Store + Vendor header */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <div className="bg-gray-100 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between mb-1">
             <div>
               <p className="text-sm font-semibold text-gray-900">{visit.retailer_name} #{visit.store_number}</p>
-              <p className="text-xs text-gray-400">{visit.address}</p>
-              <p className="text-xs text-gray-400">{visit.city}, {visit.state}</p>
+              {visit.address && <p className="text-xs text-gray-500">{visit.address}</p>}
+              <p className="text-xs text-gray-500">{visit.city}, {visit.state}</p>
             </div>
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
               isComplete ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
@@ -288,30 +288,18 @@ function Visit() {
               {isComplete ? 'Completed' : 'Open'}
             </span>
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <label className="block text-xs text-gray-400 mb-1">Vendor Program</label>
-            <input
-              type="text"
-              value={visit.program || ''}
-              onChange={(e) => updateField('program', e.target.value)}
-              disabled={isComplete}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 disabled:bg-gray-50"
-            />
+          <div className="mt-2 pt-2 border-t border-gray-200">
+            <p className="text-xs text-gray-500">Vendor Program</p>
+            <p className="text-sm font-medium text-gray-900">{visit.program || '—'}</p>
           </div>
           <div className="flex gap-4 mt-2">
             <div>
-              <label className="block text-xs text-gray-400">Date</label>
-              <p className="text-sm text-gray-700">{visit.visit_date}</p>
+              <p className="text-xs text-gray-500">Date</p>
+              <p className="text-sm text-gray-900">{visit.visit_date}</p>
             </div>
             <div>
-              <label className="block text-xs text-gray-400">Time</label>
-              <input
-                type="time"
-                value={visit.visit_time || ''}
-                onChange={(e) => updateField('visit_time', e.target.value)}
-                disabled={isComplete}
-                className="text-sm text-gray-700 border border-gray-200 rounded px-2 py-0.5 disabled:bg-gray-50"
-              />
+              <p className="text-xs text-gray-500">Time</p>
+              <p className="text-sm text-gray-900">{visit.visit_time ? visit.visit_time.replace(/:00$/, '') : '—'}</p>
             </div>
           </div>
         </div>
