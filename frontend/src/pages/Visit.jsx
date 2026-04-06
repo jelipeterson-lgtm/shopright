@@ -274,18 +274,22 @@ function Visit() {
           </div>
         )}
 
-        {/* Visit header */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
+        {/* Store + Vendor header */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="font-medium text-gray-900">{visit.retailer_name} #{visit.store_number}</p>
+            <div>
+              <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Store</p>
+              <p className="text-lg font-bold text-gray-900">{visit.retailer_name} #{visit.store_number}</p>
+              <p className="text-xs text-gray-500">{visit.city}, {visit.state}</p>
+            </div>
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
               isComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
             }`}>
               {visit.status}
             </span>
           </div>
-          <div className="mt-1">
-            <label className="block text-xs text-gray-400">Program</label>
+          <div className="mt-2 pt-2 border-t border-blue-200">
+            <label className="block text-xs font-medium text-blue-600 uppercase tracking-wide">Vendor Program</label>
             <input
               type="text"
               value={visit.program || ''}

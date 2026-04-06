@@ -117,7 +117,7 @@ function Session() {
   }
 
   const handleDiscardVisit = async (visitId) => {
-    if (!confirm('Delete this visit? This cannot be undone.')) return
+    if (!confirm('Delete this vendor entry? This cannot be undone.')) return
     setActionLoading(true)
     try {
       await api.discardVisit(visitId)
@@ -153,8 +153,8 @@ function Session() {
 
         {storeList.length === 0 && (
           <div className="bg-white rounded-lg shadow p-6 text-center mb-4">
-            <p className="text-gray-400 text-sm">No stores visited today</p>
-            <p className="text-gray-300 text-xs mt-1">Tap "New Store" to start</p>
+            <p className="text-gray-400 text-sm">No stores added yet</p>
+            <p className="text-gray-300 text-xs mt-1">Tap "Add Store" to begin</p>
           </div>
         )}
 
@@ -177,13 +177,13 @@ function Session() {
               </div>
             </div>
 
-            {/* Visit list */}
+            {/* Vendors at this store */}
             <div className="divide-y divide-gray-50">
               {store.visits.map((visit) => (
                 <div key={visit.id} className="p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-800">{visit.program}</p>
-                    <p className="text-xs text-gray-400">{visit.visit_time}</p>
+                    <p className="text-xs text-gray-400">Vendor — {visit.visit_time}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -258,13 +258,13 @@ function Session() {
             disabled={actionLoading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            New Store
+            Add Store
           </button>
           <button
             onClick={() => navigate('/manual-visit')}
             className="w-full bg-white text-gray-700 py-3 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50"
           >
-            Add Visit Manually
+            Add Store & Vendor Manually
           </button>
           {visits.length > 0 && (
             <button

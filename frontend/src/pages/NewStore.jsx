@@ -157,7 +157,7 @@ function NewStore() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <PageHeader title="New Store" size="small" />
+          <PageHeader title="Add Store" size="small" />
           <button onClick={() => navigate('/app')} className="text-blue-600 text-sm hover:underline">Cancel</button>
         </div>
 
@@ -274,12 +274,12 @@ function NewStore() {
             ) : (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Program</label>
                   <input
                     type="text"
                     value={selectedProgram || ''}
                     onChange={(e) => setSelectedProgram(e.target.value)}
-                    placeholder="Enter program code"
+                    placeholder="Enter vendor program code"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   {programs.length > 0 && (
@@ -306,7 +306,7 @@ function NewStore() {
                   disabled={!selectedProgram?.trim()}
                   className="w-full bg-blue-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Confirm Store
+                  Confirm Store & Add Vendor
                 </button>
               </>
             )}

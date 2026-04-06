@@ -75,7 +75,7 @@ function ManualVisit() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Add Visit Manually" size="small" />
+          <PageHeader title="Add Store & Vendor" size="small" />
           <button onClick={() => navigate('/session')} className="text-blue-600 text-sm hover:underline">Cancel</button>
         </div>
 
