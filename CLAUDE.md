@@ -209,7 +209,9 @@ shopright/
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-RLS: Users can only read/update their own profile. Auto-created on signup via trigger.
+RLS: Users can only read/update their own profile. Auto-created on signup via database trigger (`handle_new_user`) which also sets `trial_ends_at` to 14 days from creation.
+
+**Note**: `next_invoice_number` is legacy — invoice IDs are now derived from YYMM format, not sequential. `anthropic_api_key` is stored in plaintext — acceptable because each user stores only their own key.
 
 ### stores
 | Column | Type | Notes |
@@ -225,7 +227,7 @@ RLS: Users can only read/update their own profile. Auto-created on signup via tr
 
 Unique constraint on (retailer_name, store_number, program). RLS: authenticated users can read.
 
-### vendor_visits
+### vendor_visits (50 columns)
 | Column | Type | Notes |
 |--------|------|-------|
 | id | uuid (PK) | |
@@ -233,7 +235,7 @@ Unique constraint on (retailer_name, store_number, program). RLS: authenticated 
 | store_id | integer (FK → stores) | |
 | retailer_name, store_number, program | text | Denormalized for report generation |
 | address, city, state | text | |
-| status | text | Draft or Complete |
+| status | text | Draft or Complete (displayed as Open/Completed in UI) |
 | visit_date | date | |
 | visit_time | time | |
 | session_date | date | |
@@ -242,13 +244,28 @@ Unique constraint on (retailer_name, store_number, program). RLS: authenticated 
 | rep_names, rep_description | text | Optional |
 | rep_count | integer | Required when reps present |
 | rep_count_reason | text | Required when count > 4 |
-| eval_engaging through eval_other_store_areas | text | Pass/Fail/N/A + _comment fields |
+| eval_engaging | text | Pass/Fail/N/A |
+| eval_engaging_comment | text | Required when Fail |
+| eval_greeting, eval_greeting_comment | text | Same pattern for all eval fields |
+| eval_one_no, eval_one_no_comment | text | |
+| eval_pushy, eval_pushy_comment | text | |
+| eval_clogging, eval_clogging_comment | text | |
+| eval_leaning, eval_leaning_comment | text | |
+| eval_food_drink, eval_food_drink_comment | text | |
+| eval_dress_code, eval_dress_code_comment | text | |
+| eval_name_badge, eval_name_badge_comment | text | |
+| eval_badge_location_pass | text | Pass/Fail/N/A for badge at shoulder height |
+| eval_badge_location_comment | text | Required when badge location Fail |
+| eval_badge_where | text | Free text — where was badge located |
+| eval_other_area, eval_other_area_comment | text | |
+| eval_other_store_areas, eval_other_store_areas_comment | text | |
 | eval_soft_selling | text | N/A for non-Water programs |
-| eval_resource_guide | text | N/A for non-Costco |
-| visit_recap | text | |
+| eval_soft_selling_comment | text | Required when Fail |
+| eval_resource_guide | text | Yes/No/N/A — Costco only |
+| visit_recap | text | Main narrative field |
 | created_at, updated_at | timestamptz | |
 
-RLS: Users can only read/insert/update their own visits.
+RLS: Users can read/insert/update/delete their own visits.
 
 ---
 
@@ -395,6 +412,31 @@ If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Depl
 1. On Render, ensure `STRIPE_SECRET_KEY` has the live key (`sk_live_...`)
 2. Ensure `STRIPE_MONTHLY_PRICE_ID` and `STRIPE_ANNUAL_PRICE_ID` have live price IDs
 3. Ensure `STRIPE_WEBHOOK_SECRET` has the live webhook signing secret
+
+---
+
+## Technical Details
+
+| Item | Value |
+|------|-------|
+| Python version | 3.9+ (system Python on macOS) |
+| Node.js version | v24 LTS |
+| Render service ID | srv-d76lou8ule4c73f1m9og |
+| Render service name | shopright-api |
+| Git user.name | Eli Peterson |
+| Git user.email | j.eli.peterson@gmail.com |
+| Geocoding service | OpenStreetMap Nominatim (free, 1 request/sec rate limit) |
+| Backend .env | Symlinked to root .env (`ln -sf ../../.env backend/.env`) |
+
+### CORS Configuration
+Backend allows requests from:
+- `http://localhost:5173` (local dev)
+- `FRONTEND_URL` env var value
+- Any `https://shopright*.vercel.app` (regex match for Vercel preview deploys)
+
+### Supabase Auth Configuration
+- Email confirmation: **disabled** (for ease of testing — re-enable for production)
+- Password minimum: 6 characters
 
 ---
 

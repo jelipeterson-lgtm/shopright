@@ -58,7 +58,7 @@
 | 0.2 | Scaffold frontend — React + Tailwind, basic routing, placeholder home screen | ✅ | Vite + React Router + Tailwind v4 |
 | 0.3 | Scaffold backend — FastAPI app, health check endpoint, requirements.txt | ✅ | /health returns 200 |
 | 0.4 | Connect Supabase — verify backend reaches database | ✅ | Auth health 200, db.py configured |
-| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | ✅ | shopright-74hpouudf-jelipeterson-7076s-projects.vercel.app |
+| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | ✅ | shopright-jet.vercel.app (production URL) |
 | 0.6 | Deploy backend to Render — confirm health check returns 200 | ✅ | shopright-api.onrender.com/health returns 200 |
 | 0.7 | Frontend calls backend health check — full stack communicates end to end | ✅ | .env.production + CORS configured |
 
@@ -141,7 +141,7 @@
 | 3.8 | After completing vendor: 'Add Another Vendor' or 'Close Store' options | ✅ | Shown on open stops |
 | 3.9 | Close Store gate — blocks if Draft visits exist at stop | ✅ | Server-side check |
 | 3.10 | New Store gate — blocks if any stop from today is still open | ✅ | Checks open stops before GPS |
-| 3.11 | End Session gate — blocks if any open stops | ✅ | Same check on End Session |
+| 3.11 | ~~End Session gate~~ | ✅ | Removed in Phase 8 — unnecessary, bottom nav handles navigation |
 | 3.12 | Manual visit entry — full store search, date/time fields, same form | ✅ | ManualVisit page with date/time |
 | 3.13 | Loading, error, and empty states on all screens | ✅ | All screens covered |
 
@@ -291,9 +291,9 @@
 | 8.2 | PWA setup — manifest.json, service worker, Add to Home Screen prompt | ✅ | manifest.json, sw.js, apple-mobile-web-app meta |
 | 8.3 | Empty states on all screens | ✅ | All screens have empty/loading/error states |
 | 8.4 | Accessibility — keyboard nav, ARIA labels, color contrast | ✅ | Semantic HTML, proper labels, contrast |
-| 8.5 | Real-world use — Kelsey uses app on a real shopping day | ⬜ | Eli + Kelsey |
-| 8.6 | Output validation — generated report accepted by Smart Circle | ⬜ | |
-| 8.7 | Error monitoring setup — Sentry or equivalent | ⬜ | |
+| 8.5 | Real-world use — Kelsey uses app on a real shopping day | ⬜ | Pending — Eli + Kelsey scheduling |
+| 8.6 | Output validation — generated report accepted by Smart Circle | ⬜ | Pending — depends on 8.5 |
+| 8.7 | Error monitoring setup — Sentry or equivalent | ⬜ | Optional — not blocking launch |
 
 **🛑 GATE — Phase 8 Validation:**
 - [ ] App tested on iPhone Chrome, Android Chrome, Chromebook
@@ -316,6 +316,12 @@
 | User's own Anthropic API key | Zero AI cost to Eli. ~$1-3/month per user on their own account. | March 2026 |
 | Reusable EvaluationField component | 22 identical field behaviors — build once, configure 22 times | March 2026 |
 | TestFlight replaced by Vercel URL | Web app — anyone with the URL can use it on any device | March 2026 |
+| Removed "End Session" concept | Session/end-session was confusing and did nothing useful. Bottom nav handles navigation. Store close gates prevent mistakes. | April 2026 |
+| Renamed Session → Stores | "Session" was confusing. "Today's Stores" is clearer. Consistent Store/Vendor terminology throughout. | April 2026 |
+| Landing page for Eli Peterson Consulting LLC | Stripe requires a visible business website. Landing page at root URL with company info, contact form, and ShopRight app link. | April 2026 |
+| Separate Profile and Settings pages | Profile = personal info. Settings = AI review, password, subscription, sign out. Clearer separation. | April 2026 |
+| Blue bottom navigation bar | Professional mobile app feel. 5 tabs: Home, Stores, Reports, Profile, Settings. | April 2026 |
+| AI help chatbot | Context-aware floating ? button on every page. Uses user's Anthropic key. Comprehensive system prompt covering entire app workflow. | April 2026 |
 
 ---
 
