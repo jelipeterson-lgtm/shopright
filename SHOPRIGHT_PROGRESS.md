@@ -1,8 +1,8 @@
 # ShopRight — Build Progress Tracker
 
-**Last Updated:** April 1, 2026
-**Current Phase:** 🟡 Phase 8 — Polish & Real-World Launch
-**Overall Status:** 🟢 Active Build
+**Last Updated:** April 7, 2026
+**Current Phase:** ✅ All phases complete — awaiting real-world validation
+**Overall Status:** 🟢 Production
 
 ---
 
@@ -319,9 +319,18 @@
 
 ---
 
-## Known Issues & Blockers
+## Known Issues & Remaining Work
 
-*None at project start. Claude Code adds entries here when blocked.*
+| Item | Status | Notes |
+|------|--------|-------|
+| Render cold starts | Known | Free tier sleeps after 15min inactivity. First request takes ~30s. Upgrade to $7/mo paid tier to fix. |
+| Resend sender domain | Not configured | Emails send from onboarding@resend.dev (goes to spam). Need verified domain for production email. |
+| Custom domain | Not purchased | App runs on shopright-jet.vercel.app. Optional: buy domain (~$12/yr) for professional URL. |
+| Email confirmation | Disabled | Supabase email confirmation is off for easy testing. Re-enable for production. |
+| Error monitoring | Not set up | Sentry or equivalent not configured. |
+| Sent reports archive | Partial | Download works, but no persistent archive of previously sent reports. |
+| Store ingestion | Manual | Run `python3 ingest_stores.py` to reload stores. Not automated on app launch. |
+| 7 stores not geocoded | Known | 7 of 44 stores failed Nominatim geocoding. They work with manual search but not GPS. |
 
 ---
 
@@ -339,6 +348,8 @@
 | April 2, 2026 | Phase 6 | Shop File and Invoice generation with template-copy. Email via Resend. Weekly/monthly screens. Excel formatting validated. Invoice: YYMM numbering, single mileage line, uniform borders, phone formatting, date formatting. Numerous UX fixes across all phases. | Phase 7 — Payments |
 | April 6, 2026 | Phase 7 | Stripe test mode checkout, webhooks, paywall, 14-day trial, promo codes, free accounts. Landing page for Eli Peterson Consulting LLC. | Phase 8 — Polish & Launch |
 | April 6, 2026 | Phase 8 | Major UX overhaul: dashboard with logo, bottom nav, profile/settings split, AI help chatbot, consistent Store/Vendor terminology, Open/Completed statuses, date formatting, clean assessment header, empty store handling. | Final validation |
+| April 6, 2026 | Phase 8+ | Stripe live/test key separation, production Stripe webhooks, Getting Started tutorial, Help Guide FAQ, standardized page headers, blue bottom nav, landing page logo. | Real-world test |
+| April 7, 2026 | Production | Documentation overhaul. Created free accounts for Stacy Taggart and R Taggart. All 8 phases complete. App in production. Awaiting Kelsey's real-world validation. | Kelsey field test |
 
 ---
 
