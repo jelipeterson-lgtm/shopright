@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import PageHeader from '../components/PageHeader'
+import RouteMap from '../components/RouteMap'
 
 function haversineMiles(lat1, lon1, lat2, lon2) {
   const R = 3959
@@ -534,6 +535,14 @@ function RoutePlanner() {
               className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-200 hover:bg-red-100">
               Clear Route
             </button>
+          </div>
+        )}
+
+        {/* Route map overview */}
+        {route.length > 1 && !optimizing && !showFilters && (
+          <div className="mb-4">
+            <RouteMap route={route} />
+            <p className="text-[10px] text-gray-400 text-center mt-1">Tap a marker for details</p>
           </div>
         )}
 
