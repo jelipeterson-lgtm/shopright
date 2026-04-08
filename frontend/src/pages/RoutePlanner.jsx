@@ -306,7 +306,45 @@ function RoutePlanner() {
 
   const handleReoptimize = async () => {
     if (!parsedStores.length) return
-    setShowFilters(true)
+    setOptimizing(true)
+    setError(null)
+    try {
+      const completedStoreKeys = new Set(
+        route.filter(s => s.status === 'completed').map(s => `${s.retailer_name}-${s.store_number}`)
+      )
+      const filtered = getFilteredStores().filter(s => !completedStoreKeys.has(`${s.retailer_name}-${s.store_number}`))
+
+      const now = new Date()
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const effectiveStartTime = route.some(s => s.status === 'completed') ? currentTime : startTime
+
+      let timeWindowMinutes = null
+      if (effectiveStartTime && endTime) {
+        const [sh, sm] = effectiveStartTime.split(':').map(Number)
+        const [eh, em] = endTime.split(':').map(Number)
+        timeWindowMinutes = (eh * 60 + em) - (sh * 60 + sm)
+        if (timeWindowMinutes <= 0) timeWindowMinutes = null
+      }
+
+      const result = await api.optimizeRoute(filtered, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      if (result.success) {
+        const kept = route.filter(s => s.status === 'completed')
+        setRoute([...kept, ...result.data.route])
+        setSummary(result.data.summary)
+        await api.saveRoutePlan({
+          plan_date: today,
+          start_address: startAddress,
+          end_address: endAddress || startAddress,
+          stores_data: [...kept, ...result.data.route],
+        })
+      } else {
+        setError(result.error)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setOptimizing(false)
+    }
   }
 
   const handleClearRoute = () => {
@@ -579,14 +617,20 @@ function RoutePlanner() {
 
         {/* Route action buttons */}
         {route.length > 0 && !optimizing && !showFilters && (
-          <div className="flex gap-2 mb-4">
-            <button onClick={handleReoptimize}
-              className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl text-xs font-medium hover:bg-gray-300">
-              Filter & Re-optimize
-            </button>
-            <button onClick={handleClearRoute}
-              className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-200 hover:bg-red-100">
-              Clear Route
+          <div className="mb-4">
+            <div className="flex gap-2">
+              <button onClick={handleReoptimize}
+                className="flex-1 bg-blue-100 text-blue-700 py-2 rounded-xl text-xs font-medium border border-blue-200 hover:bg-blue-200">
+                Re-optimize Route
+              </button>
+              <button onClick={handleClearRoute}
+                className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-200 hover:bg-red-100">
+                Clear Route
+              </button>
+            </div>
+            <button onClick={() => setShowFilters(true)}
+              className="w-full text-center text-xs text-gray-400 mt-1.5 hover:text-gray-600">
+              Change distance & city filters
             </button>
           </div>
         )}
