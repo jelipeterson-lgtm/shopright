@@ -467,6 +467,22 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     return {"success": True, "data": {"route": route, "summary": summary}, "error": None}
 
 
+@router.get("/geocode")
+def geocode_address(address: str = Query(...), authorization: str = Header(...)):
+    get_user_id(authorization)
+    import httpx
+    try:
+        r = httpx.get("https://nominatim.openstreetmap.org/search", params={
+            "q": address, "format": "json", "limit": 1,
+        }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
+        results = r.json()
+        if results:
+            return {"success": True, "data": {"latitude": float(results[0]["lat"]), "longitude": float(results[0]["lon"])}, "error": None}
+        return {"success": False, "data": None, "error": "Address not found"}
+    except Exception as e:
+        return {"success": False, "data": None, "error": str(e)}
+
+
 class SavePlanRequest(BaseModel):
     plan_date: str
     start_address: str

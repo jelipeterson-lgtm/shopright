@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import PageHeader from '../components/PageHeader'
 
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3959
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 function RoutePlanner() {
   const navigate = useNavigate()
   const today = new Date().toISOString().split('T')[0]
@@ -25,6 +33,10 @@ function RoutePlanner() {
   const [showCheckinInput, setShowCheckinInput] = useState(false)
   const [hasGoogleKey, setHasGoogleKey] = useState(false)
   const [profileCity, setProfileCity] = useState('')
+  const [maxDistance, setMaxDistance] = useState('')
+  const [selectedCities, setSelectedCities] = useState(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [startCoords, setStartCoords] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -94,18 +106,10 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowEmailInput(false)
       setEmailText('')
-      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new)`)
-
-      if (hasGoogleKey && startAddress) {
-        setOptimizing(true)
-        try {
-          await optimizeWithStores(merged)
-        } finally {
-          setOptimizing(false)
-        }
-      } else if (!hasGoogleKey) {
-        setError('Google Maps API key needed to optimize route. Add it in Settings.')
-      }
+      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new). Use filters below to narrow down, then optimize.`)
+      setShowFilters(true)
+      setSelectedCities(null)
+      setMaxDistance('')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -152,16 +156,10 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowCheckinInput(false)
       setCheckinText('')
-      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new)`)
-
-      if (hasGoogleKey && startAddress) {
-        setOptimizing(true)
-        try {
-          await optimizeWithStores(merged)
-        } finally {
-          setOptimizing(false)
-        }
-      }
+      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new). Use filters below to narrow down, then optimize.`)
+      setShowFilters(true)
+      setSelectedCities(null)
+      setMaxDistance('')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -189,17 +187,66 @@ function RoutePlanner() {
     }
   }
 
-  const handleReoptimize = async () => {
-    if (!parsedStores.length) return
+  const getFilteredStores = () => {
+    let filtered = [...parsedStores]
+    if (selectedCities && selectedCities.length > 0) {
+      filtered = filtered.filter(s => selectedCities.includes((s.city || '').toLowerCase()))
+    }
+    if (maxDistance && startCoords) {
+      const miles = parseFloat(maxDistance)
+      if (!isNaN(miles)) {
+        filtered = filtered.filter(s => {
+          if (!s.latitude || !s.longitude) return true
+          return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
+        })
+      }
+    }
+    return filtered
+  }
+
+  const availableCities = [...new Set(parsedStores.map(s => (s.city || '').trim()).filter(Boolean))].sort()
+
+  const toggleCity = (city) => {
+    const lc = city.toLowerCase()
+    setSelectedCities(prev => {
+      if (!prev) return [lc]
+      if (prev.includes(lc)) {
+        const next = prev.filter(c => c !== lc)
+        return next.length === 0 ? null : next
+      }
+      return [...prev, lc]
+    })
+  }
+
+  const handleOptimizeFiltered = async () => {
+    const filtered = getFilteredStores()
+    if (!filtered.length) {
+      setError('No stores match your filters.')
+      return
+    }
+    if (!hasGoogleKey) {
+      setError('Google Maps API key needed to optimize route. Add it in Settings.')
+      return
+    }
+    if (!startAddress) {
+      setError('Enter a start location.')
+      return
+    }
     setOptimizing(true)
     setError(null)
+    setShowFilters(false)
     try {
-      await optimizeWithStores(parsedStores)
+      await optimizeWithStores(filtered)
     } catch (err) {
       setError(err.message)
     } finally {
       setOptimizing(false)
     }
+  }
+
+  const handleReoptimize = async () => {
+    if (!parsedStores.length) return
+    setShowFilters(true)
   }
 
   const handleCompleteStop = async (store) => {
@@ -270,7 +317,7 @@ function RoutePlanner() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4 space-y-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Start Location (full address with city, state)</label>
-            <input type="text" value={startAddress} onChange={(e) => setStartAddress(e.target.value)}
+            <input type="text" value={startAddress} onChange={(e) => { setStartAddress(e.target.value); setStartCoords(null) }}
               placeholder="123 Main St, Portland, OR 97201"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
@@ -334,6 +381,70 @@ function RoutePlanner() {
           </div>
         )}
 
+        {/* Filter stores before optimizing */}
+        {showFilters && parsedStores.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+            <p className="text-sm font-semibold text-gray-800 mb-3">Filter Stores ({parsedStores.length} total)</p>
+
+            {/* City filter */}
+            {availableCities.length > 1 && (
+              <div className="mb-3">
+                <label className="block text-xs text-gray-500 mb-1.5">Select Cities</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableCities.map(city => {
+                    const isSelected = !selectedCities || selectedCities.includes(city.toLowerCase())
+                    const count = parsedStores.filter(s => (s.city || '').toLowerCase() === city.toLowerCase()).length
+                    return (
+                      <button key={city} onClick={() => toggleCity(city)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          isSelected
+                            ? 'bg-blue-100 text-blue-700 border-blue-300'
+                            : 'bg-gray-50 text-gray-400 border-gray-200'
+                        }`}>
+                        {city} ({count})
+                      </button>
+                    )
+                  })}
+                </div>
+                {selectedCities && (
+                  <button onClick={() => setSelectedCities(null)} className="text-xs text-blue-600 mt-1.5 hover:underline">
+                    Select all cities
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Max distance filter */}
+            <div className="mb-3">
+              <label className="block text-xs text-gray-500 mb-1">Max Distance from Start (miles)</label>
+              <input type="number" value={maxDistance} onChange={(e) => {
+                setMaxDistance(e.target.value)
+                if (e.target.value && !startCoords && startAddress) {
+                  api.geocodeAddress(startAddress).then(r => {
+                    if (r.success) setStartCoords({ lat: r.data.latitude, lng: r.data.longitude })
+                  }).catch(() => {})
+                }
+              }}
+                placeholder="No limit"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              {maxDistance && !startCoords && <p className="text-xs text-yellow-600 mt-1">Geocoding start address...</p>}
+            </div>
+
+            {/* Count and optimize button */}
+            <div className="text-xs text-gray-500 mb-2">
+              {(() => {
+                const filtered = getFilteredStores()
+                const storeCount = new Set(filtered.map(s => `${s.retailer_name}-${s.store_number}`)).size
+                return `${filtered.length} vendors at ${storeCount} stores selected`
+              })()}
+            </div>
+            <button onClick={handleOptimizeFiltered} disabled={optimizing}
+              className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              Optimize Route
+            </button>
+          </div>
+        )}
+
         {/* Optimizing indicator */}
         {optimizing && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
@@ -372,10 +483,10 @@ function RoutePlanner() {
         )}
 
         {/* Re-optimize button */}
-        {route.length > 0 && !optimizing && (
+        {route.length > 0 && !optimizing && !showFilters && (
           <button onClick={handleReoptimize}
             className="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-xs font-medium hover:bg-gray-300 mb-4">
-            Re-optimize Route
+            Filter & Re-optimize
           </button>
         )}
 

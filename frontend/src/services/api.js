@@ -151,6 +151,8 @@ const api = {
     body: JSON.stringify({ stores, start_address: startAddress, end_address: endAddress }),
   }),
 
+  geocodeAddress: (address) => request(`/route/geocode?address=${encodeURIComponent(address)}`),
+
   getRoutePlan: (date) => request(`/route/plan/${date}`),
 
   saveRoutePlan: (data) => request('/route/plan', {
