@@ -42,6 +42,7 @@ Read this file at the start of every session. This is the comprehensive referenc
 | **Dropbox** | dropbox.com | ShopRight-Config folder | Store directory + Excel templates |
 | **GitHub** | github.com/jelipeterson-lgtm | jelipeterson-lgtm | Version control |
 | **Anthropic** | console.anthropic.com | Per-user | AI review API keys (user's own account) |
+| **Google Cloud** | console.cloud.google.com | Per-user | Google Maps Distance Matrix API key (user's own account) |
 
 ---
 
@@ -58,6 +59,7 @@ Read this file at the start of every session. This is the comprehensive referenc
 | Voice input | Web Speech API | Chrome browser | $0 |
 | AI review | Anthropic Claude API (Haiku) | Render backend | User's own key |
 | AI help chat | Anthropic Claude API (Haiku) | Render backend | User's own key |
+| Route optimization | Google Maps Distance Matrix API | Render backend | User's own key |
 | Payments | Stripe (hosted checkout) | External | 2.9% + 30¢/txn |
 | GPS | Browser Geolocation API + Haversine | Chrome browser | $0 |
 | Store directory | Book1.xlsx on Dropbox | Dropbox | $0 |
@@ -133,7 +135,8 @@ shopright/
 │       ├── visits.py                  ← CRUD, complete/unlock, close stop, gates
 │       ├── review.py                  ← AI review via user's Anthropic key
 │       ├── reports.py                 ← Shop File + Invoice generate/send via Resend
-│       └── payments.py                ← Stripe checkout, webhook, portal, promo codes
+│       ├── payments.py                ← Stripe checkout, webhook, portal, promo codes
+│       └── route.py                   ← Route Planner: email/check-in parsing, AI parsing, route optimization
 │
 ├── frontend/
 │   ├── index.html                     ← PWA meta tags, viewport, theme color
@@ -176,6 +179,7 @@ shopright/
 │       │   ├── Reports.jsx            ← Reports hub (weekly + monthly)
 │       │   ├── WeeklyReport.jsx       ← Generate/send weekly Shop File
 │       │   ├── MonthlyInvoice.jsx     ← Generate/send monthly invoice
+│       │   ├── RoutePlanner.jsx        ← Route optimization from event emails/check-ins
 │       │   ├── HelpGuide.jsx          ← Expandable FAQ sections
 │       │   └── Tutorial.jsx           ← Step-by-step Getting Started guide
 │       │
@@ -201,6 +205,9 @@ shopright/
 | invoice_number_start | integer | Default 1 |
 | next_invoice_number | integer | Default 1 |
 | anthropic_api_key | text | User's own key for AI review |
+| google_maps_api_key | text | User's own key for route optimization |
+| default_start_address | text | Default start address for Route Planner |
+| default_end_address | text | Default end address for Route Planner |
 | ai_review_enabled | boolean | Default false |
 | is_free_account | boolean | Default false — bypasses paywall |
 | stripe_customer_id | text | Stripe customer ID |
@@ -211,7 +218,7 @@ shopright/
 
 RLS: Users can only read/update their own profile. Auto-created on signup via database trigger (`handle_new_user`) which also sets `trial_ends_at` to 14 days from creation.
 
-**Note**: `next_invoice_number` is legacy — invoice IDs are now derived from YYMM format, not sequential. `anthropic_api_key` is stored in plaintext — acceptable because each user stores only their own key.
+**Note**: `next_invoice_number` is legacy — invoice IDs are now derived from YYMM format, not sequential. `anthropic_api_key` and `google_maps_api_key` are stored in plaintext — acceptable because each user stores only their own key.
 
 ### stores
 | Column | Type | Notes |
@@ -310,6 +317,11 @@ RLS: Users can read/insert/update/delete their own visits.
 | POST | /payments/portal | Yes | Stripe customer portal |
 | POST | /payments/redeem | Yes | Redeem promo code |
 | POST | /payments/webhook | No | Stripe webhook handler |
+| POST | /route/parse-email | Yes | Parse event email into store/vendor entries (AI + fallback) |
+| POST | /route/parse-checkin | Yes | Parse check-in text into store/vendor entries (AI + fallback) |
+| POST | /route/optimize | Yes | Optimize route via Google Maps Distance Matrix API |
+| GET | /route/plan | Yes | Get saved route plan |
+| POST | /route/plan | Yes | Save route plan |
 
 ---
 
