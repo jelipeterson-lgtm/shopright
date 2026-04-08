@@ -292,6 +292,8 @@ function RoutePlanner() {
       )
       const unvisited = filtered.filter(s => !completedStoreKeys.has(`${s.retailer_name}-${s.store_number}`))
 
+      setAccepted(false)
+
       // Use current time as start for re-optimization (real-time traffic)
       const now = new Date()
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -799,7 +801,7 @@ function RoutePlanner() {
             ) : (
               <button onClick={handleAcceptRoute} disabled={accepting}
                 className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                {accepting ? 'Creating visits...' : `Accept Route — Add ${upcomingStops.reduce((sum, s) => sum + (s.vendors?.length || 0), 0)} Vendors to Stores`}
+                {accepting ? 'Updating stores...' : `Accept Route — Sync ${upcomingStops.reduce((sum, s) => sum + (s.vendors?.length || 0), 0)} Vendors to Stores`}
               </button>
             )}
           </div>
