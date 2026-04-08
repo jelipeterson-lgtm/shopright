@@ -143,6 +143,78 @@ def parse_checkin_text(raw_text):
     return unique
 
 
+def ai_parse_content(raw_text, content_type, api_key):
+    """Use Claude AI to parse email or check-in text into structured data."""
+    import anthropic
+    import json
+
+    if content_type == "email":
+        prompt = f"""Extract all store/vendor entries from this email. Each entry should have:
+- retailer_name (e.g., "Costco", "Kroger - Fred Meyer", "Lowe's Home Improvement", "Target", "Sam's Club")
+- store_number (just the number)
+- address (street address)
+- city
+- state (2-letter code)
+- zip_code
+- program (vendor program code like RTL-ATT-EDM, RS-CKE, RTL-LEAF FILTER, etc.)
+- start_date (MM/DD/YYYY)
+- end_date (MM/DD/YYYY)
+
+Only include entries where the end_date is today or in the future (today is {datetime.now().strftime('%m/%d/%Y')}).
+Ignore email headers, greetings, signatures, and image references.
+
+Return ONLY a JSON array of objects. No explanation, no markdown code blocks, just the JSON array.
+
+Email content:
+{raw_text}"""
+    else:
+        prompt = f"""Extract all store check-in entries from this text message. Each entry should have:
+- retailer_name (e.g., "Costco", "Kroger - Fred Meyer", "Lowe's Home Improvement", "Target", "Sam's Club")
+- store_number (just the number)
+- program (vendor program code)
+- city
+- state (2-letter code)
+
+Ignore greetings, separators (--- or +++), and status messages.
+If there are multiple messages separated by dividers, extract from ALL of them.
+
+Return ONLY a JSON array of objects. No explanation, no markdown code blocks, just the JSON array.
+
+Text message content:
+{raw_text}"""
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=4000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text.strip()
+        # Extract JSON from response
+        if "```" in text:
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        if text.startswith("["):
+            entries = json.loads(text)
+            # Deduplicate
+            seen = set()
+            unique = []
+            for e in entries:
+                key = (e.get('retailer_name', ''), e.get('store_number', ''), e.get('program', ''))
+                if key not in seen and key[0] and key[1]:
+                    seen.add(key)
+                    unique.append(e)
+            return unique
+    except Exception as e:
+        pass
+
+    return None
+
+
 class ParseEmailRequest(BaseModel):
     raw_text: str
 
@@ -150,7 +222,18 @@ class ParseEmailRequest(BaseModel):
 @router.post("/parse-email")
 def parse_email(body: ParseEmailRequest, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
-    entries = parse_event_email(body.raw_text)
+
+    # Try AI parsing first if user has API key
+    profile = supabase_admin.table("profiles").select("anthropic_api_key").eq("id", user_id).single().execute()
+    api_key = profile.data.get("anthropic_api_key") if profile.data else None
+
+    entries = None
+    if api_key:
+        entries = ai_parse_content(body.raw_text, "email", api_key)
+
+    # Fall back to pattern parser
+    if entries is None:
+        entries = parse_event_email(body.raw_text)
 
     for entry in entries:
         store = supabase_admin.table("stores").select("id, latitude, longitude, address").eq(
@@ -189,7 +272,17 @@ class ParseCheckinRequest(BaseModel):
 @router.post("/parse-checkin")
 def parse_checkin(body: ParseCheckinRequest, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
-    entries = parse_checkin_text(body.raw_text)
+
+    # Try AI parsing first
+    profile = supabase_admin.table("profiles").select("anthropic_api_key").eq("id", user_id).single().execute()
+    api_key = profile.data.get("anthropic_api_key") if profile.data else None
+
+    entries = None
+    if api_key:
+        entries = ai_parse_content(body.raw_text, "checkin", api_key)
+
+    if entries is None:
+        entries = parse_checkin_text(body.raw_text)
 
     for entry in entries:
         store = supabase_admin.table("stores").select("id, latitude, longitude, address, zip_code").eq(
