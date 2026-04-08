@@ -16,65 +16,93 @@ function RoutePlanner() {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
   const [parsing, setParsing] = useState(false)
+  const [optimizing, setOptimizing] = useState(false)
   const [error, setError] = useState(null)
+  const [parseSuccess, setParseSuccess] = useState(null)
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [showCheckinInput, setShowCheckinInput] = useState(false)
   const [hasGoogleKey, setHasGoogleKey] = useState(false)
+  const [profileCity, setProfileCity] = useState('')
 
   useEffect(() => {
-    // Load profile defaults and existing plan
+    setLoading(true)
     Promise.all([
       api.getProfile(),
       api.getRoutePlan(today),
     ]).then(([profileResult, planResult]) => {
       const p = profileResult.data
-      setStartAddress(p.default_start_address || p.home_address || '')
-      setEndAddress(p.default_end_address || p.default_start_address || p.home_address || '')
+      const homeAddr = p.home_address || ''
+      setStartAddress(p.default_start_address || homeAddr)
+      setEndAddress(p.default_end_address || p.default_start_address || homeAddr)
       setHasGoogleKey(!!p.google_maps_api_key)
 
       if (planResult.data) {
         const plan = planResult.data
         if (plan.start_address) setStartAddress(plan.start_address)
         if (plan.end_address) setEndAddress(plan.end_address)
-        if (plan.stores_data) {
+        if (plan.stores_data && plan.stores_data.length > 0) {
           setRoute(plan.stores_data)
-          // Recalculate summary from saved route
-          const totalEarnings = plan.stores_data.reduce((sum, s) => sum + (s.earnings || 0), 0)
-          const totalTime = plan.stores_data.reduce((sum, s) => sum + (s.drive_time_min || 0) + (s.est_minutes || 0), 0)
-          setSummary({
-            total_stops: plan.stores_data.length,
-            total_earnings: totalEarnings,
-            total_time_min: totalTime,
-            projected_rate_per_hour: totalTime > 0 ? (totalEarnings / (totalTime / 60)) : 0,
-          })
+          recalcSummary(plan.stores_data)
         }
       }
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [today])
+
+  const recalcSummary = (routeData) => {
+    const totalEarnings = routeData.reduce((sum, s) => sum + (s.earnings || 0), 0)
+    const totalDrive = routeData.reduce((sum, s) => sum + (s.drive_time_min || 0), 0)
+    const totalAssess = routeData.reduce((sum, s) => sum + (s.est_minutes || 0), 0)
+    const totalTime = totalDrive + totalAssess
+    const totalMiles = routeData.reduce((sum, s) => sum + (s.drive_distance_mi || 0), 0)
+    setSummary({
+      total_stops: routeData.length,
+      total_vendors: routeData.reduce((sum, s) => sum + (s.vendors?.length || 0), 0),
+      total_earnings: Math.round(totalEarnings),
+      total_time_min: Math.round(totalTime),
+      total_miles: Math.round(totalMiles * 10) / 10,
+      projected_rate_per_hour: totalTime > 0 ? Math.round(totalEarnings / (totalTime / 60)) : 0,
+    })
+  }
 
   const handleParseEmail = async () => {
     if (!emailText.trim()) return
     setParsing(true)
     setError(null)
+    setParseSuccess(null)
     try {
       const result = await api.parseEmail(emailText)
       const newStores = result.data || []
-      // Merge with existing parsed stores
+
+      if (newStores.length === 0) {
+        setError('No stores found in the pasted email. Check the format and try again.')
+        setParsing(false)
+        return
+      }
+
       const merged = [...parsedStores]
+      let addedCount = 0
       for (const store of newStores) {
         const exists = merged.some(s =>
           s.retailer_name === store.retailer_name &&
           s.store_number === store.store_number &&
           s.program === store.program
         )
-        if (!exists) merged.push(store)
+        if (!exists) { merged.push(store); addedCount++ }
       }
       setParsedStores(merged)
       setShowEmailInput(false)
       setEmailText('')
+      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new)`)
 
       if (hasGoogleKey && startAddress) {
-        await optimizeWithStores(merged)
+        setOptimizing(true)
+        try {
+          await optimizeWithStores(merged)
+        } finally {
+          setOptimizing(false)
+        }
+      } else if (!hasGoogleKey) {
+        setError('Google Maps API key needed to optimize route. Add it in Settings.')
       }
     } catch (err) {
       setError(err.message)
@@ -87,10 +115,19 @@ function RoutePlanner() {
     if (!checkinText.trim()) return
     setParsing(true)
     setError(null)
+    setParseSuccess(null)
     try {
       const result = await api.parseCheckin(checkinText)
       const newStores = result.data || []
+
+      if (newStores.length === 0) {
+        setError('No check-ins found in the pasted text. Check the format and try again.')
+        setParsing(false)
+        return
+      }
+
       const merged = [...parsedStores]
+      let addedCount = 0
       for (const store of newStores) {
         const exists = merged.some(s =>
           s.retailer_name === store.retailer_name &&
@@ -100,8 +137,8 @@ function RoutePlanner() {
         if (!exists) {
           store.confirmed = true
           merged.push(store)
+          addedCount++
         } else {
-          // Mark existing as confirmed
           const idx = merged.findIndex(s =>
             s.retailer_name === store.retailer_name &&
             s.store_number === store.store_number &&
@@ -113,9 +150,15 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowCheckinInput(false)
       setCheckinText('')
+      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new)`)
 
       if (hasGoogleKey && startAddress) {
-        await optimizeWithStores(merged)
+        setOptimizing(true)
+        try {
+          await optimizeWithStores(merged)
+        } finally {
+          setOptimizing(false)
+        }
       }
     } catch (err) {
       setError(err.message)
@@ -125,15 +168,11 @@ function RoutePlanner() {
   }
 
   const optimizeWithStores = async (stores) => {
-    setLoading(true)
-    setError(null)
     try {
       const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress)
       if (result.success) {
         setRoute(result.data.route)
         setSummary(result.data.summary)
-
-        // Save plan
         await api.saveRoutePlan({
           plan_date: today,
           start_address: startAddress,
@@ -145,28 +184,43 @@ function RoutePlanner() {
       }
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  const handleReoptimize = async () => {
+    if (!parsedStores.length) return
+    setOptimizing(true)
+    setError(null)
+    try {
+      await optimizeWithStores(parsedStores)
+    } catch (err) {
+      setError(err.message)
     } finally {
-      setLoading(false)
+      setOptimizing(false)
     }
   }
 
   const handleCompleteStop = async (store) => {
     try {
       await api.completeRouteStop(today, store.store_number, store.retailer_name)
-      setRoute(prev => prev.map(s =>
+      const updated = route.map(s =>
         s.retailer_name === store.retailer_name && s.store_number === store.store_number
           ? { ...s, status: 'completed' }
           : s
-      ))
+      )
+      setRoute(updated)
+      recalcSummary(updated)
     } catch (err) {
       setError(err.message)
     }
   }
 
   const handleRemoveStop = (store) => {
-    setRoute(prev => prev.filter(s =>
+    const updated = route.filter(s =>
       !(s.retailer_name === store.retailer_name && s.store_number === store.store_number)
-    ))
+    )
+    setRoute(updated)
+    recalcSummary(updated)
     setParsedStores(prev => prev.filter(s =>
       !(s.retailer_name === store.retailer_name && s.store_number === store.store_number)
     ))
@@ -185,27 +239,37 @@ function RoutePlanner() {
   const completedStops = route.filter(s => s.status === 'completed')
   const upcomingStops = route.filter(s => s.status !== 'completed')
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader title="Route Planner" />
+        <div className="text-center py-12"><p className="text-gray-400 text-sm">Loading...</p></div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="Route Planner" subtitle={new Date(today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })} />
 
       <div className="max-w-lg mx-auto px-4 py-4">
-        {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-lg">{error}</p>}
+        {error && <p className="text-red-500 text-sm mb-3 bg-red-50 p-3 rounded-lg">{error}</p>}
+        {parseSuccess && <p className="text-green-600 text-sm mb-3 bg-green-50 p-3 rounded-lg">{parseSuccess}</p>}
 
         {!hasGoogleKey && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p className="text-yellow-800 text-sm font-medium">Google Maps API key required</p>
-            <p className="text-yellow-700 text-xs mt-1">Go to Settings to add your Google Maps API key for route optimization.</p>
-            <button onClick={() => navigate('/settings')} className="mt-2 text-xs text-blue-600 font-medium hover:underline">Go to Settings</button>
+            <p className="text-yellow-700 text-xs mt-1">Add your Google Maps API key in Settings to enable route optimization.</p>
+            <button onClick={() => navigate('/settings')} className="mt-2 px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 shadow-sm">Go to Settings</button>
           </div>
         )}
 
         {/* Start/End addresses */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4 space-y-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Start Location</label>
+            <label className="block text-xs text-gray-500 mb-1">Start Location (full address with city, state)</label>
             <input type="text" value={startAddress} onChange={(e) => setStartAddress(e.target.value)}
-              placeholder="Home address or starting point"
+              placeholder="123 Main St, Portland, OR 97201"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
@@ -218,11 +282,11 @@ function RoutePlanner() {
 
         {/* Input buttons */}
         <div className="flex gap-2 mb-4">
-          <button onClick={() => setShowEmailInput(!showEmailInput)}
+          <button onClick={() => { setShowEmailInput(!showEmailInput); setShowCheckinInput(false) }}
             className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-xs font-medium hover:bg-blue-700">
             {showEmailInput ? 'Cancel' : 'Paste Event Email'}
           </button>
-          <button onClick={() => setShowCheckinInput(!showCheckinInput)}
+          <button onClick={() => { setShowCheckinInput(!showCheckinInput); setShowEmailInput(false) }}
             className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-xs font-medium hover:bg-green-700">
             {showCheckinInput ? 'Cancel' : 'Paste Check-in'}
           </button>
@@ -237,7 +301,7 @@ function RoutePlanner() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
             <button onClick={handleParseEmail} disabled={parsing || !emailText.trim()}
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              {parsing ? 'Parsing...' : 'Parse & Build Route'}
+              {parsing ? 'Parsing email...' : 'Parse & Build Route'}
             </button>
           </div>
         )}
@@ -251,13 +315,21 @@ function RoutePlanner() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
             <button onClick={handleParseCheckin} disabled={parsing || !checkinText.trim()}
               className="w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-              {parsing ? 'Parsing...' : 'Add Check-ins & Re-optimize'}
+              {parsing ? 'Parsing check-ins...' : 'Add Check-ins & Re-optimize'}
             </button>
           </div>
         )}
 
+        {/* Optimizing indicator */}
+        {optimizing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-center">
+            <p className="text-blue-700 text-sm font-medium">Optimizing your route...</p>
+            <p className="text-blue-500 text-xs mt-1">Calculating drive times and best order</p>
+          </div>
+        )}
+
         {/* Summary bar */}
-        {summary && (
+        {summary && route.length > 0 && (
           <div className="bg-blue-600 text-white rounded-xl p-4 mb-4">
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>
@@ -273,28 +345,37 @@ function RoutePlanner() {
                 <p className="text-[10px] text-blue-200">Total Time</p>
               </div>
               <div>
-                <p className="text-xl font-bold">${Math.round(summary.projected_rate_per_hour)}</p>
+                <p className="text-xl font-bold">${summary.projected_rate_per_hour}</p>
                 <p className="text-[10px] text-blue-200">$/Hour</p>
               </div>
             </div>
+            {summary.total_miles > 0 && (
+              <p className="text-center text-[10px] text-blue-200 mt-2">{summary.total_miles} miles total</p>
+            )}
           </div>
         )}
 
-        {loading && (
-          <div className="text-center py-8">
-            <p className="text-gray-400 text-sm">Optimizing route...</p>
-          </div>
+        {/* Re-optimize button */}
+        {route.length > 0 && !optimizing && (
+          <button onClick={handleReoptimize}
+            className="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-xs font-medium hover:bg-gray-300 mb-4">
+            Re-optimize Route
+          </button>
         )}
 
         {/* Completed stops */}
         {completedStops.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Completed</p>
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Completed ({completedStops.length})</p>
             {completedStops.map((store, i) => (
-              <div key={i} className="bg-gray-100 rounded-xl p-3 mb-2 opacity-60">
-                <p className="text-sm font-medium text-gray-700">{store.retailer_name} #{store.store_number}</p>
-                <p className="text-xs text-gray-400">{store.vendors?.join(', ')}</p>
-                <p className="text-xs text-green-600 font-medium">${store.earnings} earned</p>
+              <div key={i} className="bg-gray-100 rounded-xl p-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-green-600 bg-green-100 w-6 h-6 rounded-full flex items-center justify-center">✓</span>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">{store.retailer_name} #{store.store_number}</p>
+                    <p className="text-xs text-gray-400">{store.vendors?.join(', ')} — ${store.earnings}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -304,40 +385,38 @@ function RoutePlanner() {
         {upcomingStops.length > 0 && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">
-              {completedStops.length > 0 ? 'Upcoming' : 'Route'}
+              {completedStops.length > 0 ? `Upcoming (${upcomingStops.length})` : `Route (${upcomingStops.length} stops)`}
             </p>
             {upcomingStops.map((store, i) => {
               const globalIndex = route.indexOf(store)
               return (
-                <div key={i} className={`bg-white rounded-xl shadow-sm border p-4 mb-2 ${i === 0 ? 'border-blue-300 bg-blue-50' : 'border-gray-100'}`}>
+                <div key={i} className={`bg-white rounded-xl shadow-sm border p-4 mb-2 ${i === 0 ? 'border-blue-300' : 'border-gray-100'}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-blue-600 bg-blue-100 w-6 h-6 rounded-full flex items-center justify-center">
+                        <span className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${i === 0 ? 'text-white bg-blue-600' : 'text-blue-600 bg-blue-100'}`}>
                           {completedStops.length + i + 1}
                         </span>
                         <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
                       </div>
                       {store.address && <p className="text-xs text-gray-400 mt-1 ml-8">{store.address}, {store.city}</p>}
                       <p className="text-xs text-gray-500 mt-1 ml-8">{store.vendors?.join(', ')}</p>
-                      <div className="flex gap-3 mt-2 ml-8">
+                      <div className="flex flex-wrap gap-2 mt-2 ml-8">
                         {store.drive_time_min > 0 && (
-                          <span className="text-xs text-gray-400">{Math.round(store.drive_time_min)} min drive</span>
+                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{Math.round(store.drive_time_min)} min drive</span>
                         )}
                         {store.drive_distance_mi > 0 && (
-                          <span className="text-xs text-gray-400">{store.drive_distance_mi} mi</span>
+                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{store.drive_distance_mi} mi</span>
                         )}
-                        <span className="text-xs text-green-600 font-medium">${store.earnings}</span>
-                        <span className="text-xs text-gray-400">~{Math.round(store.est_minutes)} min</span>
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">${store.earnings}</span>
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">~{Math.round(store.est_minutes)} min</span>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex gap-1">
-                        <button onClick={() => moveStop(globalIndex, -1)} disabled={globalIndex === 0}
-                          className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30">↑</button>
-                        <button onClick={() => moveStop(globalIndex, 1)} disabled={globalIndex === route.length - 1}
-                          className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30">↓</button>
-                      </div>
+                    <div className="flex flex-col gap-1 ml-2">
+                      <button onClick={() => moveStop(globalIndex, -1)} disabled={globalIndex === 0}
+                        className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30 hover:bg-gray-200">↑</button>
+                      <button onClick={() => moveStop(globalIndex, 1)} disabled={globalIndex === route.length - 1}
+                        className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30 hover:bg-gray-200">↓</button>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
@@ -357,7 +436,7 @@ function RoutePlanner() {
         )}
 
         {/* Empty state */}
-        {route.length === 0 && !loading && (
+        {route.length === 0 && !loading && !optimizing && (
           <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
             <p className="text-gray-400 text-sm">No route planned yet</p>
             <p className="text-gray-300 text-xs mt-1">Paste an event email to get started</p>

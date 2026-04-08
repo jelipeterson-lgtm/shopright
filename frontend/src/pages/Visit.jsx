@@ -330,7 +330,16 @@ function Visit() {
           )}
 
           {repsPresent === 'N/A' && (
-            <p className="text-sm text-blue-500 italic">Not applicable — all fields set to N/A. Complete the Visit Recap below.</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+              <p className="text-sm text-blue-700 font-medium">Not Applicable</p>
+              <p className="text-xs text-blue-600 mt-1">All evaluation fields have been set to N/A. Only the Visit Recap below needs to be completed.</p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Rep Info: N/A</span>
+                <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded">All Evaluations: N/A</span>
+                <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Soft Selling: N/A</span>
+                <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Resource Guide: N/A</span>
+              </div>
+            </div>
           )}
 
           {showFullForm && (
