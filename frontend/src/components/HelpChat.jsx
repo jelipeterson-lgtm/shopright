@@ -3,14 +3,17 @@ import { useLocation } from 'react-router-dom'
 import api from '../services/api'
 
 const PAGE_CONTEXT = {
-  '/app': 'The user is on the Home dashboard. They can start a session, add visits manually, or view reports.',
-  '/session': 'The user is on the Session page viewing today\'s store visits. They can add stores, create vendor entries, close stores, or end the session.',
-  '/new-store': 'The user is selecting a new store via GPS or search to begin a vendor visit.',
-  '/visit': 'The user is filling out the assessment form for a vendor visit with evaluation fields, rep info, and visit recap.',
+  '/app': 'The user is on the Home dashboard. They can start shopping, add stores and vendors manually, or view reports.',
+  '/session': 'The user is on the Stores page viewing today\'s stores and vendors. They can add stores, add vendors, close stores.',
+  '/new-store': 'The user is adding a new store via GPS or search, then selecting a vendor program from the dropdown.',
+  '/visit': 'The user is filling out the vendor assessment form with evaluation fields, rep info, and visit recap.',
   '/weekly-report': 'The user is viewing the Weekly Shop File report. They can download or email the report.',
   '/monthly-invoice': 'The user is viewing the Monthly Invoice. They enter mileage and can send the invoice.',
+  '/reports': 'The user is on the Reports hub. They can choose Weekly Shop File or Monthly Invoice.',
   '/profile': 'The user is on their Profile page editing personal information.',
   '/settings': 'The user is on Settings managing their AI review API key, password, and subscription.',
+  '/help': 'The user is on the Help Guide page with FAQ sections.',
+  '/tutorial': 'The user is going through the Getting Started tutorial.',
 }
 
 const SYSTEM_PROMPT = `You are a friendly ShopRight help assistant. ShopRight is a mobile web app for mystery shoppers at Smart Circle International.
@@ -107,7 +110,7 @@ function HelpChat() {
           <div className="text-center py-6">
             <p className="text-sm text-gray-400">Hi! How can I help you?</p>
             <div className="mt-3 space-y-1">
-              {['How do I start a session?', 'How do I set up AI review?', 'How do I send my report?'].map((q) => (
+              {['How do I add a store and vendor?', 'How do I set up AI review?', 'How do I send my report?', 'What if my program isn\'t in the list?'].map((q) => (
                 <button
                   key={q}
                   onClick={() => { setInput(q); }}

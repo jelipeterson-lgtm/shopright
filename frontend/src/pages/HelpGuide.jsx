@@ -10,8 +10,9 @@ function HelpGuide() {
       items: [
         { q: 'How do I start shopping?', a: 'From the Home page, tap "Start Shopping". This takes you to the Stores page where you can add your first store.' },
         { q: 'How do I add a store?', a: 'Tap "Add Store" on the Stores page. Allow GPS to find nearby stores, or search by store number or retailer name. Select the store and confirm.' },
-        { q: 'How do I add a vendor?', a: 'After confirming a store, enter the vendor program code and tap "Confirm Store & Add Vendor". This opens the assessment form for that vendor.' },
-        { q: 'How do I add another vendor at the same store?', a: 'On the Stores page, tap "Add Another Vendor" under the store. Select the program and fill out the form.' },
+        { q: 'How do I add a vendor?', a: 'After selecting a store, choose a vendor program from the dropdown (e.g., RTL-ATT-EDM). If your program isn\'t listed, select "Other (enter manually)" and type it. Tap "Confirm Store & Add Vendor" to open the assessment form.' },
+        { q: 'How do I add another vendor at the same store?', a: 'On the Stores page, tap "Add Another Vendor" under the store. Select the program from the dropdown and fill out the form.' },
+        { q: 'What if my vendor program isn\'t in the dropdown?', a: 'Select "Other (enter manually)" at the bottom of the program dropdown. You can type any program code. Tap "Back to program list" if you want to switch back to the dropdown.' },
       ],
     },
     {

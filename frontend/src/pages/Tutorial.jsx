@@ -19,10 +19,11 @@ const steps = [
   },
   {
     title: 'Adding a Vendor',
-    content: 'After selecting a store, you\'ll see a field for the vendor program code (like RTL-ATT-EDM). If the store has a known program, it will auto-fill for you. You can also type any program code.\n\nTap "Confirm Store & Add Vendor" to open the assessment form.\n\nYou can add multiple vendors at the same store. After completing one vendor\'s assessment, tap "Add Another Vendor" on the Stores page to add the next one.',
+    content: 'After selecting a store, you\'ll see a dropdown with available vendor programs (like RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, and more).\n\nSelect the program for the vendor you\'re assessing. If the program isn\'t in the list, select "Other (enter manually)" and type it in.\n\nTap "Confirm Store & Add Vendor" to open the assessment form.\n\nYou can add multiple vendors at the same store. After completing one vendor\'s assessment, tap "Add Another Vendor" on the Stores page to add the next one.',
     tips: [
       'Each vendor at a store gets its own assessment form',
       'The program code identifies which vendor or brand you\'re assessing',
+      'If your program isn\'t in the dropdown, select "Other" to type it manually',
     ],
   },
   {
