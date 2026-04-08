@@ -369,39 +369,41 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     drive_times = {}
     drive_distances = {}
 
-    # Batch requests to stay under Google's 100 elements per request limit
-    MAX_ELEMENTS = 100
+    # Batch requests: max 25 origins and 25 destinations per request (free tier limit)
+    BATCH_SIZE = 25
     try:
-        for o_start in range(0, len(all_origins), max(1, MAX_ELEMENTS // len(all_destinations))):
-            o_end = min(o_start + max(1, MAX_ELEMENTS // len(all_destinations)), len(all_origins))
-            batch_origins = all_origins[o_start:o_end]
+        for o_start in range(0, len(all_origins), BATCH_SIZE):
+            batch_origins = all_origins[o_start:o_start + BATCH_SIZE]
+            for d_start in range(0, len(all_destinations), BATCH_SIZE):
+                batch_destinations = all_destinations[d_start:d_start + BATCH_SIZE]
 
-            r = httpx.get(
-                "https://maps.googleapis.com/maps/api/distancematrix/json",
-                params={
-                    "origins": "|".join(batch_origins),
-                    "destinations": "|".join(all_destinations),
-                    "key": api_key,
-                    "departure_time": "now",
-                    "traffic_model": "best_guess",
-                },
-                timeout=30,
-            )
-            matrix = r.json()
+                r = httpx.get(
+                    "https://maps.googleapis.com/maps/api/distancematrix/json",
+                    params={
+                        "origins": "|".join(batch_origins),
+                        "destinations": "|".join(batch_destinations),
+                        "key": api_key,
+                        "departure_time": "now",
+                        "traffic_model": "best_guess",
+                    },
+                    timeout=30,
+                )
+                matrix = r.json()
 
-            if matrix.get("status") != "OK":
-                return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('error_message', matrix.get('status'))}"}
+                if matrix.get("status") != "OK":
+                    return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('error_message', matrix.get('status'))}"}
 
-            for i, row in enumerate(matrix.get("rows", [])):
-                actual_i = o_start + i
-                for j, elem in enumerate(row.get("elements", [])):
-                    if elem.get("status") == "OK":
-                        duration = elem.get("duration_in_traffic", elem.get("duration", {}))
-                        drive_times[(actual_i, j)] = duration.get("value", 9999) / 60
-                        drive_distances[(actual_i, j)] = elem.get("distance", {}).get("value", 0) / 1609.34
-                    else:
-                        drive_times[(actual_i, j)] = 9999
-                        drive_distances[(actual_i, j)] = 0
+                for i, row in enumerate(matrix.get("rows", [])):
+                    actual_i = o_start + i
+                    for j, elem in enumerate(row.get("elements", [])):
+                        actual_j = d_start + j
+                        if elem.get("status") == "OK":
+                            duration = elem.get("duration_in_traffic", elem.get("duration", {}))
+                            drive_times[(actual_i, actual_j)] = duration.get("value", 9999) / 60
+                            drive_distances[(actual_i, actual_j)] = elem.get("distance", {}).get("value", 0) / 1609.34
+                        else:
+                            drive_times[(actual_i, actual_j)] = 9999
+                            drive_distances[(actual_i, actual_j)] = 0
     except Exception as e:
         return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
 
