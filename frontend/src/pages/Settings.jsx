@@ -88,10 +88,12 @@ function GoogleMapsKeySection() {
               <li>Go to <span className="font-medium">console.cloud.google.com</span></li>
               <li>Create a project (or select existing)</li>
               <li>Go to <span className="font-medium">APIs & Services {'>'} Library</span></li>
-              <li>Enable <span className="font-medium">"Distance Matrix API"</span></li>
+              <li>Search for and enable <span className="font-medium">"Distance Matrix API"</span></li>
               <li>Go to <span className="font-medium">APIs & Services {'>'} Credentials</span></li>
-              <li>Create or copy your API Key</li>
-              <li>Paste it below</li>
+              <li>Create an API Key (or use existing)</li>
+              <li>Click the key and under <span className="font-medium">API restrictions</span>, add <span className="font-medium">"Distance Matrix API"</span> to the allowed list (or select "Don't restrict key")</li>
+              <li>Under <span className="font-medium">Application restrictions</span>, select <span className="font-medium">"None"</span> or <span className="font-medium">"IP addresses"</span></li>
+              <li>Save and paste the key below (may take up to 5 minutes to activate)</li>
             </ol>
           </div>
           <input type="password" value={mapsKey} onChange={(e) => setMapsKey(e.target.value)}
