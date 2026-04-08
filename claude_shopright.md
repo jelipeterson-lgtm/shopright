@@ -357,6 +357,8 @@ RLS: Users can read/insert/update/delete their own visits.
 
 Never use "visit," "session," or "draft" in user-facing text.
 
+**Known variance**: The Stores page URL path is `/session` (not `/stores`). This is internal only — visible in the browser address bar but not in any UI text. Not renamed to avoid breaking user bookmarks. Zero user impact.
+
 ---
 
 ## Dropbox Files (ShopRight-Config folder)
