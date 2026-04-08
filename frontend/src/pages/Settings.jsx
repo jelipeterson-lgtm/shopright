@@ -47,6 +47,69 @@ function SubscriptionSection() {
   return <p className="text-sm text-red-600">Subscription expired</p>
 }
 
+function GoogleMapsKeySection() {
+  const [hasKey, setHasKey] = useState(false)
+  const [showInput, setShowInput] = useState(false)
+  const [mapsKey, setMapsKey] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState(null)
+
+  useEffect(() => {
+    api.getProfile().then((r) => {
+      setHasKey(!!r.data?.google_maps_api_key)
+    }).catch(() => {})
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await api.updateProfile({ google_maps_api_key: mapsKey })
+      setHasKey(true)
+      setShowInput(false)
+      setMapsKey('')
+      setSuccess('Google Maps API key saved')
+    } catch (e) {}
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-gray-700">{hasKey ? 'API key configured' : 'Not configured'}</p>
+      {!showInput ? (
+        <button onClick={() => setShowInput(true)}
+          className="px-4 py-2 bg-gray-50 text-gray-700 text-sm rounded-lg border border-gray-200 hover:bg-gray-100">
+          {hasKey ? 'Update API Key' : 'Add API Key'}
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs font-medium text-gray-700 mb-2">How to get your Google Maps API key:</p>
+            <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+              <li>Go to <span className="font-medium">console.cloud.google.com</span></li>
+              <li>Create a project (or select existing)</li>
+              <li>Go to <span className="font-medium">APIs & Services {'>'} Library</span></li>
+              <li>Enable <span className="font-medium">"Distance Matrix API"</span></li>
+              <li>Go to <span className="font-medium">APIs & Services {'>'} Credentials</span></li>
+              <li>Create or copy your API Key</li>
+              <li>Paste it below</li>
+            </ol>
+          </div>
+          <input type="password" value={mapsKey} onChange={(e) => setMapsKey(e.target.value)}
+            placeholder="AIza..."
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+          <button onClick={handleSave} disabled={saving || !mapsKey}
+            className="w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save API Key'}
+          </button>
+          <button onClick={() => { setShowInput(false); setMapsKey('') }}
+            className="w-full text-gray-500 text-sm hover:underline">Cancel</button>
+        </div>
+      )}
+      {success && <p className="text-green-600 text-sm">{success}</p>}
+    </div>
+  )
+}
+
 function Settings() {
   const { signOut } = useAuth()
   const navigate = useNavigate()
@@ -233,6 +296,12 @@ function Settings() {
             <button onClick={() => setShowKeyInput(true)}
               className="text-xs text-gray-500 hover:underline">Update API key</button>
           )}
+        </div>
+
+        {/* Google Maps API Key */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-800">Route Planner (Google Maps)</h2>
+          <GoogleMapsKeySection />
         </div>
 
         {/* Password */}

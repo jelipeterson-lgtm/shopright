@@ -305,7 +305,7 @@ function Visit() {
         <div className="bg-white rounded-lg shadow p-4 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Reps Present?</h2>
           <div className="flex gap-2 mb-3">
-            {['Pass', 'Fail'].map((opt) => (
+            {['Pass', 'Fail', 'N/A'].map((opt) => (
               <button
                 key={opt}
                 onClick={() => !isComplete && updateField('reps_present', opt)}
@@ -314,7 +314,9 @@ function Visit() {
                   repsPresent === opt
                     ? opt === 'Pass'
                       ? 'bg-green-100 text-green-700 border border-green-300'
-                      : 'bg-red-100 text-red-700 border border-red-300'
+                      : opt === 'Fail'
+                        ? 'bg-red-100 text-red-700 border border-red-300'
+                        : 'bg-blue-100 text-blue-700 border border-blue-300'
                     : 'bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100'
                 } ${isComplete ? 'opacity-50' : ''}`}
               >
@@ -325,6 +327,10 @@ function Visit() {
 
           {repsPresent === 'Fail' && (
             <p className="text-sm text-red-500 italic">Reps not present — skip to Visit Recap below.</p>
+          )}
+
+          {repsPresent === 'N/A' && (
+            <p className="text-sm text-blue-500 italic">Not applicable — all fields set to N/A. Complete the Visit Recap below.</p>
           )}
 
           {showFullForm && (

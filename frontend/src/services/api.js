@@ -135,6 +135,36 @@ const api = {
     body: JSON.stringify({ message, page_context: pageContext }),
   }),
 
+  // Route Planner
+  parseEmail: (rawText) => request('/route/parse-email', {
+    method: 'POST',
+    body: JSON.stringify({ raw_text: rawText }),
+  }),
+
+  parseCheckin: (rawText) => request('/route/parse-checkin', {
+    method: 'POST',
+    body: JSON.stringify({ raw_text: rawText }),
+  }),
+
+  optimizeRoute: (stores, startAddress, endAddress) => request('/route/optimize', {
+    method: 'POST',
+    body: JSON.stringify({ stores, start_address: startAddress, end_address: endAddress }),
+  }),
+
+  getRoutePlan: (date) => request(`/route/plan/${date}`),
+
+  saveRoutePlan: (data) => request('/route/plan', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  completeRouteStop: (date, storeNumber, retailerName) =>
+    request(`/route/plan/${date}/complete-stop?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}`, {
+      method: 'POST',
+    }),
+
+  getVisitHistory: () => request('/route/visit-history'),
+
   reviewVisit: (visitId) => request('/review', {
     method: 'POST',
     body: JSON.stringify({ visit_id: visitId }),

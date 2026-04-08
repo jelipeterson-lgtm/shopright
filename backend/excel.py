@@ -106,6 +106,13 @@ def generate_shop_file(visits, first_name):
             ws.cell(row, 40, v.get("visit_recap") or "")
             continue
 
+        # If Reps Present = N/A, all eval fields output N/A, only Visit Recap has content
+        if reps == "N/A":
+            for c in range(10, 40):
+                ws.cell(row, c, "N/A")
+            ws.cell(row, 40, v.get("visit_recap") or "")
+            continue
+
         ws.cell(row, 10, v.get("rep_names") or "")
         ws.cell(row, 11, v.get("rep_description") or "")
 

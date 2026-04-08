@@ -29,6 +29,7 @@ from routers.visits import router as visits_router
 from routers.review import router as review_router
 from routers.reports import router as reports_router
 from routers.payments import router as payments_router
+from routers.route import router as route_router
 
 app.include_router(auth_router)
 app.include_router(stores_router)
@@ -36,6 +37,7 @@ app.include_router(visits_router)
 app.include_router(review_router)
 app.include_router(reports_router)
 app.include_router(payments_router)
+app.include_router(route_router)
 
 
 @app.get("/health")
