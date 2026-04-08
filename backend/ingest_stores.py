@@ -1,6 +1,7 @@
 """
 Download Book1.xlsx from Dropbox, geocode addresses, and load into stores table.
-Run manually or on app startup.
+Also loads program list into a programs table.
+Run manually: python3 ingest_stores.py
 """
 import os
 import time
@@ -15,7 +16,6 @@ DROPBOX_URL = os.getenv("DROPBOX_STORES_URL", "").replace("dl=0", "dl=1")
 
 
 def download_book1():
-    """Download Book1.xlsx from Dropbox."""
     print("Downloading Book1.xlsx from Dropbox...")
     r = httpx.get(DROPBOX_URL, follow_redirects=True, timeout=30)
     r.raise_for_status()
@@ -27,7 +27,6 @@ def download_book1():
 
 
 def geocode_address(address, city, state, zip_code):
-    """Geocode an address using OpenStreetMap Nominatim (free, 1 req/sec)."""
     full_address = f"{address}, {city}, {state} {zip_code}"
     try:
         r = httpx.get(
@@ -45,9 +44,30 @@ def geocode_address(address, city, state, zip_code):
 
 
 def parse_and_load(path):
-    """Parse Book1.xlsx and upsert into stores table."""
     wb = load_workbook(path)
-    ws = wb.active
+
+    # --- Load Programs ---
+    if "Program" in wb.sheetnames:
+        ws_prog = wb["Program"]
+        programs = []
+        for row in range(2, ws_prog.max_row + 1):
+            code = ws_prog.cell(row, 1).value
+            if code and code.strip():
+                programs.append(code.strip())
+        print(f"Found {len(programs)} programs")
+
+        # Store programs in database
+        for prog in programs:
+            supabase_admin.table("programs").upsert(
+                {"code": prog}, on_conflict="code"
+            ).execute()
+        print(f"Programs loaded: {programs}")
+    else:
+        print("No Program worksheet found")
+
+    # --- Load Stores from Retail worksheet ---
+    ws_name = "Retail" if "Retail" in wb.sheetnames else wb.sheetnames[0]
+    ws = wb[ws_name]
 
     seen = set()
     stores = []
@@ -55,12 +75,11 @@ def parse_and_load(path):
     for row in range(2, ws.max_row + 1):
         retailer = ws.cell(row, 1).value
         store_num = str(ws.cell(row, 2).value or "").strip()
-        program = ws.cell(row, 4).value
 
-        if not retailer or not store_num or not program:
+        if not retailer or not store_num:
             continue
 
-        key = (retailer, store_num, program)
+        key = (retailer.strip(), store_num)
         if key in seen:
             continue
         seen.add(key)
@@ -68,12 +87,10 @@ def parse_and_load(path):
         stores.append({
             "retailer_name": retailer.strip(),
             "store_number": store_num,
-            "account": (ws.cell(row, 3).value or "").strip(),
-            "program": program.strip(),
-            "address": (ws.cell(row, 5).value or "").strip(),
-            "city": (ws.cell(row, 6).value or "").strip(),
-            "state": (ws.cell(row, 7).value or "").strip(),
-            "zip_code": str(ws.cell(row, 8).value or "").strip(),
+            "address": (ws.cell(row, 3).value or "").strip(),
+            "city": (ws.cell(row, 4).value or "").strip(),
+            "state": (ws.cell(row, 5).value or "").strip(),
+            "zip_code": str(ws.cell(row, 6).value or "").strip(),
         })
 
     print(f"Parsed {len(stores)} unique stores (from {ws.max_row - 1} rows)")
@@ -89,7 +106,7 @@ def parse_and_load(path):
                 print(f"  Geocoded: {store['retailer_name']} #{store['store_number']} -> {lat}, {lon}")
             else:
                 print(f"  FAILED: {store['retailer_name']} #{store['store_number']}")
-            time.sleep(1.1)  # Nominatim rate limit: 1 req/sec
+            time.sleep(1.1)  # Nominatim rate limit
 
         store["latitude"], store["longitude"] = geocoded[addr_key]
 
@@ -97,7 +114,7 @@ def parse_and_load(path):
     print("Loading into database...")
     for store in stores:
         supabase_admin.table("stores").upsert(
-            store, on_conflict="retailer_name,store_number,program"
+            store, on_conflict="retailer_name,store_number"
         ).execute()
 
     print(f"Done. {len(stores)} stores loaded.")

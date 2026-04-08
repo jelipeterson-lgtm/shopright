@@ -10,6 +10,8 @@ function ManualVisit() {
   const [selectedStore, setSelectedStore] = useState(null)
   const [programs, setPrograms] = useState([])
   const [selectedProgram, setSelectedProgram] = useState(null)
+  const [showCustomProgram, setShowCustomProgram] = useState(false)
+  const [customProgram, setCustomProgram] = useState('')
   const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0])
   const [visitTime, setVisitTime] = useState(new Date().toTimeString().slice(0, 5))
   const [loading, setLoading] = useState(false)
@@ -34,9 +36,8 @@ function ManualVisit() {
   const handleSelectStore = async (store) => {
     setSelectedStore(store)
     try {
-      const result = await api.getStorePrograms(store.store_number, store.retailer_name)
+      const result = await api.getPrograms()
       setPrograms(result.data)
-      if (result.data.length === 1) setSelectedProgram(result.data[0])
     } catch (err) {
       setError('Failed to load programs')
     }
@@ -117,27 +118,43 @@ function ManualVisit() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
-              <input
-                type="text"
-                value={selectedProgram || ''}
-                onChange={(e) => setSelectedProgram(e.target.value)}
-                placeholder="Enter program code"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {programs.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Program</label>
+              {!showCustomProgram ? (
+                <select
+                  value={selectedProgram || ''}
+                  onChange={(e) => {
+                    if (e.target.value === '__custom__') {
+                      setShowCustomProgram(true)
+                      setSelectedProgram('')
+                    } else {
+                      setSelectedProgram(e.target.value)
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Select a program...</option>
                   {programs.map((prog) => (
-                    <button key={prog} onClick={() => setSelectedProgram(prog)}
-                      className={`px-3 py-1 text-xs rounded-full border transition ${
-                        selectedProgram === prog
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}>
-                      {prog}
-                    </button>
+                    <option key={prog} value={prog}>{prog}</option>
                   ))}
-                </div>
+                  <option value="__custom__">Other (enter manually)</option>
+                </select>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={customProgram}
+                    onChange={(e) => { setCustomProgram(e.target.value); setSelectedProgram(e.target.value) }}
+                    placeholder="Enter vendor program code"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => { setShowCustomProgram(false); setCustomProgram(''); setSelectedProgram('') }}
+                    className="text-xs text-blue-600 mt-1 hover:underline"
+                  >
+                    Back to program list
+                  </button>
+                </>
               )}
             </div>
 

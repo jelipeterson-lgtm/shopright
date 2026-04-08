@@ -61,8 +61,7 @@ const api = {
 
   searchStores: (query) => request(`/stores/search?q=${encodeURIComponent(query)}`),
 
-  getStorePrograms: (storeNumber, retailerName) =>
-    request(`/stores/programs?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}`),
+  getPrograms: () => request('/stores/programs'),
 
   // Visits
   createVisit: (data) => request('/visits', {

@@ -47,14 +47,8 @@ def search_stores(q: str = Query(..., min_length=1)):
 
 
 @router.get("/programs")
-def get_store_programs(store_number: str = Query(...), retailer_name: str = Query(...)):
-    """Get active programs for a specific store."""
-    result = (
-        supabase_admin.table("stores")
-        .select("program")
-        .eq("store_number", store_number)
-        .eq("retailer_name", retailer_name)
-        .execute()
-    )
-    programs = list(set(row["program"] for row in (result.data or [])))
+def get_programs():
+    """Get all available program codes from the programs table."""
+    result = supabase_admin.table("programs").select("code").order("code").execute()
+    programs = [row["code"] for row in (result.data or [])]
     return {"success": True, "data": programs, "error": None}
