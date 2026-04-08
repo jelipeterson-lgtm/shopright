@@ -34,6 +34,8 @@ function RoutePlanner() {
   const [showCheckinInput, setShowCheckinInput] = useState(false)
   const [hasGoogleKey, setHasGoogleKey] = useState(false)
   const [profileCity, setProfileCity] = useState('')
+  const [accepted, setAccepted] = useState(false)
+  const [accepting, setAccepting] = useState(false)
   const [maxDistance, setMaxDistance] = useState('')
   const [selectedCities, setSelectedCities] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -44,7 +46,8 @@ function RoutePlanner() {
     Promise.all([
       api.getProfile(),
       api.getRoutePlan(today),
-    ]).then(([profileResult, planResult]) => {
+      api.getVisits({ session_date: today }),
+    ]).then(([profileResult, planResult, visitsResult]) => {
       const p = profileResult.data
       const homeAddr = p.home_address || ''
       setStartAddress(p.default_start_address || homeAddr)
@@ -56,8 +59,29 @@ function RoutePlanner() {
         if (plan.start_address) setStartAddress(plan.start_address)
         if (plan.end_address) setEndAddress(plan.end_address)
         if (plan.stores_data && plan.stores_data.length > 0) {
-          setRoute(plan.stores_data)
-          recalcSummary(plan.stores_data)
+          let routeData = plan.stores_data
+
+          // Sync route status with actual visits from Stores page
+          const visits = visitsResult.data || []
+          if (visits.length > 0) {
+            setAccepted(true)
+            const completedKeys = new Set()
+            for (const v of visits) {
+              if (v.status === 'Complete') {
+                completedKeys.add(`${v.retailer_name}-${v.store_number}`)
+              }
+            }
+            routeData = routeData.map(s => {
+              const key = `${s.retailer_name}-${s.store_number}`
+              if (completedKeys.has(key) && s.status !== 'completed') {
+                return { ...s, status: 'completed' }
+              }
+              return s
+            })
+          }
+
+          setRoute(routeData)
+          recalcSummary(routeData)
         }
       }
     }).catch(() => {}).finally(() => setLoading(false))
@@ -354,6 +378,26 @@ function RoutePlanner() {
     setParseSuccess(null)
     setError(null)
     setShowFilters(false)
+  }
+
+  const handleAcceptRoute = async () => {
+    const upcoming = route.filter(s => s.status === 'upcoming')
+    if (!upcoming.length) return
+    setAccepting(true)
+    setError(null)
+    try {
+      const result = await api.batchCreateVisits(upcoming, today)
+      if (result.success) {
+        setAccepted(true)
+        setParseSuccess(`Route accepted! ${result.data.created} vendors added to Stores.${result.data.skipped ? ` ${result.data.skipped} already existed.` : ''}`)
+      } else {
+        setError(result.error)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setAccepting(false)
+    }
   }
 
   const handleCompleteStop = async (store, status) => {
@@ -741,6 +785,23 @@ function RoutePlanner() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Accept Route button */}
+        {upcomingStops.length > 0 && !optimizing && (
+          <div className="mb-4">
+            {accepted ? (
+              <button onClick={() => navigate('/session')}
+                className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700">
+                Go to Stores
+              </button>
+            ) : (
+              <button onClick={handleAcceptRoute} disabled={accepting}
+                className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+                {accepting ? 'Creating visits...' : `Accept Route — Add ${upcomingStops.reduce((sum, s) => sum + (s.vendors?.length || 0), 0)} Vendors to Stores`}
+              </button>
+            )}
           </div>
         )}
 

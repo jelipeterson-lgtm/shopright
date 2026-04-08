@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header, Query
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY
 from routers.auth import get_user_id
 from datetime import date, time, datetime
@@ -82,6 +82,64 @@ def create_visit(body: CreateVisit, authorization: str = Header(...)):
     }
     result = supabase_admin.table("vendor_visits").insert(visit).execute()
     return {"success": True, "data": result.data[0] if result.data else None, "error": None}
+
+
+class BatchCreateVisit(BaseModel):
+    stores: list  # List of route stores with vendors
+    session_date: str  # YYYY-MM-DD
+
+
+@router.post("/batch")
+def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)):
+    user_id = get_user_id(authorization)
+    now = datetime.utcnow()
+    visit_time = now.strftime("%H:%M")
+
+    # Check for existing visits on this date to avoid duplicates
+    existing = supabase_admin.table("vendor_visits").select(
+        "retailer_name, store_number, program"
+    ).eq("user_id", user_id).eq("session_date", body.session_date).execute()
+
+    existing_keys = set()
+    for v in (existing.data or []):
+        existing_keys.add((v["retailer_name"], v["store_number"], v["program"]))
+
+    created = []
+    skipped = 0
+    for store in body.stores:
+        vendors = store.get("vendors", [])
+        if not vendors:
+            continue
+        for program in vendors:
+            key = (store["retailer_name"], store["store_number"], program)
+            if key in existing_keys:
+                skipped += 1
+                continue
+            visit = {
+                "user_id": user_id,
+                "store_id": store.get("store_id"),
+                "retailer_name": store["retailer_name"],
+                "store_number": store["store_number"],
+                "program": program,
+                "address": store.get("address", ""),
+                "city": store.get("city", ""),
+                "state": store.get("state", ""),
+                "visit_date": body.session_date,
+                "visit_time": visit_time,
+                "session_date": body.session_date,
+                "status": "Draft",
+                "stop_open": True,
+            }
+            result = supabase_admin.table("vendor_visits").insert(visit).execute()
+            if result.data:
+                created.append(result.data[0])
+                existing_keys.add(key)
+
+    return {
+        "success": True,
+        "data": {"created": len(created), "skipped": skipped, "visits": created},
+        "error": None,
+    }
 
 
 @router.get("")

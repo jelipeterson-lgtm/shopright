@@ -69,6 +69,11 @@ const api = {
     body: JSON.stringify(data),
   }),
 
+  batchCreateVisits: (stores, sessionDate) => request('/visits/batch', {
+    method: 'POST',
+    body: JSON.stringify({ stores, session_date: sessionDate }),
+  }),
+
   getVisits: (params = {}) => {
     const qs = new URLSearchParams(params).toString()
     return request(`/visits${qs ? '?' + qs : ''}`)
