@@ -20,7 +20,7 @@ function HelpGuide() {
       items: [
         { q: 'What is the Reps Present field?', a: 'This is a gate field. If reps are present, select Pass and fill out the full form. If no reps are present, select Fail — the form will skip to Visit Recap.' },
         { q: 'What do Pass, Fail, and N/A mean?', a: 'Pass = everything is fine (default). Fail = there\'s an issue (requires a comment). N/A = not applicable to this vendor or store.' },
-        { q: 'What is the Visit Recap?', a: 'A text field at the bottom of every assessment where you describe the overall visit. This is the main narrative Smart Circle reads.' },
+        { q: 'What is the Visit Recap?', a: 'A text field at the bottom of every assessment where you describe the overall store visit. This is the main narrative Smart Circle reads.' },
         { q: 'Can I use voice input?', a: 'Yes! Tap the microphone icon next to any text field to speak instead of type. Works in Chrome on all devices.' },
         { q: 'What if I close the browser mid-form?', a: 'Your work auto-saves every time you change a field. Reopen the app and your data will be there.' },
       ],

@@ -216,7 +216,7 @@ function MonthlyInvoice() {
               <h2 className="text-sm font-semibold text-gray-700 mb-2">Summary</h2>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Vendor visits ({visits.length})</span>
+                  <span className="text-gray-500">Vendors ({visits.length})</span>
                   <span className="text-gray-800">${totals.vendorTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
