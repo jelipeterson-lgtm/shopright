@@ -345,11 +345,11 @@ function RoutePlanner() {
         <div className="flex gap-2 mb-4">
           <button onClick={() => { setShowEmailInput(!showEmailInput); setShowCheckinInput(false) }}
             className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-xs font-medium hover:bg-blue-700">
-            {showEmailInput ? 'Cancel' : 'Paste Event Email'}
+            {showEmailInput ? 'Cancel' : 'Paste Program Event Email'}
           </button>
           <button onClick={() => { setShowCheckinInput(!showCheckinInput); setShowEmailInput(false) }}
             className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-xs font-medium hover:bg-green-700">
-            {showCheckinInput ? 'Cancel' : 'Paste Check-in'}
+            {showCheckinInput ? 'Cancel' : 'Paste SMS Check-in'}
           </button>
         </div>
 
