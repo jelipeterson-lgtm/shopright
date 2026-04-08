@@ -698,7 +698,7 @@ function RoutePlanner() {
         {/* Route map overview */}
         {route.length > 1 && !optimizing && !showFilters && (
           <div className="mb-4">
-            <RouteMap route={route} />
+            <RouteMap route={route} startCoords={startCoords} endAddress={endAddress || startAddress} />
             <p className="text-[10px] text-gray-400 text-center mt-1">Tap a marker for details</p>
           </div>
         )}

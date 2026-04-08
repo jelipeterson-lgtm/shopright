@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-function RouteMap({ route }) {
+function RouteMap({ route, startCoords, endAddress }) {
   const mapRef = useRef(null)
   const mapInstance = useRef(null)
 
@@ -27,7 +27,26 @@ function RouteMap({ route }) {
       attribution: '&copy; OpenStreetMap',
     }).addTo(map)
 
-    const latLngs = points.map(p => [p.latitude, p.longitude])
+    const allLatLngs = []
+
+    // Add start marker if we have coords
+    if (startCoords) {
+      const startIcon = L.divIcon({
+        className: 'route-marker',
+        html: `<div style="
+          width: 28px; height: 28px; border-radius: 50%;
+          background: #16A34A;
+          color: white; font-size: 13px; font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+          border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        ">S</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      })
+      L.marker([startCoords.lat, startCoords.lng], { icon: startIcon }).addTo(map)
+        .bindPopup('<b>Start Location</b>')
+      allLatLngs.push([startCoords.lat, startCoords.lng])
+    }
 
     // Add numbered markers for each stop
     points.forEach((p, i) => {
@@ -45,6 +64,7 @@ function RouteMap({ route }) {
       })
 
       const marker = L.marker([p.latitude, p.longitude], { icon }).addTo(map)
+      allLatLngs.push([p.latitude, p.longitude])
 
       const vendors = p.vendors?.join(', ') || ''
       marker.bindPopup(`<div style="font-size:12px;line-height:1.4;">
@@ -56,34 +76,86 @@ function RouteMap({ route }) {
       </div>`)
     })
 
-    // Fit map to show all markers with padding
-    if (latLngs.length === 1) {
-      map.setView(latLngs[0], 12)
-    } else {
-      map.fitBounds(latLngs, { padding: [30, 30] })
+    // Geocode end address and add end marker, then draw route
+    const drawRoute = (endCoords) => {
+      if (endCoords) {
+        const endIcon = L.divIcon({
+          className: 'route-marker',
+          html: `<div style="
+            width: 28px; height: 28px; border-radius: 50%;
+            background: #DC2626;
+            color: white; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          ">E</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        })
+        if (mapInstance.current) {
+          L.marker([endCoords.lat, endCoords.lng], { icon: endIcon }).addTo(mapInstance.current)
+            .bindPopup('<b>End Location</b>')
+          allLatLngs.push([endCoords.lat, endCoords.lng])
+          mapInstance.current.fitBounds(allLatLngs, { padding: [30, 30] })
+        }
+      }
+
+      // Build OSRM coords: start + stops + end
+      if (points.length >= 1) {
+        const osrmPoints = []
+        if (startCoords) osrmPoints.push(`${startCoords.lng},${startCoords.lat}`)
+        points.forEach(p => osrmPoints.push(`${p.longitude},${p.latitude}`))
+        if (endCoords) osrmPoints.push(`${endCoords.lng},${endCoords.lat}`)
+
+        if (osrmPoints.length >= 2) {
+          fetch(`https://router.project-osrm.org/route/v1/driving/${osrmPoints.join(';')}?overview=full&geometries=geojson`)
+            .then(r => r.json())
+            .then(data => {
+              if (data.code === 'Ok' && data.routes?.[0]?.geometry && mapInstance.current) {
+                L.geoJSON(data.routes[0].geometry, {
+                  style: { color: '#2563EB', weight: 4, opacity: 0.7 },
+                }).addTo(mapInstance.current)
+              }
+            })
+            .catch(() => {
+              if (mapInstance.current) {
+                const fallbackPoints = []
+                if (startCoords) fallbackPoints.push([startCoords.lat, startCoords.lng])
+                points.forEach(p => fallbackPoints.push([p.latitude, p.longitude]))
+                if (endCoords) fallbackPoints.push([endCoords.lat, endCoords.lng])
+                L.polyline(fallbackPoints, { color: '#2563EB', weight: 3, opacity: 0.5, dashArray: '8,8' }).addTo(mapInstance.current)
+              }
+            })
+        }
+      }
     }
 
-    // Fetch actual road routes from OSRM (free) and draw them
-    if (points.length >= 2) {
-      const coords = points.map(p => `${p.longitude},${p.latitude}`).join(';')
-      fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`)
+    // Fit map initially to stop markers
+    if (allLatLngs.length === 1) {
+      map.setView(allLatLngs[0], 12)
+    } else if (allLatLngs.length > 1) {
+      map.fitBounds(allLatLngs, { padding: [30, 30] })
+    }
+
+    // Get end coordinates — use startCoords if same address or geocode
+    if (startCoords && (!endAddress || endAddress === '')) {
+      drawRoute(startCoords)
+    } else if (endAddress) {
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(endAddress)}&format=json&limit=1`, {
+        headers: { 'User-Agent': 'ShopRight/1.0' },
+      })
         .then(r => r.json())
-        .then(data => {
-          if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
-            const routeLine = L.geoJSON(data.routes[0].geometry, {
-              style: { color: '#2563EB', weight: 4, opacity: 0.7 },
-            })
-            if (mapInstance.current) {
-              routeLine.addTo(mapInstance.current)
-            }
+        .then(results => {
+          if (results?.[0]) {
+            drawRoute({ lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) })
+          } else if (startCoords) {
+            drawRoute(startCoords)
+          } else {
+            drawRoute(null)
           }
         })
-        .catch(() => {
-          // Fallback to straight lines if OSRM fails
-          if (mapInstance.current) {
-            L.polyline(latLngs, { color: '#2563EB', weight: 3, opacity: 0.5, dashArray: '8,8' }).addTo(mapInstance.current)
-          }
-        })
+        .catch(() => drawRoute(startCoords || null))
+    } else {
+      drawRoute(null)
     }
 
     return () => {
@@ -92,7 +164,7 @@ function RouteMap({ route }) {
         mapInstance.current = null
       }
     }
-  }, [route])
+  }, [route, startCoords, endAddress])
 
   return <div ref={mapRef} className="w-full h-56 rounded-xl border border-gray-200 bg-gray-100" />
 }
