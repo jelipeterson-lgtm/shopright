@@ -64,19 +64,21 @@ function RoutePlanner() {
   }, [today])
 
   const recalcSummary = (routeData) => {
-    const totalEarnings = routeData.reduce((sum, s) => sum + (s.earnings || 0), 0)
-    const totalDrive = routeData.reduce((sum, s) => sum + (s.drive_time_min || 0), 0)
-    const totalAssess = routeData.reduce((sum, s) => sum + (s.est_minutes || 0), 0)
+    const active = routeData.filter(s => s.status === 'upcoming' || s.status === 'completed')
+    const totalEarnings = active.reduce((sum, s) => sum + (s.earnings || 0), 0)
+    const totalDrive = active.reduce((sum, s) => sum + (s.drive_time_min || 0), 0)
+    const totalAssess = active.reduce((sum, s) => sum + (s.est_minutes || 0), 0)
     const totalTime = totalDrive + totalAssess
-    const totalMiles = routeData.reduce((sum, s) => sum + (s.drive_distance_mi || 0), 0)
-    setSummary({
-      total_stops: routeData.length,
-      total_vendors: routeData.reduce((sum, s) => sum + (s.vendors?.length || 0), 0),
+    const totalMiles = active.reduce((sum, s) => sum + (s.drive_distance_mi || 0), 0)
+    setSummary(prev => ({
+      ...prev,
+      total_stops: active.length,
+      total_vendors: active.reduce((sum, s) => sum + (s.vendors?.length || 0), 0),
       total_earnings: Math.round(totalEarnings),
       total_time_min: Math.round(totalTime),
       total_miles: Math.round(totalMiles * 10) / 10,
       projected_rate_per_hour: totalTime > 0 ? Math.round(totalEarnings / (totalTime / 60)) : 0,
-    })
+    }))
   }
 
   const handleParseEmail = async () => {
@@ -300,14 +302,23 @@ function RoutePlanner() {
   }
 
   const handleRemoveStop = (store) => {
-    const updated = route.filter(s =>
-      !(s.retailer_name === store.retailer_name && s.store_number === store.store_number)
+    const updated = route.map(s =>
+      s.retailer_name === store.retailer_name && s.store_number === store.store_number
+        ? { ...s, status: 'removed' }
+        : s
     )
     setRoute(updated)
     recalcSummary(updated)
-    setParsedStores(prev => prev.filter(s =>
-      !(s.retailer_name === store.retailer_name && s.store_number === store.store_number)
-    ))
+  }
+
+  const handleRestoreStop = (store) => {
+    const updated = route.map(s =>
+      s.retailer_name === store.retailer_name && s.store_number === store.store_number
+        ? { ...s, status: 'upcoming' }
+        : s
+    )
+    setRoute(updated)
+    recalcSummary(updated)
   }
 
   const moveStop = (index, direction) => {
@@ -320,8 +331,9 @@ function RoutePlanner() {
     setRoute(newRoute)
   }
 
-  const completedStops = route.filter(s => s.status === 'completed' || s.status === 'skipped')
-  const upcomingStops = route.filter(s => s.status !== 'completed' && s.status !== 'skipped')
+  const doneStatuses = ['completed', 'skipped', 'removed']
+  const completedStops = route.filter(s => doneStatuses.includes(s.status))
+  const upcomingStops = route.filter(s => !doneStatuses.includes(s.status))
 
   if (loading) {
     return (
@@ -553,7 +565,7 @@ function RoutePlanner() {
           </div>
         )}
 
-        {/* Completed/Skipped stops */}
+        {/* Completed/Skipped/Removed stops */}
         {completedStops.length > 0 && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Done ({completedStops.length})</p>
@@ -566,14 +578,24 @@ function RoutePlanner() {
                     <span className="text-xs font-bold text-gray-400 bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center">—</span>
                   )}
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600">{store.retailer_name} #{store.store_number}</p>
+                    <p className={`text-sm font-medium ${store.status === 'removed' ? 'text-gray-400 line-through' : 'text-gray-600'}`}>{store.retailer_name} #{store.store_number}</p>
                     <p className="text-xs text-gray-400">{store.vendors?.join(', ')} — ${store.earnings}</p>
                   </div>
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${
-                    store.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
-                  }`}>
-                    {store.status === 'completed' ? 'Visited' : 'Skipped'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${
+                      store.status === 'completed' ? 'bg-green-100 text-green-700'
+                        : store.status === 'removed' ? 'bg-red-50 text-red-500'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {store.status === 'completed' ? 'Visited' : store.status === 'removed' ? 'Removed' : 'Skipped'}
+                    </span>
+                    {store.status !== 'completed' && (
+                      <button onClick={() => handleRestoreStop(store)}
+                        className="text-[10px] font-medium text-blue-600 hover:underline">
+                        Restore
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
