@@ -8,57 +8,94 @@ import re
 
 router = APIRouter(prefix="/route", tags=["route"])
 
+KNOWN_RETAILERS = [
+    "costco", "costco bc", "kroger - fred meyer", "kroger-fred meyer",
+    "lowe's home improvement", "lowes home improvement", "lowe's",
+    "target", "sam's club", "sams club",
+]
+STATES = ['OR', 'WA', 'CO', 'ID', 'MT', 'NV', 'UT', 'CA', 'AZ', 'NM', 'WY']
+
 
 def parse_event_email(raw_text):
-    """Parse pasted event email into a list of store/vendor entries."""
+    """Parse pasted event email into a list of store/vendor entries.
+    Uses retailer name detection to find entry boundaries, avoiding alignment issues."""
     lines = [l.strip() for l in raw_text.split('\n') if l.strip()]
 
-    # Remove header row if present
-    header_keywords = ['retailer name', 'store no', 'address', 'city', 'state', 'zip code', 'event program']
-    lines = [l for l in lines if not any(k in l.lower() for k in header_keywords)]
+    # Find entry start positions by detecting retailer names
+    entry_starts = []
+    for i, line in enumerate(lines):
+        if any(line.lower().strip().startswith(r) for r in KNOWN_RETAILERS):
+            # Make sure it's not a header line
+            if 'retailer name' not in line.lower():
+                entry_starts.append(i)
 
-    # Remove greeting, signature, image references
-    skip_patterns = ['hey ', 'hi ', 'hello', 'sending over', 'please let us know', 'updated list',
-                     'image00', '.jpg', '.png', 'phoebe foss', 'smart circle', 'pfoss@',
-                     'warning:', 'confidential', 'mikee if', "i'll update", 'www.smartcircle']
-    lines = [l for l in lines if not any(p in l.lower() for p in skip_patterns)]
-
-    # Parse entries — each entry is 9 fields in sequence:
-    # Retailer Name, Store No, Address, City, State, Zip, Program, Start Date, End Date
     entries = []
-    i = 0
-    while i + 8 < len(lines):
-        retailer = lines[i]
-        store_no = lines[i + 1]
-        address = lines[i + 2]
-        city = lines[i + 3]
-        state = lines[i + 4]
-        zip_code = lines[i + 5]
-        program = lines[i + 6]
-        start_date = lines[i + 7]
-        end_date = lines[i + 8]
+    for idx, start in enumerate(entry_starts):
+        end = entry_starts[idx + 1] if idx + 1 < len(entry_starts) else len(lines)
+        block = lines[start:end]
 
-        # Validate this looks like a real entry
-        if state.upper() in ['OR', 'WA', 'CO', 'ID', 'MT', 'NV', 'UT', 'CA'] and len(store_no) <= 5:
-            # Check if dates are within current range
-            try:
-                end_dt = datetime.strptime(end_date, '%m/%d/%Y')
-                if end_dt >= datetime.now():
-                    entries.append({
-                        'retailer_name': retailer.strip(),
-                        'store_number': store_no.strip(),
-                        'address': address.strip(),
-                        'city': city.strip(),
-                        'state': state.strip().upper(),
-                        'zip_code': zip_code.strip(),
-                        'program': program.strip(),
-                        'start_date': start_date,
-                        'end_date': end_date,
-                    })
-            except ValueError:
-                pass
+        if len(block) < 7:
+            continue
 
-        i += 9
+        retailer = block[0]
+        store_no = block[1]
+
+        # Validate store number
+        if not store_no.strip().replace('-', '').isdigit() or len(store_no.strip()) > 6:
+            continue
+
+        # Find the state line — scan for a 2-letter state code
+        state_idx = None
+        for j in range(2, min(len(block), 8)):
+            if block[j].upper().strip() in STATES and len(block[j].strip()) <= 2:
+                state_idx = j
+                break
+
+        if state_idx is None:
+            continue
+
+        city = block[state_idx - 1]
+        address = block[2] if state_idx >= 4 else ''
+        state = block[state_idx].upper().strip()
+
+        remaining = block[state_idx + 1:]
+        if len(remaining) < 2:
+            continue
+
+        zip_code = remaining[0]
+        program = remaining[1] if len(remaining) > 1 else ''
+        start_date = remaining[2] if len(remaining) > 2 else ''
+        end_date = remaining[3] if len(remaining) > 3 else ''
+
+        # Skip if end date is in the past
+        if end_date:
+            expired = False
+            for fmt in ['%m/%d/%Y', '%m/%d/%y']:
+                try:
+                    end_dt = datetime.strptime(end_date.strip(), fmt)
+                    if end_dt < datetime.now():
+                        expired = True
+                    break
+                except ValueError:
+                    continue
+            if expired:
+                continue
+
+        # Skip non-program lines
+        if not program or program.lower() in ['start date', 'end date', '']:
+            continue
+
+        entries.append({
+            'retailer_name': retailer.strip(),
+            'store_number': store_no.strip(),
+            'address': address.strip(),
+            'city': city.strip(),
+            'state': state,
+            'zip_code': zip_code.strip(),
+            'program': program.strip(),
+            'start_date': start_date.strip(),
+            'end_date': end_date.strip(),
+        })
 
     # Deduplicate by store + program
     seen = set()
@@ -76,7 +113,6 @@ def parse_checkin_text(raw_text):
     """Parse pasted check-in text message into confirmed store/vendor entries."""
     lines = [l.strip() for l in raw_text.split('\n') if l.strip()]
 
-    # Remove greeting/separator lines
     skip_patterns = ['hi ', 'hey ', 'hello', 'here are', 'checked in', "i'll update",
                      '---', '+++', '++', 'update later', 'additional check']
 
@@ -96,7 +132,6 @@ def parse_checkin_text(raw_text):
                 'state': parts[4].strip().upper(),
             })
 
-    # Deduplicate
     seen = set()
     unique = []
     for e in entries:
@@ -114,11 +149,9 @@ class ParseEmailRequest(BaseModel):
 
 @router.post("/parse-email")
 def parse_email(body: ParseEmailRequest, authorization: str = Header(...)):
-    """Parse pasted event email and return extracted stores/vendors."""
     user_id = get_user_id(authorization)
     entries = parse_event_email(body.raw_text)
 
-    # Enrich with store coordinates from database
     for entry in entries:
         store = supabase_admin.table("stores").select("id, latitude, longitude, address").eq(
             "store_number", entry["store_number"]
@@ -130,7 +163,6 @@ def parse_email(body: ParseEmailRequest, authorization: str = Header(...)):
             if not entry.get("address") and store.data[0].get("address"):
                 entry["address"] = store.data[0]["address"]
 
-    # Check monthly visit counts
     now = datetime.now()
     visit_month = now.strftime("%Y-%m")
     history = supabase_admin.table("store_visit_history").select("*").eq(
@@ -156,11 +188,9 @@ class ParseCheckinRequest(BaseModel):
 
 @router.post("/parse-checkin")
 def parse_checkin(body: ParseCheckinRequest, authorization: str = Header(...)):
-    """Parse pasted check-in text and return confirmed stores."""
     user_id = get_user_id(authorization)
     entries = parse_checkin_text(body.raw_text)
 
-    # Enrich with store coordinates
     for entry in entries:
         store = supabase_admin.table("stores").select("id, latitude, longitude, address, zip_code").eq(
             "store_number", entry["store_number"]
@@ -172,7 +202,6 @@ def parse_checkin(body: ParseCheckinRequest, authorization: str = Header(...)):
             entry["address"] = store.data[0].get("address", "")
             entry["zip_code"] = store.data[0].get("zip_code", "")
 
-    # Check monthly visit counts
     now = datetime.now()
     visit_month = now.strftime("%Y-%m")
     history = supabase_admin.table("store_visit_history").select("*").eq(
@@ -193,17 +222,15 @@ def parse_checkin(body: ParseCheckinRequest, authorization: str = Header(...)):
 
 
 class OptimizeRequest(BaseModel):
-    stores: list  # list of store entries with lat/lng
+    stores: list
     start_address: str
     end_address: Optional[str] = None
 
 
 @router.post("/optimize")
 def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
-    """Optimize route order using Google Maps Distance Matrix."""
     user_id = get_user_id(authorization)
 
-    # Get user's Google Maps API key
     profile = supabase_admin.table("profiles").select("google_maps_api_key").eq("id", user_id).single().execute()
     api_key = profile.data.get("google_maps_api_key") if profile.data else None
 
@@ -211,12 +238,10 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         return {"success": False, "data": None, "error": "Google Maps API key required. Set it up in Settings."}
 
     end_address = body.end_address or body.start_address
-
-    # Filter to non-blocked stores with coordinates
     candidate_stores = [s for s in body.stores if not s.get("blocked") and s.get("latitude")]
 
     if not candidate_stores:
-        return {"success": True, "data": {"route": [], "summary": {}}, "error": None}
+        return {"success": True, "data": {"route": [], "summary": {"total_stops": 0, "total_vendors": 0, "total_earnings": 0, "total_time_min": 0, "total_miles": 0, "projected_rate_per_hour": 0}}, "error": None}
 
     # Group vendors by store location
     store_groups = {}
@@ -237,13 +262,11 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     stores = list(store_groups.values())
 
-    # Calculate earnings and time per store
     for store in stores:
         vendor_count = len(store["vendors"])
         store["earnings"] = 50 + (15 * (vendor_count - 1))
         store["est_minutes"] = 20 + (7.5 * (vendor_count - 1))
 
-    # Get distance matrix from Google Maps
     import httpx
 
     origins = [body.start_address] + [f"{s['latitude']},{s['longitude']}" for s in stores]
@@ -264,17 +287,13 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         matrix = r.json()
 
         if matrix.get("status") != "OK":
-            return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('status')}"}
+            return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('error_message', matrix.get('status'))}"}
     except Exception as e:
         return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
 
-    # Extract drive times (in minutes)
     rows = matrix.get("rows", [])
     num_stores = len(stores)
 
-    # Build drive time matrix
-    # rows[0] = from start to each store + end
-    # rows[1..n] = from each store to each store + end
     drive_times = {}
     drive_distances = {}
 
@@ -283,16 +302,16 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         for j, elem in enumerate(elements):
             if elem.get("status") == "OK":
                 duration = elem.get("duration_in_traffic", elem.get("duration", {}))
-                drive_times[(i, j)] = duration.get("value", 9999) / 60  # seconds to minutes
-                drive_distances[(i, j)] = elem.get("distance", {}).get("value", 0) / 1609.34  # meters to miles
+                drive_times[(i, j)] = duration.get("value", 9999) / 60
+                drive_distances[(i, j)] = elem.get("distance", {}).get("value", 0) / 1609.34
             else:
                 drive_times[(i, j)] = 9999
                 drive_distances[(i, j)] = 0
 
-    # Greedy optimization: pick best next store by earnings per time
+    # Greedy optimization
     route = []
     remaining = list(range(num_stores))
-    current = 0  # start position (index 0 in origins)
+    current = 0
 
     while remaining:
         best_score = -1
@@ -312,18 +331,14 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             break
 
         store = stores[best_idx]
-        drive_min = drive_times.get((current, best_idx), 0)
-        drive_mi = drive_distances.get((current, best_idx), 0)
-
-        store["drive_time_min"] = round(drive_min, 1)
-        store["drive_distance_mi"] = round(drive_mi, 1)
+        store["drive_time_min"] = round(drive_times.get((current, best_idx), 0), 1)
+        store["drive_distance_mi"] = round(drive_distances.get((current, best_idx), 0), 1)
         store["status"] = "upcoming"
 
         route.append(store)
         remaining.remove(best_idx)
-        current = best_idx + 1  # +1 because origin[0] is start address
+        current = best_idx + 1
 
-    # Add return drive time
     if route:
         last_store_idx = stores.index(route[-1])
         return_time = drive_times.get((last_store_idx + 1, num_stores), 0)
@@ -332,7 +347,6 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         return_time = 0
         return_distance = 0
 
-    # Calculate summary
     total_earnings = sum(s["earnings"] for s in route)
     total_assess_time = sum(s["est_minutes"] for s in route)
     total_drive_time = sum(s["drive_time_min"] for s in route) + return_time
@@ -364,9 +378,7 @@ class SavePlanRequest(BaseModel):
 
 @router.post("/plan")
 def save_plan(body: SavePlanRequest, authorization: str = Header(...)):
-    """Save or update a route plan for a date."""
     user_id = get_user_id(authorization)
-
     plan = {
         "user_id": user_id,
         "plan_date": body.plan_date,
@@ -382,18 +394,15 @@ def save_plan(body: SavePlanRequest, authorization: str = Header(...)):
     result = supabase_admin.table("route_plans").upsert(
         plan, on_conflict="user_id,plan_date"
     ).execute()
-
     return {"success": True, "data": result.data[0] if result.data else None, "error": None}
 
 
 @router.get("/plan/{plan_date}")
 def get_plan(plan_date: str, authorization: str = Header(...)):
-    """Get saved route plan for a date."""
     user_id = get_user_id(authorization)
     result = supabase_admin.table("route_plans").select("*").eq(
         "user_id", user_id
     ).eq("plan_date", plan_date).limit(1).execute()
-
     if result.data:
         return {"success": True, "data": result.data[0], "error": None}
     return {"success": True, "data": None, "error": None}
@@ -401,11 +410,9 @@ def get_plan(plan_date: str, authorization: str = Header(...)):
 
 @router.post("/plan/{plan_date}/complete-stop")
 def complete_stop(plan_date: str, store_number: str = Query(...), retailer_name: str = Query(...), authorization: str = Header(...)):
-    """Mark a store as completed on the route and update visit history."""
     user_id = get_user_id(authorization)
     visit_month = datetime.now().strftime("%Y-%m")
 
-    # Update visit history
     existing = supabase_admin.table("store_visit_history").select("*").eq(
         "user_id", user_id
     ).eq("store_number", store_number).eq("retailer_name", retailer_name).eq(
@@ -430,12 +437,9 @@ def complete_stop(plan_date: str, store_number: str = Query(...), retailer_name:
 
 @router.get("/visit-history")
 def get_visit_history(authorization: str = Header(...)):
-    """Get monthly visit counts for current month."""
     user_id = get_user_id(authorization)
     visit_month = datetime.now().strftime("%Y-%m")
-
     result = supabase_admin.table("store_visit_history").select("*").eq(
         "user_id", user_id
     ).eq("visit_month", visit_month).execute()
-
     return {"success": True, "data": result.data or [], "error": None}

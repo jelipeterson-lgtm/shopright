@@ -15,6 +15,8 @@ function RoutePlanner() {
   const [route, setRoute] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('17:00')
   const [parsing, setParsing] = useState(false)
   const [optimizing, setOptimizing] = useState(false)
   const [error, setError] = useState(null)
@@ -278,6 +280,18 @@ function RoutePlanner() {
               placeholder="Same as start (default)"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 mb-1">Start Time</label>
+              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 mb-1">End Time</label>
+              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
         </div>
 
         {/* Input buttons */}
@@ -333,25 +347,27 @@ function RoutePlanner() {
           <div className="bg-blue-600 text-white rounded-xl p-4 mb-4">
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>
-                <p className="text-xl font-bold">{summary.total_stops}</p>
+                <p className="text-xl font-bold">{summary.total_stops || 0}</p>
                 <p className="text-[10px] text-blue-200">Stops</p>
               </div>
               <div>
-                <p className="text-xl font-bold">${summary.total_earnings}</p>
+                <p className="text-xl font-bold">${summary.total_earnings || 0}</p>
                 <p className="text-[10px] text-blue-200">Earnings</p>
               </div>
               <div>
-                <p className="text-xl font-bold">{Math.round(summary.total_time_min)}m</p>
+                <p className="text-xl font-bold">{Math.round(summary.total_time_min || 0)}m</p>
                 <p className="text-[10px] text-blue-200">Total Time</p>
               </div>
               <div>
-                <p className="text-xl font-bold">${summary.projected_rate_per_hour}</p>
+                <p className="text-xl font-bold">${Math.round(summary.projected_rate_per_hour || 0)}</p>
                 <p className="text-[10px] text-blue-200">$/Hour</p>
               </div>
             </div>
-            {summary.total_miles > 0 && (
-              <p className="text-center text-[10px] text-blue-200 mt-2">{summary.total_miles} miles total</p>
-            )}
+            <div className="flex justify-center gap-4 mt-2 text-[10px] text-blue-200">
+              {(summary.total_miles || 0) > 0 && <span>{summary.total_miles} miles</span>}
+              {summary.total_vendors > 0 && <span>{summary.total_vendors} vendors</span>}
+              {startTime && endTime && <span>Window: {startTime}–{endTime}</span>}
+            </div>
           </div>
         )}
 
