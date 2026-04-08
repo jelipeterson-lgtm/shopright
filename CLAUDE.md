@@ -317,11 +317,15 @@ RLS: Users can read/insert/update/delete their own visits.
 | POST | /payments/portal | Yes | Stripe customer portal |
 | POST | /payments/redeem | Yes | Redeem promo code |
 | POST | /payments/webhook | No | Stripe webhook handler |
+| POST | /visits/batch | Yes | Batch create visits from accepted route |
+| DELETE | /visits/by-store | Yes | Delete Draft visits by store/date (route skip/remove) |
 | POST | /route/parse-email | Yes | Parse event email into store/vendor entries (AI + fallback) |
 | POST | /route/parse-checkin | Yes | Parse check-in text into store/vendor entries (AI + fallback) |
 | POST | /route/optimize | Yes | Optimize route via Google Maps Distance Matrix API |
-| GET | /route/plan | Yes | Get saved route plan |
+| GET | /route/geocode | Yes | Geocode address to lat/lng via Nominatim |
+| GET | /route/plan/{date} | Yes | Get saved route plan for date |
 | POST | /route/plan | Yes | Save route plan |
+| POST | /route/plan/{date}/complete-stop | Yes | Record store visit in history |
 
 ---
 
@@ -354,6 +358,8 @@ RLS: Users can read/insert/update/delete their own visits.
 13. **Dates**: All dates displayed as MM/DD/YY on the website and in Excel. Times as hh:mm AM/PM.
 
 14. **Phone numbers**: Always formatted as (555) 555-5555 in invoice output regardless of input format.
+
+15. **Route Planner**: Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using Google Maps Distance Matrix API with time window constraint (start/end times). Schedule shows estimated arrival/departure at each stop. "Accept Route" batch-creates Draft vendor visits on Stores tab. "Skip"/"Remove" deletes Draft visits from Stores. Completing assessment on Stores syncs back to Route as "Assessed". Re-optimize uses current time and traffic. Distance Matrix batched at 10×10 elements per request (free tier).
 
 ---
 
