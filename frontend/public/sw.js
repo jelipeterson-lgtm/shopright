@@ -12,7 +12,9 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  // Let all requests pass through to network
-  // This gives us PWA installability without complex caching
-  event.respondWith(fetch(event.request))
+  // Pass through to network; if it fails, return a basic error response
+  // instead of throwing inside respondWith
+  event.respondWith(
+    fetch(event.request).catch(() => new Response('Network error', { status: 503 }))
+  )
 })
