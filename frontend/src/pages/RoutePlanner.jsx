@@ -178,7 +178,7 @@ function RoutePlanner() {
         timeWindowMinutes = (eh * 60 + em) - (sh * 60 + sm)
         if (timeWindowMinutes <= 0) timeWindowMinutes = null
       }
-      const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress, timeWindowMinutes)
+      const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress, timeWindowMinutes, startTime)
       if (result.success) {
         setRoute(result.data.route)
         setSummary(result.data.summary)
@@ -513,9 +513,13 @@ function RoutePlanner() {
             <div className="flex justify-center gap-4 mt-2 text-[10px] text-blue-200">
               {(summary.total_miles || 0) > 0 && <span>{summary.total_miles} miles</span>}
               {summary.total_vendors > 0 && <span>{summary.total_vendors} vendors</span>}
-              {startTime && endTime && <span>Window: {startTime}–{endTime}</span>}
-              {summary.return_drive_min > 0 && <span>+{Math.round(summary.return_drive_min)}m return</span>}
             </div>
+            {(summary.depart_home || summary.arrive_home) && (
+              <div className="flex justify-center gap-3 mt-1 text-[10px] text-blue-200">
+                {summary.depart_home && <span>Leave {summary.depart_home}</span>}
+                {summary.arrive_home && <span>Home by {summary.arrive_home}</span>}
+              </div>
+            )}
             {summary.skipped_vendors > 0 && (
               <p className="text-center text-[10px] text-blue-300 mt-1">
                 {summary.skipped_vendors} vendors skipped (didn't fit in time window)
@@ -593,7 +597,13 @@ function RoutePlanner() {
                       </div>
                       {store.address && <p className="text-xs text-gray-400 mt-1 ml-8">{store.address}, {store.city}</p>}
                       <p className="text-xs text-gray-500 mt-1 ml-8">{store.vendors?.join(', ')}</p>
-                      <div className="flex flex-wrap gap-2 mt-2 ml-8">
+                      {/* Schedule */}
+                      {store.est_arrival && (
+                        <p className="text-xs font-medium text-blue-600 mt-1.5 ml-8">
+                          Arrive {store.est_arrival} — Leave {store.est_depart}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-1.5 ml-8">
                         {store.drive_time_min > 0 && (
                           <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{Math.round(store.drive_time_min)} min drive</span>
                         )}
@@ -601,7 +611,7 @@ function RoutePlanner() {
                           <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{store.drive_distance_mi} mi</span>
                         )}
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">${store.earnings}</span>
-                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">~{Math.round(store.est_minutes)} min</span>
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">~{Math.round(store.est_minutes)} min assess</span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 ml-2">

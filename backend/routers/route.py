@@ -319,6 +319,7 @@ class OptimizeRequest(BaseModel):
     start_address: str
     end_address: Optional[str] = None
     time_window_minutes: Optional[int] = None
+    start_time: Optional[str] = None  # "HH:MM" format
 
 
 @router.post("/optimize")
@@ -408,12 +409,32 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     except Exception as e:
         return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
 
-    # Greedy optimization with time window constraint
+    # Parse start time for schedule building
+    start_hour, start_minute = 10, 0  # default 10:00 AM
+    if body.start_time:
+        try:
+            parts = body.start_time.split(":")
+            start_hour, start_minute = int(parts[0]), int(parts[1])
+        except (ValueError, IndexError):
+            pass
+
+    def minutes_to_time(total_min):
+        """Convert elapsed minutes from midnight to HH:MM AM/PM format."""
+        h = int(total_min // 60) % 24
+        m = int(total_min % 60)
+        ampm = "AM" if h < 12 else "PM"
+        display_h = h if h <= 12 else h - 12
+        if display_h == 0:
+            display_h = 12
+        return f"{display_h}:{m:02d} {ampm}"
+
+    # Greedy optimization with time window and schedule tracking
     max_minutes = body.time_window_minutes or 99999
     route = []
     remaining = list(range(num_stores))
     current = 0
     elapsed = 0
+    clock = start_hour * 60 + start_minute  # minutes from midnight
 
     while remaining:
         best_score = -1
@@ -443,7 +464,13 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         store["drive_distance_mi"] = round(drive_distances.get((current, best_idx), 0), 1)
         store["status"] = "upcoming"
 
+        # Schedule: arrival, assessment window, departure
+        arrival = clock + drive_min
+        store["est_arrival"] = minutes_to_time(arrival)
+        store["est_depart"] = minutes_to_time(arrival + store["est_minutes"])
+
         elapsed += drive_min + store["est_minutes"]
+        clock = arrival + store["est_minutes"]
         route.append(store)
         remaining.remove(best_idx)
         current = best_idx + 1
@@ -465,6 +492,10 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     skipped_count = len(candidate_stores) - sum(len(s["vendors"]) for s in route)
 
+    # Schedule metadata
+    depart_home = minutes_to_time(start_hour * 60 + start_minute)
+    arrive_home = minutes_to_time(clock + return_time)
+
     summary = {
         "total_stops": len(route),
         "total_vendors": sum(len(s["vendors"]) for s in route),
@@ -474,6 +505,8 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         "projected_rate_per_hour": round(projected_rate, 2),
         "return_drive_min": round(return_time, 1),
         "return_drive_mi": round(return_distance, 1),
+        "depart_home": depart_home,
+        "arrive_home": arrive_home,
         "time_window_minutes": max_minutes if max_minutes < 99999 else None,
         "skipped_vendors": skipped_count if skipped_count > 0 else 0,
     }
