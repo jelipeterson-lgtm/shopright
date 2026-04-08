@@ -362,44 +362,48 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     import httpx
 
-    origins = [body.start_address] + [f"{s['latitude']},{s['longitude']}" for s in stores]
-    destinations = [f"{s['latitude']},{s['longitude']}" for s in stores] + [end_address]
-
-    try:
-        r = httpx.get(
-            "https://maps.googleapis.com/maps/api/distancematrix/json",
-            params={
-                "origins": "|".join(origins),
-                "destinations": "|".join(destinations),
-                "key": api_key,
-                "departure_time": "now",
-                "traffic_model": "best_guess",
-            },
-            timeout=30,
-        )
-        matrix = r.json()
-
-        if matrix.get("status") != "OK":
-            return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('error_message', matrix.get('status'))}"}
-    except Exception as e:
-        return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
-
-    rows = matrix.get("rows", [])
+    all_origins = [body.start_address] + [f"{s['latitude']},{s['longitude']}" for s in stores]
+    all_destinations = [f"{s['latitude']},{s['longitude']}" for s in stores] + [end_address]
     num_stores = len(stores)
 
     drive_times = {}
     drive_distances = {}
 
-    for i, row in enumerate(rows):
-        elements = row.get("elements", [])
-        for j, elem in enumerate(elements):
-            if elem.get("status") == "OK":
-                duration = elem.get("duration_in_traffic", elem.get("duration", {}))
-                drive_times[(i, j)] = duration.get("value", 9999) / 60
-                drive_distances[(i, j)] = elem.get("distance", {}).get("value", 0) / 1609.34
-            else:
-                drive_times[(i, j)] = 9999
-                drive_distances[(i, j)] = 0
+    # Batch requests to stay under Google's 100 elements per request limit
+    MAX_ELEMENTS = 100
+    try:
+        for o_start in range(0, len(all_origins), max(1, MAX_ELEMENTS // len(all_destinations))):
+            o_end = min(o_start + max(1, MAX_ELEMENTS // len(all_destinations)), len(all_origins))
+            batch_origins = all_origins[o_start:o_end]
+
+            r = httpx.get(
+                "https://maps.googleapis.com/maps/api/distancematrix/json",
+                params={
+                    "origins": "|".join(batch_origins),
+                    "destinations": "|".join(all_destinations),
+                    "key": api_key,
+                    "departure_time": "now",
+                    "traffic_model": "best_guess",
+                },
+                timeout=30,
+            )
+            matrix = r.json()
+
+            if matrix.get("status") != "OK":
+                return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('error_message', matrix.get('status'))}"}
+
+            for i, row in enumerate(matrix.get("rows", [])):
+                actual_i = o_start + i
+                for j, elem in enumerate(row.get("elements", [])):
+                    if elem.get("status") == "OK":
+                        duration = elem.get("duration_in_traffic", elem.get("duration", {}))
+                        drive_times[(actual_i, j)] = duration.get("value", 9999) / 60
+                        drive_distances[(actual_i, j)] = elem.get("distance", {}).get("value", 0) / 1609.34
+                    else:
+                        drive_times[(actual_i, j)] = 9999
+                        drive_distances[(actual_i, j)] = 0
+    except Exception as e:
+        return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
 
     # Greedy optimization
     route = []
