@@ -169,7 +169,7 @@ function MonthlyInvoice() {
           <p className="text-gray-400 text-sm text-center py-8">Loading...</p>
         ) : visits.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-gray-400 text-sm">No complete visits for {monthNames[month]} {year}</p>
+            <p className="text-gray-400 text-sm">No completed vendors for {monthNames[month]} {year}</p>
           </div>
         ) : (
           <>
