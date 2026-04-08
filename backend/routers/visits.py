@@ -215,6 +215,29 @@ def unlock_visit(visit_id: str, authorization: str = Header(...)):
     return {"success": True, "data": result.data[0] if result.data else None, "error": None}
 
 
+@router.delete("/by-store")
+def delete_visits_by_store(
+    store_number: str = Query(...),
+    retailer_name: str = Query(...),
+    session_date: str = Query(...),
+    authorization: str = Header(...),
+):
+    """Delete all Draft visits for a specific store on a given date. Won't delete completed assessments."""
+    user_id = get_user_id(authorization)
+    result = (
+        supabase_admin.table("vendor_visits")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("store_number", store_number)
+        .eq("retailer_name", retailer_name)
+        .eq("session_date", session_date)
+        .eq("status", "Draft")
+        .execute()
+    )
+    deleted = len(result.data) if result.data else 0
+    return {"success": True, "data": {"deleted": deleted}, "error": None}
+
+
 @router.post("/close-stop")
 def close_stop(
     store_number: str = Query(...),

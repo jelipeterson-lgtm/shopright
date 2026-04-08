@@ -92,6 +92,11 @@ const api = {
 
   discardVisit: (id) => request(`/visits/${id}`, { method: 'DELETE' }),
 
+  deleteVisitsByStore: (storeNumber, retailerName, sessionDate) =>
+    request(`/visits/by-store?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}&session_date=${sessionDate}`, {
+      method: 'DELETE',
+    }),
+
   closeStop: (storeNumber, retailerName, sessionDate) =>
     request(`/visits/close-stop?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}&session_date=${sessionDate}`, {
       method: 'POST',

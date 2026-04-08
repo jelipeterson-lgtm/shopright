@@ -416,10 +416,16 @@ function RoutePlanner() {
     }
   }
 
-  const handleCompleteStop = async (store, status) => {
+  const handleAssessVendors = (store) => {
+    // Navigate to Stores tab — the store's visits are already there from Accept Route
+    navigate('/session')
+  }
+
+  const handleSkipOrRemove = async (store, status) => {
     try {
-      if (status === 'completed') {
-        await api.completeRouteStop(today, store.store_number, store.retailer_name)
+      // Delete Draft visits for this store from the Stores tab
+      if (accepted) {
+        await api.deleteVisitsByStore(store.store_number, store.retailer_name, today)
       }
       const updated = route.map(s =>
         s.retailer_name === store.retailer_name && s.store_number === store.store_number
@@ -433,24 +439,22 @@ function RoutePlanner() {
     }
   }
 
-  const handleRemoveStop = (store) => {
-    const updated = route.map(s =>
-      s.retailer_name === store.retailer_name && s.store_number === store.store_number
-        ? { ...s, status: 'removed' }
-        : s
-    )
-    setRoute(updated)
-    recalcSummary(updated)
-  }
-
-  const handleRestoreStop = (store) => {
-    const updated = route.map(s =>
-      s.retailer_name === store.retailer_name && s.store_number === store.store_number
-        ? { ...s, status: 'upcoming' }
-        : s
-    )
-    setRoute(updated)
-    recalcSummary(updated)
+  const handleRestoreStop = async (store) => {
+    try {
+      // Re-create visits on Stores tab if route was accepted
+      if (accepted) {
+        await api.batchCreateVisits([store], today)
+      }
+      const updated = route.map(s =>
+        s.retailer_name === store.retailer_name && s.store_number === store.store_number
+          ? { ...s, status: 'upcoming' }
+          : s
+      )
+      setRoute(updated)
+      recalcSummary(updated)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   const moveStop = (index, direction) => {
@@ -725,7 +729,7 @@ function RoutePlanner() {
                         : store.status === 'removed' ? 'bg-red-50 text-red-500'
                         : 'bg-gray-200 text-gray-500'
                     }`}>
-                      {store.status === 'completed' ? 'Visited' : store.status === 'removed' ? 'Removed' : 'Skipped'}
+                      {store.status === 'completed' ? 'Assessed' : store.status === 'removed' ? 'Removed' : 'Skipped'}
                     </span>
                     {store.status !== 'completed' && (
                       <button onClick={() => handleRestoreStop(store)}
@@ -785,15 +789,15 @@ function RoutePlanner() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <button onClick={() => handleCompleteStop(store, 'completed')}
-                      className="flex-1 bg-green-50 text-green-700 py-1.5 rounded-lg text-xs font-medium border border-green-200 hover:bg-green-100">
-                      Done
+                    <button onClick={() => handleAssessVendors(store)}
+                      className="flex-1 bg-blue-50 text-blue-700 py-1.5 rounded-lg text-xs font-medium border border-blue-200 hover:bg-blue-100">
+                      Assess Vendors
                     </button>
-                    <button onClick={() => handleCompleteStop(store, 'skipped')}
+                    <button onClick={() => handleSkipOrRemove(store, 'skipped')}
                       className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
-                      Skipped
+                      Skip
                     </button>
-                    <button onClick={() => handleRemoveStop(store)}
+                    <button onClick={() => handleSkipOrRemove(store, 'removed')}
                       className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200 hover:bg-red-100">
                       Remove
                     </button>
