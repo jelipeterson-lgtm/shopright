@@ -331,14 +331,25 @@ function RoutePlanner() {
   }
 
   const handleReoptimize = async () => {
-    if (!parsedStores.length) return
+    // Use parsedStores if available, otherwise rebuild from current route
+    const storePool = parsedStores.length > 0 ? parsedStores : route
+    if (!storePool.length) return
+
     setOptimizing(true)
     setError(null)
+    setParseSuccess(null)
     try {
       const completedStoreKeys = new Set(
         route.filter(s => s.status === 'completed').map(s => `${s.retailer_name}-${s.store_number}`)
       )
-      const filtered = getFilteredStores().filter(s => !completedStoreKeys.has(`${s.retailer_name}-${s.store_number}`))
+
+      // Filter from pool, exclude completed
+      let candidates = storePool.filter(s => !completedStoreKeys.has(`${s.retailer_name}-${s.store_number}`))
+
+      // Apply distance/city filters if parsedStores available
+      if (parsedStores.length > 0) {
+        candidates = getFilteredStores().filter(s => !completedStoreKeys.has(`${s.retailer_name}-${s.store_number}`))
+      }
 
       const now = new Date()
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -352,16 +363,19 @@ function RoutePlanner() {
         if (timeWindowMinutes <= 0) timeWindowMinutes = null
       }
 
-      const result = await api.optimizeRoute(filtered, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      setAccepted(false)
+      const result = await api.optimizeRoute(candidates, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
       if (result.success) {
         const kept = route.filter(s => s.status === 'completed')
-        setRoute([...kept, ...result.data.route])
+        const newRoute = [...kept, ...result.data.route]
+        setRoute(newRoute)
         setSummary(result.data.summary)
+        setParseSuccess(`Route re-optimized with ${result.data.route.length} stops using current traffic.`)
         await api.saveRoutePlan({
           plan_date: today,
           start_address: startAddress,
           end_address: endAddress || startAddress,
-          stores_data: [...kept, ...result.data.route],
+          stores_data: newRoute,
         })
       } else {
         setError(result.error)
