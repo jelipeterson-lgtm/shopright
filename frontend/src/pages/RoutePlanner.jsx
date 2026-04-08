@@ -157,10 +157,13 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowCheckinInput(false)
       setCheckinText('')
-      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new). Use filters below to narrow down, then optimize.`)
-      setShowFilters(true)
-      setSelectedCities(null)
-      setMaxDistance('')
+      const hasExistingRoute = route.length > 0
+      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Use filters below to narrow down, then optimize.'}`)
+      if (!hasExistingRoute) {
+        setShowFilters(true)
+        setSelectedCities(null)
+        setMaxDistance('')
+      }
     } catch (err) {
       setError(err.message)
     } finally {
