@@ -204,7 +204,16 @@ function RoutePlanner() {
     return filtered
   }
 
-  const availableCities = [...new Set(parsedStores.map(s => (s.city || '').trim()).filter(Boolean))].sort()
+  const availableCities = (() => {
+    const cityMap = {}
+    for (const s of parsedStores) {
+      const raw = (s.city || '').trim()
+      if (!raw) continue
+      const key = raw.toLowerCase()
+      if (!cityMap[key]) cityMap[key] = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase()
+    }
+    return Object.values(cityMap).sort()
+  })()
 
   const toggleCity = (city) => {
     const lc = city.toLowerCase()
@@ -384,7 +393,7 @@ function RoutePlanner() {
         {/* Filter stores before optimizing */}
         {showFilters && parsedStores.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-            <p className="text-sm font-semibold text-gray-800 mb-3">Filter Stores ({parsedStores.length} total)</p>
+            <p className="text-sm font-semibold text-gray-800 mb-3">Filter Stores ({new Set(parsedStores.map(s => `${s.retailer_name}-${s.store_number}`)).size} stores, {parsedStores.length} vendors)</p>
 
             {/* City filter */}
             {availableCities.length > 1 && (
