@@ -262,7 +262,41 @@ function RoutePlanner() {
     setError(null)
     setShowFilters(false)
     try {
-      await optimizeWithStores(filtered)
+      // Exclude stores already visited
+      const completedStoreKeys = new Set(
+        route.filter(s => s.status === 'completed').map(s => `${s.retailer_name}-${s.store_number}`)
+      )
+      const unvisited = filtered.filter(s => !completedStoreKeys.has(`${s.retailer_name}-${s.store_number}`))
+
+      // Use current time as start for re-optimization (real-time traffic)
+      const now = new Date()
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const effectiveStartTime = route.some(s => s.status === 'completed') ? currentTime : startTime
+
+      // Calculate remaining time window
+      let timeWindowMinutes = null
+      if (effectiveStartTime && endTime) {
+        const [sh, sm] = effectiveStartTime.split(':').map(Number)
+        const [eh, em] = endTime.split(':').map(Number)
+        timeWindowMinutes = (eh * 60 + em) - (sh * 60 + sm)
+        if (timeWindowMinutes <= 0) timeWindowMinutes = null
+      }
+
+      const result = await api.optimizeRoute(unvisited, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      if (result.success) {
+        // Preserve completed stops at the top, append new optimized route
+        const kept = route.filter(s => s.status === 'completed')
+        setRoute([...kept, ...result.data.route])
+        setSummary(result.data.summary)
+        await api.saveRoutePlan({
+          plan_date: today,
+          start_address: startAddress,
+          end_address: endAddress || startAddress,
+          stores_data: [...kept, ...result.data.route],
+        })
+      } else {
+        setError(result.error)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -648,8 +682,8 @@ function RoutePlanner() {
                   </div>
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => handleCompleteStop(store, 'completed')}
-                      className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-xs font-medium hover:bg-green-700">
-                      Visit Completed
+                      className="flex-1 bg-green-50 text-green-700 py-1.5 rounded-lg text-xs font-medium border border-green-200 hover:bg-green-100">
+                      Done
                     </button>
                     <button onClick={() => handleCompleteStop(store, 'skipped')}
                       className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
