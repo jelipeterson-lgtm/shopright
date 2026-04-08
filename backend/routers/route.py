@@ -369,8 +369,8 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     drive_times = {}
     drive_distances = {}
 
-    # Batch requests: max 25 origins and 25 destinations per request (free tier limit)
-    BATCH_SIZE = 25
+    # Batch requests: max 10 origins × 10 destinations = 100 elements per request (free tier limit)
+    BATCH_SIZE = 10
     try:
         for o_start in range(0, len(all_origins), BATCH_SIZE):
             batch_origins = all_origins[o_start:o_start + BATCH_SIZE]

@@ -187,26 +187,21 @@ function RoutePlanner() {
     }
   }
 
-  const getFilteredStores = () => {
-    let filtered = [...parsedStores]
-    if (selectedCities && selectedCities.length > 0) {
-      filtered = filtered.filter(s => selectedCities.includes((s.city || '').toLowerCase()))
-    }
-    if (maxDistance && startCoords) {
-      const miles = parseFloat(maxDistance)
-      if (!isNaN(miles)) {
-        filtered = filtered.filter(s => {
-          if (!s.latitude || !s.longitude) return true
-          return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
-        })
-      }
-    }
-    return filtered
-  }
+  // Distance filter applies first to get reachable stores
+  const distanceFilteredStores = (() => {
+    if (!maxDistance || !startCoords) return parsedStores
+    const miles = parseFloat(maxDistance)
+    if (isNaN(miles)) return parsedStores
+    return parsedStores.filter(s => {
+      if (!s.latitude || !s.longitude) return true
+      return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
+    })
+  })()
 
+  // City buttons only show cities within distance range
   const availableCities = (() => {
     const cityMap = {}
-    for (const s of parsedStores) {
+    for (const s of distanceFilteredStores) {
       const raw = (s.city || '').trim()
       if (!raw) continue
       const key = raw.toLowerCase()
@@ -214,6 +209,14 @@ function RoutePlanner() {
     }
     return Object.values(cityMap).sort()
   })()
+
+  const getFilteredStores = () => {
+    let filtered = distanceFilteredStores
+    if (selectedCities && selectedCities.length > 0) {
+      filtered = filtered.filter(s => selectedCities.includes((s.city || '').toLowerCase()))
+    }
+    return filtered
+  }
 
   const toggleCity = (city) => {
     const lc = city.toLowerCase()
@@ -395,14 +398,34 @@ function RoutePlanner() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
             <p className="text-sm font-semibold text-gray-800 mb-3">Filter Stores ({new Set(parsedStores.map(s => `${s.retailer_name}-${s.store_number}`)).size} stores, {parsedStores.length} vendors)</p>
 
-            {/* City filter */}
+            {/* Max distance filter — applies first, limits which cities appear */}
+            <div className="mb-3">
+              <label className="block text-xs text-gray-500 mb-1">Max Radius from Start (straight-line miles)</label>
+              <input type="number" value={maxDistance} onChange={(e) => {
+                setMaxDistance(e.target.value)
+                setSelectedCities(null)
+                if (e.target.value && !startCoords && startAddress) {
+                  api.geocodeAddress(startAddress).then(r => {
+                    if (r.success) setStartCoords({ lat: r.data.latitude, lng: r.data.longitude })
+                  }).catch(() => {})
+                }
+              }}
+                placeholder="No limit — show all stores"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              {maxDistance && !startCoords && startAddress && <p className="text-xs text-yellow-600 mt-1">Locating start address...</p>}
+              {maxDistance && startCoords && (
+                <p className="text-xs text-gray-400 mt-1">{distanceFilteredStores.length} of {parsedStores.length} vendors within {maxDistance} miles</p>
+              )}
+            </div>
+
+            {/* City filter — only shows cities within distance range */}
             {availableCities.length > 1 && (
               <div className="mb-3">
-                <label className="block text-xs text-gray-500 mb-1.5">Select Cities</label>
+                <label className="block text-xs text-gray-500 mb-1.5">Then Select Cities</label>
                 <div className="flex flex-wrap gap-1.5">
                   {availableCities.map(city => {
                     const isSelected = !selectedCities || selectedCities.includes(city.toLowerCase())
-                    const count = parsedStores.filter(s => (s.city || '').toLowerCase() === city.toLowerCase()).length
+                    const count = distanceFilteredStores.filter(s => (s.city || '').toLowerCase() === city.toLowerCase()).length
                     return (
                       <button key={city} onClick={() => toggleCity(city)}
                         className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
@@ -422,22 +445,6 @@ function RoutePlanner() {
                 )}
               </div>
             )}
-
-            {/* Max distance filter */}
-            <div className="mb-3">
-              <label className="block text-xs text-gray-500 mb-1">Max Distance from Start (miles)</label>
-              <input type="number" value={maxDistance} onChange={(e) => {
-                setMaxDistance(e.target.value)
-                if (e.target.value && !startCoords && startAddress) {
-                  api.geocodeAddress(startAddress).then(r => {
-                    if (r.success) setStartCoords({ lat: r.data.latitude, lng: r.data.longitude })
-                  }).catch(() => {})
-                }
-              }}
-                placeholder="No limit"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              {maxDistance && !startCoords && <p className="text-xs text-yellow-600 mt-1">Geocoding start address...</p>}
-            </div>
 
             {/* Count and optimize button */}
             <div className="text-xs text-gray-500 mb-2">
