@@ -336,7 +336,7 @@
 | Error monitoring | Not set up | Sentry or equivalent not configured. |
 | Sent reports archive | Partial | Download works, but no persistent archive of previously sent reports. |
 | Store ingestion | Manual | Run `python3 ingest_stores.py` to reload stores. Not automated on app launch. |
-| 7 stores not geocoded | Known | 7 of 44 stores failed Nominatim geocoding. They work with manual search but not GPS. |
+| ~30 stores not geocoded | Known | ~30 of 236 stores failed Nominatim geocoding. They work with manual search but not GPS. |
 
 ---
 
