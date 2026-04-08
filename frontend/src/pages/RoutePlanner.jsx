@@ -169,7 +169,15 @@ function RoutePlanner() {
 
   const optimizeWithStores = async (stores) => {
     try {
-      const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress)
+      // Calculate time window in minutes from start/end times
+      let timeWindowMinutes = null
+      if (startTime && endTime) {
+        const [sh, sm] = startTime.split(':').map(Number)
+        const [eh, em] = endTime.split(':').map(Number)
+        timeWindowMinutes = (eh * 60 + em) - (sh * 60 + sm)
+        if (timeWindowMinutes <= 0) timeWindowMinutes = null
+      }
+      const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress, timeWindowMinutes)
       if (result.success) {
         setRoute(result.data.route)
         setSummary(result.data.summary)
@@ -494,7 +502,13 @@ function RoutePlanner() {
               {(summary.total_miles || 0) > 0 && <span>{summary.total_miles} miles</span>}
               {summary.total_vendors > 0 && <span>{summary.total_vendors} vendors</span>}
               {startTime && endTime && <span>Window: {startTime}–{endTime}</span>}
+              {summary.return_drive_min > 0 && <span>+{Math.round(summary.return_drive_min)}m return</span>}
             </div>
+            {summary.skipped_vendors > 0 && (
+              <p className="text-center text-[10px] text-blue-300 mt-1">
+                {summary.skipped_vendors} vendors skipped (didn't fit in time window)
+              </p>
+            )}
           </div>
         )}
 

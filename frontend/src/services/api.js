@@ -146,9 +146,9 @@ const api = {
     body: JSON.stringify({ raw_text: rawText }),
   }),
 
-  optimizeRoute: (stores, startAddress, endAddress) => request('/route/optimize', {
+  optimizeRoute: (stores, startAddress, endAddress, timeWindowMinutes) => request('/route/optimize', {
     method: 'POST',
-    body: JSON.stringify({ stores, start_address: startAddress, end_address: endAddress }),
+    body: JSON.stringify({ stores, start_address: startAddress, end_address: endAddress, time_window_minutes: timeWindowMinutes }),
   }),
 
   geocodeAddress: (address) => request(`/route/geocode?address=${encodeURIComponent(address)}`),
