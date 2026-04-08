@@ -269,12 +269,23 @@ function RoutePlanner() {
     setShowFilters(true)
   }
 
-  const handleCompleteStop = async (store) => {
+  const handleClearRoute = () => {
+    setRoute([])
+    setSummary(null)
+    setParsedStores([])
+    setParseSuccess(null)
+    setError(null)
+    setShowFilters(false)
+  }
+
+  const handleCompleteStop = async (store, status) => {
     try {
-      await api.completeRouteStop(today, store.store_number, store.retailer_name)
+      if (status === 'completed') {
+        await api.completeRouteStop(today, store.store_number, store.retailer_name)
+      }
       const updated = route.map(s =>
         s.retailer_name === store.retailer_name && s.store_number === store.store_number
-          ? { ...s, status: 'completed' }
+          ? { ...s, status }
           : s
       )
       setRoute(updated)
@@ -305,8 +316,8 @@ function RoutePlanner() {
     setRoute(newRoute)
   }
 
-  const completedStops = route.filter(s => s.status === 'completed')
-  const upcomingStops = route.filter(s => s.status !== 'completed')
+  const completedStops = route.filter(s => s.status === 'completed' || s.status === 'skipped')
+  const upcomingStops = route.filter(s => s.status !== 'completed' && s.status !== 'skipped')
 
   if (loading) {
     return (
@@ -512,26 +523,41 @@ function RoutePlanner() {
           </div>
         )}
 
-        {/* Re-optimize button */}
+        {/* Route action buttons */}
         {route.length > 0 && !optimizing && !showFilters && (
-          <button onClick={handleReoptimize}
-            className="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-xs font-medium hover:bg-gray-300 mb-4">
-            Filter & Re-optimize
-          </button>
+          <div className="flex gap-2 mb-4">
+            <button onClick={handleReoptimize}
+              className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl text-xs font-medium hover:bg-gray-300">
+              Filter & Re-optimize
+            </button>
+            <button onClick={handleClearRoute}
+              className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-200 hover:bg-red-100">
+              Clear Route
+            </button>
+          </div>
         )}
 
-        {/* Completed stops */}
+        {/* Completed/Skipped stops */}
         {completedStops.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Completed ({completedStops.length})</p>
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Done ({completedStops.length})</p>
             {completedStops.map((store, i) => (
               <div key={i} className="bg-gray-100 rounded-xl p-3 mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-green-600 bg-green-100 w-6 h-6 rounded-full flex items-center justify-center">✓</span>
-                  <div>
+                  {store.status === 'completed' ? (
+                    <span className="text-xs font-bold text-green-600 bg-green-100 w-6 h-6 rounded-full flex items-center justify-center">✓</span>
+                  ) : (
+                    <span className="text-xs font-bold text-gray-400 bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center">—</span>
+                  )}
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600">{store.retailer_name} #{store.store_number}</p>
                     <p className="text-xs text-gray-400">{store.vendors?.join(', ')} — ${store.earnings}</p>
                   </div>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${
+                    store.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {store.status === 'completed' ? 'Visited' : 'Skipped'}
+                  </span>
                 </div>
               </div>
             ))}
@@ -577,9 +603,13 @@ function RoutePlanner() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <button onClick={() => handleCompleteStop(store)}
+                    <button onClick={() => handleCompleteStop(store, 'completed')}
                       className="flex-1 bg-green-600 text-white py-1.5 rounded-lg text-xs font-medium hover:bg-green-700">
-                      Complete
+                      Visit Completed
+                    </button>
+                    <button onClick={() => handleCompleteStop(store, 'skipped')}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
+                      Skipped
                     </button>
                     <button onClick={() => handleRemoveStop(store)}
                       className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200 hover:bg-red-100">
