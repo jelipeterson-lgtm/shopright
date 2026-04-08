@@ -36,6 +36,17 @@ function HelpGuide() {
       ],
     },
     {
+      title: 'Route Planning',
+      items: [
+        { q: 'How do I plan my route for the day?', a: 'Paste your event email or SMS check-in text, filter by distance or city, optimize, and accept the route. The planner will parse your stores and build an optimized driving order.' },
+        { q: 'What does "Accept Route" do?', a: 'Creates Draft vendor visits on the Stores tab for each store in your route. You can then assess each vendor from there.' },
+        { q: 'How do I start an assessment from the Route tab?', a: 'Tap "Assess Vendors" on any store to go to the Stores tab.' },
+        { q: 'What happens when I Skip or Remove a store?', a: 'Removes the Draft visits from the Stores tab. Use "Restore" to add them back.' },
+        { q: 'How does Re-optimize Route work?', a: 'Recalculates the best route using current time and traffic, skipping stores you already assessed.' },
+        { q: 'Do I need a Google Maps API key?', a: 'Yes, set it up in Settings. You need the Distance Matrix API enabled in your Google Cloud Console.' },
+      ],
+    },
+    {
       title: 'Reports & Invoices',
       items: [
         { q: 'How do I send my weekly report?', a: 'From Home, tap "Weekly Shop File" under Reports. Review your completed vendors for the week, enter the recipient email, and tap Send.' },

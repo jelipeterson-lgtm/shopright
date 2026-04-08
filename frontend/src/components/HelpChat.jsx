@@ -4,6 +4,7 @@ import api from '../services/api'
 
 const PAGE_CONTEXT = {
   '/app': 'The user is on the Home dashboard. They can start shopping, add stores and vendors manually, or view reports.',
+  '/route': 'The user is on the Route Planner. They can paste event emails or SMS check-ins, filter stores, optimize their route, and accept it to create visits on the Stores tab.',
   '/session': 'The user is on the Stores page viewing today\'s stores and vendors. They can add stores, add vendors, close stores.',
   '/new-store': 'The user is adding a new store via GPS or search, then selecting a vendor program from the dropdown.',
   '/visit': 'The user is filling out the vendor assessment form with evaluation fields, rep info, and visit recap.',
@@ -19,11 +20,24 @@ const PAGE_CONTEXT = {
 const SYSTEM_PROMPT = `You are a friendly ShopRight help assistant. ShopRight is a mobile web app for mystery shoppers at Smart Circle International.
 
 Key features:
-- Start a session → Add stores via GPS or search → Add vendor visits → Fill assessment form → AI review → Submit
+- Route Planner: Paste event email or SMS check-in → filter by distance/city → optimize route → accept route → assess vendors
+- Stores: Add stores via GPS or search → Add vendor visits → Fill assessment form → AI review → Submit
 - Assessment form: Reps Present (Pass/Fail gate), 12 evaluation fields (Pass/Fail/N/A), Visit Recap
 - Weekly Shop File: generates Excel report emailed to Smart Circle
 - Monthly Invoice: enter mileage, auto-calculates pricing ($50 first vendor per stop, $15 additional)
 - AI Review: optional, uses user's own Anthropic API key. Set up in Settings.
+
+Route Planner:
+1. Go to Route tab, paste your event email from Smart Circle
+2. Set your start/end address and start/end times
+3. Filter by max distance from start and select cities
+4. Tap Optimize Route — calculates best order using Google Maps
+5. Review the route with estimated arrival/departure times and map
+6. Tap Accept Route to create vendor visits on the Stores tab
+7. Tap Assess Vendors to go to Stores and fill out assessments
+8. Skip or Remove stores you won't visit (removes them from Stores tab too)
+9. Re-optimize Route anytime to recalculate with current traffic
+- Requires Google Maps API key (set up in Settings, needs Distance Matrix API enabled in Google Cloud Console)
 
 Setting up AI Review:
 1. Go to Settings
@@ -110,7 +124,7 @@ function HelpChat() {
           <div className="text-center py-6">
             <p className="text-sm text-gray-400">Hi! How can I help you?</p>
             <div className="mt-3 space-y-1">
-              {['How do I add a store and vendor?', 'How do I set up AI review?', 'How do I send my report?', 'What if my program isn\'t in the list?'].map((q) => (
+              {['How do I plan my route?', 'How do I add a store and vendor?', 'How do I set up AI review?', 'How do I send my report?'].map((q) => (
                 <button
                   key={q}
                   onClick={() => { setInput(q); }}

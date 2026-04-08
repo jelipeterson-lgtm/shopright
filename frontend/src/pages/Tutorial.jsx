@@ -18,6 +18,24 @@ const steps = [
     ],
   },
   {
+    title: 'Planning Your Route',
+    content: 'Before heading out, go to the Route tab. Paste your event email from Smart Circle to load all available stores and vendors. Use the distance and city filters to narrow down your area, then tap Optimize Route. The app will calculate the best order based on drive times, earnings, and your time window.',
+    tips: [
+      'Paste the full email text — the app will automatically extract stores and vendors',
+      'Use the distance filter to focus on stores close to your home address',
+      'The time window helps the app estimate how many stores you can realistically visit',
+    ],
+  },
+  {
+    title: 'Accepting & Following Your Route',
+    content: 'Once you\'re happy with the route, tap Accept Route at the bottom to create vendor visits on the Stores tab. During the day, tap Assess Vendors to jump to the Stores tab for each assessment. If plans change, use Skip or Remove (they\'ll be cleaned up from the Stores tab too). Tap Re-optimize Route anytime to recalculate based on current traffic and remaining time.',
+    tips: [
+      'Accepting a route automatically creates all the vendor entries on the Stores tab',
+      'Skipped or removed stores are also removed from the Stores tab',
+      'You can re-optimize as many times as needed if your plans change during the day',
+    ],
+  },
+  {
     title: 'Adding a Vendor',
     content: 'After selecting a store, you\'ll see a dropdown with available vendor programs (like RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, and more).\n\nSelect the program for the vendor you\'re assessing. If the program isn\'t in the list, select "Other (enter manually)" and type it in.\n\nTap "Confirm Store & Add Vendor" to open the assessment form.\n\nYou can add multiple vendors at the same store. After completing one vendor\'s assessment, tap "Add Another Vendor" on the Stores page to add the next one.',
     tips: [
