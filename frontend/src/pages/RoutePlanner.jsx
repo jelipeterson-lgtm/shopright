@@ -16,8 +16,12 @@ function RoutePlanner() {
   const navigate = useNavigate()
   const today = getLocalDate()
 
-  const [startAddress, setStartAddress] = useState('')
-  const [endAddress, setEndAddress] = useState('')
+  const [startAddress, setStartAddress] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`shopright_addr_${getLocalDate()}`))?.start || '' } catch { return '' }
+  })
+  const [endAddress, setEndAddress] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`shopright_addr_${getLocalDate()}`))?.end || '' } catch { return '' }
+  })
   const [emailText, setEmailText] = useState('')
   const [checkinText, setCheckinText] = useState('')
   const [parsedStores, setParsedStores] = useState([])
@@ -186,10 +190,16 @@ function RoutePlanner() {
     return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [route.length])
 
-  // Persist start/end times
+  // Persist start/end times and addresses
   useEffect(() => {
     try { localStorage.setItem(LS_TIMES, JSON.stringify({ start: startTime, end: endTime })) } catch {}
   }, [startTime, endTime])
+
+  useEffect(() => {
+    if (startAddress || endAddress) {
+      try { localStorage.setItem(`shopright_addr_${today}`, JSON.stringify({ start: startAddress, end: endAddress })) } catch {}
+    }
+  }, [startAddress, endAddress])
 
   // Persist to localStorage on every change
   useEffect(() => {
