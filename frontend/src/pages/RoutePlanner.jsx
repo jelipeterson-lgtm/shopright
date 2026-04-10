@@ -926,113 +926,125 @@ function RoutePlanner() {
             {upcomingStops.map((store, i) => {
               const globalIndex = route.indexOf(store)
               return (
-                <div key={i} className={`bg-white rounded-xl shadow-sm border p-4 mb-2 ${i === 0 ? 'border-blue-300' : 'border-gray-100'}`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                <div key={i} className={`bg-white rounded-xl shadow-sm border mb-3 overflow-hidden ${i === 0 ? 'border-blue-300' : 'border-gray-100'}`}>
+                  {/* Store header */}
+                  <div className="p-4 pb-2">
+                    <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${i === 0 ? 'text-white bg-blue-600' : 'text-blue-600 bg-blue-100'}`}>
+                        <span className={`text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${i === 0 ? 'text-white bg-blue-600' : 'text-blue-600 bg-blue-100'}`}>
                           {completedStops.length + i + 1}
                         </span>
-                        <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
+                          {store.address && <p className="text-xs text-gray-400">{store.address}, {store.city}</p>}
+                        </div>
                       </div>
-                      {store.address && <p className="text-xs text-gray-400 mt-1 ml-8">{store.address}, {store.city}</p>}
-                      {/* Individual vendor assessment status */}
-                      <div className="mt-1 ml-8 space-y-1">
-                        {(() => {
-                          // Merge route vendors with any additional visits from todayVisits
-                          const routeVendors = store.vendors || []
-                          const extraVisits = todayVisits.filter(v =>
-                            v.retailer_name === store.retailer_name &&
-                            v.store_number === store.store_number &&
-                            !routeVendors.includes(v.program)
-                          )
-                          const allVendors = [...routeVendors, ...extraVisits.map(v => v.program)]
-                          return allVendors.map((vendor, vi) => {
-                            const visit = todayVisits.find(v =>
-                              v.retailer_name === store.retailer_name &&
-                              v.store_number === store.store_number &&
-                              v.program === vendor
-                            )
-                            const isDone = visit?.status === 'Complete'
-                            return (
-                              <div key={vi} className="flex items-center gap-1.5">
-                                {visit ? (
-                                  <button onClick={() => navigate(`/visit/${visit.id}`)}
-                                    className={`text-xs px-2 py-0.5 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'}`}>
-                                    {isDone ? '✓ ' : ''}{vendor} {isDone ? '' : '— tap to assess'}
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-gray-500">{vendor}</span>
-                                )}
-                              </div>
-                            )
-                          })
-                        })()}
-                      </div>
-                      {/* Schedule */}
-                      {store.est_arrival && (
-                        <p className="text-xs font-medium text-blue-600 mt-1.5 ml-8">
-                          Arrive {store.est_arrival} — Leave {store.est_depart}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap gap-2 mt-1.5 ml-8">
-                        {store.drive_time_min > 0 && (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{Math.round(store.drive_time_min)} min drive</span>
-                        )}
-                        {store.drive_distance_mi > 0 && (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{store.drive_distance_mi} mi</span>
-                        )}
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">${store.earnings}</span>
-                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">~{Math.round(store.est_minutes)} min assess</span>
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => moveStop(globalIndex, -1)} disabled={globalIndex === 0}
+                          className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 text-sm disabled:opacity-20 active:bg-gray-200">↑</button>
+                        <button onClick={() => moveStop(globalIndex, 1)} disabled={globalIndex === route.length - 1}
+                          className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 text-sm disabled:opacity-20 active:bg-gray-200">↓</button>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 ml-2">
-                      <button onClick={() => moveStop(globalIndex, -1)} disabled={globalIndex === 0}
-                        className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30 hover:bg-gray-200">↑</button>
-                      <button onClick={() => moveStop(globalIndex, 1)} disabled={globalIndex === route.length - 1}
-                        className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30 hover:bg-gray-200">↓</button>
+                    {/* Schedule + stats */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {store.est_arrival && (
+                        <span className="text-xs font-medium text-blue-600">{store.est_arrival} — {store.est_depart}</span>
+                      )}
+                      {store.drive_time_min > 0 && (
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{Math.round(store.drive_time_min)} min</span>
+                      )}
+                      {store.drive_distance_mi > 0 && (
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{store.drive_distance_mi} mi</span>
+                      )}
+                      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">${store.earnings}</span>
                     </div>
                   </div>
+
+                  {/* Vendor rows — each is a full-width tappable row */}
+                  <div className="border-t border-gray-100">
+                    {(() => {
+                      const routeVendors = store.vendors || []
+                      const extraVisits = todayVisits.filter(v =>
+                        v.retailer_name === store.retailer_name &&
+                        v.store_number === store.store_number &&
+                        !routeVendors.includes(v.program)
+                      )
+                      const allVendors = [...routeVendors, ...extraVisits.map(v => v.program)]
+                      return allVendors.map((vendor, vi) => {
+                        const visit = todayVisits.find(v =>
+                          v.retailer_name === store.retailer_name &&
+                          v.store_number === store.store_number &&
+                          v.program === vendor
+                        )
+                        const isDone = visit?.status === 'Complete'
+                        return (
+                          <button key={vi}
+                            onClick={() => visit ? navigate(`/visit/${visit.id}`) : null}
+                            disabled={!visit}
+                            className={`w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-b-0 text-left ${visit ? 'active:bg-gray-50' : ''}`}>
+                            <div className="flex items-center gap-2 min-w-0">
+                              {isDone ? (
+                                <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs shrink-0">✓</span>
+                              ) : visit ? (
+                                <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-[10px] shrink-0">●</span>
+                              ) : (
+                                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-[10px] shrink-0">○</span>
+                              )}
+                              <span className="text-sm text-gray-800 truncate">{vendor}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                                isDone ? 'bg-green-100 text-green-700' : visit ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-400'
+                              }`}>
+                                {isDone ? 'Complete' : visit ? 'Open' : 'Pending'}
+                              </span>
+                              {visit && <span className="text-gray-300 text-sm">›</span>}
+                            </div>
+                          </button>
+                        )
+                      })
+                    })()}
+                  </div>
+
                   {/* Inline Add Vendor */}
                   {addingVendorStore && addingVendorStore.retailer_name === store.retailer_name && addingVendorStore.store_number === store.store_number && (
-                    <div className="mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className="p-3 bg-gray-50 border-t border-gray-200">
                       <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Add Vendor</p>
                       <select value={selectedProgram || ''} onChange={(e) => setSelectedProgram(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2">
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-2">
                         <option value="">Select a program...</option>
                         {programs.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                       <input type="text" placeholder="Or type a custom program code"
                         value={selectedProgram && !programs.includes(selectedProgram) ? selectedProgram : ''}
                         onChange={(e) => setSelectedProgram(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-2" />
                       <div className="flex gap-2">
                         <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
-                          className="flex-1 bg-blue-600 text-white py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                          className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                           Add Vendor
                         </button>
                         <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
+                          className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-200">
                           Cancel
                         </button>
                       </div>
                     </div>
                   )}
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={() => handleAssessVendors(store)}
-                      className="flex-1 bg-blue-50 text-blue-700 py-1.5 rounded-lg text-xs font-medium border border-blue-200 hover:bg-blue-100">
-                      Assess Vendors
-                    </button>
+
+                  {/* Store actions */}
+                  <div className="flex border-t border-gray-100">
                     <button onClick={() => handleAddVendorToExisting(store)}
-                      className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium border border-blue-200 hover:bg-blue-100">
+                      className="flex-1 py-3 text-xs font-medium text-blue-600 active:bg-blue-50 border-r border-gray-100">
                       + Vendor
                     </button>
                     <button onClick={() => handleSkipOrRemove(store, 'skipped')}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
+                      className="flex-1 py-3 text-xs font-medium text-gray-500 active:bg-gray-50 border-r border-gray-100">
                       Skip
                     </button>
                     <button onClick={() => handleSkipOrRemove(store, 'removed')}
-                      className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200 hover:bg-red-100">
+                      className="flex-1 py-3 text-xs font-medium text-red-500 active:bg-red-50">
                       Remove
                     </button>
                   </div>
