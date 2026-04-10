@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
@@ -188,8 +188,7 @@ function RoutePlanner() {
   // Auto-refresh travel times when returning to route page (e.g., after assessment)
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && route.length > 0) {
-        // Refresh visits to sync assessment completions
+      if (document.visibilityState === 'visible' && route.length > 0 && !showAddStore && !addingVendorStore) {
         refreshVisits()
       }
     }
@@ -638,13 +637,17 @@ function RoutePlanner() {
     } catch (err) {}
   }
 
-  const handleStoreSearch = async (q) => {
+  const searchTimer = useRef(null)
+  const handleStoreSearch = (q) => {
     setStoreSearchQuery(q)
     if (q.trim().length < 1) { setStoreSearchResults([]); return }
-    try {
-      const result = await api.searchStores(q)
-      setStoreSearchResults(result.data || [])
-    } catch (err) {}
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const result = await api.searchStores(q)
+        setStoreSearchResults(result.data || [])
+      } catch (err) {}
+    }, 300)
   }
 
   const handleAddStoreToRoute = async (store) => {
