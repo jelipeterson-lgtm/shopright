@@ -600,12 +600,10 @@ function RoutePlanner() {
         visit_time: now.toTimeString().slice(0, 5),
         session_date: today,
       }
-      const result = await api.createVisit(visitData)
+      await api.createVisit(visitData)
       setAddingVendorStore(null)
       setSelectedProgram(null)
       await refreshVisits()
-      // Navigate to the assessment form
-      if (result.data?.id) navigate(`/visit/${result.data.id}`)
     } catch (err) {
       setError(err.message)
     }
@@ -1001,7 +999,7 @@ function RoutePlanner() {
                       <div className="flex gap-2">
                         <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
                           className="flex-1 bg-blue-600 text-white py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
-                          Add & Assess
+                          Add Vendor
                         </button>
                         <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
                           className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
@@ -1062,7 +1060,7 @@ function RoutePlanner() {
             <div className="flex gap-2">
               <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
                 className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
-                Add & Assess
+                Add Vendor
               </button>
               <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
                 className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
