@@ -159,7 +159,7 @@ function Visit() {
         setSkipReason(data.reason)
         setReviewState('skipped')
         await api.completeVisit(id)
-        navigate('/session')
+        navigate('/route')
         return
       }
 
@@ -196,7 +196,7 @@ function Visit() {
         // No flags — mark complete
         setReviewState('idle')
         await api.completeVisit(id)
-        navigate('/session')
+        navigate('/route')
       }
     } catch (err) {
       // Network error — submit anyway with warning
@@ -204,7 +204,7 @@ function Visit() {
       setSkipReason('api_error')
       try {
         await api.completeVisit(id)
-        navigate('/session')
+        navigate('/route')
       } catch (e) {
         setError(e.message)
       }
@@ -217,7 +217,7 @@ function Visit() {
     setSaving(true)
     try {
       await api.completeVisit(id)
-      navigate('/session')
+      navigate('/route')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -262,7 +262,7 @@ function Visit() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader title="Assessment" rightButton={<button onClick={() => navigate('/session')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
+      <PageHeader title="Assessment" rightButton={<button onClick={() => navigate('/route')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
       <div className="max-w-lg mx-auto px-4 py-4 pb-64">
 
         {error && (
@@ -581,7 +581,7 @@ function Visit() {
                   onClick={async () => {
                     if (confirm('This will discard this vendor visit. Are you sure?')) {
                       try { await api.discardVisit(id) } catch (e) {}
-                      navigate('/session')
+                      navigate('/route')
                     }
                   }}
                   disabled={saving}
@@ -600,7 +600,7 @@ function Visit() {
                   {saving ? 'Saving...' : 'Review & Submit'}
                 </button>
                 <button
-                  onClick={() => navigate('/session')}
+                  onClick={() => navigate('/route')}
                   className="w-full bg-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-300"
                 >
                   Save Draft & Go Back
@@ -609,7 +609,7 @@ function Visit() {
                   onClick={async () => {
                     if (confirm('Delete this vendor entry? This cannot be undone.')) {
                       try { await api.discardVisit(id) } catch (e) {}
-                      navigate('/session')
+                      navigate('/route')
                     }
                   }}
                   className="w-full text-red-500 py-2 text-sm font-medium hover:text-red-700"
