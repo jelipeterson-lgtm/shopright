@@ -320,13 +320,14 @@ function RoutePlanner() {
       }
       const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress, timeWindowMinutes, startTime)
       if (result.success) {
-        setRoute(result.data.route)
+        const allStores = [...result.data.route, ...(result.data.overflow || [])]
+        setRoute(allStores)
         setSummary(result.data.summary)
         await api.saveRoutePlan({
           plan_date: today,
           start_address: startAddress,
           end_address: endAddress || startAddress,
-          stores_data: result.data.route,
+          stores_data: allStores,
         })
       } else {
         setError(result.error)
@@ -421,15 +422,16 @@ function RoutePlanner() {
 
       const result = await api.optimizeRoute(unvisited, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
       if (result.success) {
-        // Preserve completed stops at the top, append new optimized route
+        // Preserve completed stops at the top, append optimized + overflow
         const kept = route.filter(s => s.status === 'completed')
-        setRoute([...kept, ...result.data.route])
+        const allStores = [...kept, ...result.data.route, ...(result.data.overflow || [])]
+        setRoute(allStores)
         setSummary(result.data.summary)
         await api.saveRoutePlan({
           plan_date: today,
           start_address: startAddress,
           end_address: endAddress || startAddress,
-          stores_data: [...kept, ...result.data.route],
+          stores_data: allStores,
         })
       } else {
         setError(result.error)
@@ -478,10 +480,12 @@ function RoutePlanner() {
       const result = await api.optimizeRoute(candidates, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
       if (result.success) {
         const kept = route.filter(s => s.status === 'completed')
-        const newRoute = [...kept, ...result.data.route]
+        const overflow = result.data.overflow || []
+        const newRoute = [...kept, ...result.data.route, ...overflow]
         setRoute(newRoute)
         setSummary(result.data.summary)
-        setParseSuccess(`Route re-optimized with ${result.data.route.length} stops using current traffic.`)
+        const overflowMsg = overflow.length > 0 ? ` ${overflow.length} stores outside time window.` : ''
+        setParseSuccess(`Route re-optimized: ${result.data.route.length} stops fit in time window.${overflowMsg} ${parsedStores.length} vendors in pool.`)
         await api.saveRoutePlan({
           plan_date: today,
           start_address: startAddress,
@@ -675,7 +679,8 @@ function RoutePlanner() {
 
   const doneStatuses = ['completed', 'skipped', 'removed']
   const completedStops = route.filter(s => doneStatuses.includes(s.status))
-  const upcomingStops = route.filter(s => !doneStatuses.includes(s.status))
+  const upcomingStops = route.filter(s => s.status === 'upcoming')
+  const overflowStops = route.filter(s => s.status === 'overflow')
 
   if (loading) {
     return (
@@ -877,9 +882,14 @@ function RoutePlanner() {
                 {summary.arrive_home && <span>Home by {summary.arrive_home}</span>}
               </div>
             )}
-            {summary.skipped_vendors > 0 && (
+            {summary.overflow_count > 0 && (
               <p className="text-center text-[10px] text-blue-300 mt-1">
-                {summary.skipped_vendors} vendors skipped (didn't fit in time window)
+                {summary.overflow_count} stores outside time window (shown below)
+              </p>
+            )}
+            {parsedStores.length > 0 && (
+              <p className="text-center text-[10px] text-blue-300 mt-1">
+                Data pool: {parsedStores.length} vendors from emails/check-ins
               </p>
             )}
           </div>
@@ -1165,6 +1175,30 @@ function RoutePlanner() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Overflow — stores that don't fit in time window */}
+        {overflowStops.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-orange-500 mb-2 uppercase">Outside Time Window ({overflowStops.length})</p>
+            <p className="text-[10px] text-gray-400 mb-2">These stores don't fit in your {startTime}–{endTime} window. Remove upcoming stops or extend your end time to include them.</p>
+            {overflowStops.map((store, i) => (
+              <div key={i} className="bg-orange-50 rounded-xl border border-orange-100 p-3 mb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">{store.retailer_name} #{store.store_number}</p>
+                    <p className="text-xs text-gray-400">{store.vendors?.join(', ')}</p>
+                    <div className="flex gap-2 mt-1">
+                      {store.drive_time_min > 0 && <span className="text-[10px] text-gray-400">Travel: {Math.round(store.drive_time_min)} min</span>}
+                      <span className="text-[10px] text-green-600 font-medium">Est: ${store.earnings}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => handleSkipOrRemove(store, 'removed')}
+                    className="px-2 py-1 text-[10px] text-red-500 bg-red-50 rounded border border-red-100">Remove</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

@@ -480,60 +480,46 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             display_h = 12
         return f"{display_h}:{m:02d} {ampm}"
 
-    # Greedy optimization: maintain $100/hr minimum, maximize vendor count as secondary
-    MIN_HOURLY_RATE = 100  # dollars per hour target
+    # Greedy optimization: best earnings/minute order within time window
+    # Never drops stores — includes all that fit, marks overflow separately
     max_minutes = body.time_window_minutes or 99999
     route = []
+    overflow = []  # stores that don't fit in time window
     remaining = list(range(num_stores))
     current = 0
     elapsed = 0
-    total_earnings_so_far = 0
     clock = start_hour * 60 + start_minute  # minutes from midnight
 
     while remaining:
         best_score = -1
         best_idx = None
-        best_projected_rate = 0
 
         for idx in remaining:
             drive_min = drive_times.get((current, idx), 9999)
             store = stores[idx]
             time_at_store = drive_min + store["est_minutes"]
-
-            # Check if adding this store + return trip fits in time window
             return_from_store = drive_times.get((idx + 1, num_stores), 0)
-            if elapsed + time_at_store + return_from_store > max_minutes:
+
+            would_fit = (elapsed + time_at_store + return_from_store) <= max_minutes
+            if not would_fit:
                 continue
 
-            # Calculate what the overall $/hr would be if we add this store
-            new_total_earnings = total_earnings_so_far + store["earnings"]
-            new_total_time = elapsed + time_at_store + return_from_store
-            projected_rate = (new_total_earnings / max(new_total_time / 60, 0.01)) if new_total_time > 0 else 0
-
-            # Score: prioritize stores that keep rate above $100/hr
-            # Among those, prefer higher earnings per minute (closer + more vendors)
-            earnings_per_min = store["earnings"] / max(time_at_store, 1)
-
-            if projected_rate >= MIN_HOURLY_RATE:
-                # Above threshold: score by earnings/min + small bonus for vendor count
-                score = earnings_per_min + (len(store.get("vendors", [])) * 0.01)
-            else:
-                # Below threshold: heavily penalize — only pick if nothing better
-                score = earnings_per_min * 0.1
-
+            score = store["earnings"] / max(time_at_store, 1)
             if score > best_score:
                 best_score = score
                 best_idx = idx
-                best_projected_rate = projected_rate
 
         if best_idx is None:
+            # No more stores fit — remaining go to overflow
+            for idx in remaining:
+                store = stores[idx]
+                drive_min = drive_times.get((current, idx), 0)
+                store["drive_time_min"] = round(drive_min, 1)
+                store["drive_distance_mi"] = round(drive_distances.get((current, idx), 0), 1)
+                store["status"] = "overflow"
+                overflow.append(store)
             break
 
-        # If adding this store drops us below $100/hr and we already have stores, stop
-        if best_projected_rate < MIN_HOURLY_RATE and len(route) > 0:
-            break
-
-        store = stores[best_idx]
         drive_min = drive_times.get((current, best_idx), 0)
         store["drive_time_min"] = round(drive_min, 1)
         store["drive_distance_mi"] = round(drive_distances.get((current, best_idx), 0), 1)
@@ -566,8 +552,6 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     total_miles = sum(s["drive_distance_mi"] for s in route) + return_distance
     projected_rate = (total_earnings / max(total_time / 60, 0.01)) if total_time > 0 else 0
 
-    skipped_count = len(candidate_stores) - sum(len(s["vendors"]) for s in route)
-
     # Schedule metadata
     depart_home = minutes_to_time(start_hour * 60 + start_minute)
     arrive_home = minutes_to_time(clock + return_time)
@@ -584,10 +568,10 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         "depart_home": depart_home,
         "arrive_home": arrive_home,
         "time_window_minutes": max_minutes if max_minutes < 99999 else None,
-        "skipped_vendors": skipped_count if skipped_count > 0 else 0,
+        "overflow_count": len(overflow),
     }
 
-    return {"success": True, "data": {"route": route, "summary": summary}, "error": None}
+    return {"success": True, "data": {"route": route, "overflow": overflow, "summary": summary}, "error": None}
 
 
 @router.get("/geocode")
