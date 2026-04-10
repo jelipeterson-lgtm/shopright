@@ -938,26 +938,36 @@ function RoutePlanner() {
                       {store.address && <p className="text-xs text-gray-400 mt-1 ml-8">{store.address}, {store.city}</p>}
                       {/* Individual vendor assessment status */}
                       <div className="mt-1 ml-8 space-y-1">
-                        {(store.vendors || []).map((vendor, vi) => {
-                          const visit = todayVisits.find(v =>
+                        {(() => {
+                          // Merge route vendors with any additional visits from todayVisits
+                          const routeVendors = store.vendors || []
+                          const extraVisits = todayVisits.filter(v =>
                             v.retailer_name === store.retailer_name &&
                             v.store_number === store.store_number &&
-                            v.program === vendor
+                            !routeVendors.includes(v.program)
                           )
-                          const isDone = visit?.status === 'Complete'
-                          return (
-                            <div key={vi} className="flex items-center gap-1.5">
-                              {visit ? (
-                                <button onClick={() => navigate(`/visit/${visit.id}`)}
-                                  className={`text-xs px-2 py-0.5 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'}`}>
-                                  {isDone ? '✓ ' : ''}{vendor} {isDone ? '' : '— tap to assess'}
-                                </button>
-                              ) : (
-                                <span className="text-xs text-gray-500">{vendor}</span>
-                              )}
-                            </div>
-                          )
-                        })}
+                          const allVendors = [...routeVendors, ...extraVisits.map(v => v.program)]
+                          return allVendors.map((vendor, vi) => {
+                            const visit = todayVisits.find(v =>
+                              v.retailer_name === store.retailer_name &&
+                              v.store_number === store.store_number &&
+                              v.program === vendor
+                            )
+                            const isDone = visit?.status === 'Complete'
+                            return (
+                              <div key={vi} className="flex items-center gap-1.5">
+                                {visit ? (
+                                  <button onClick={() => navigate(`/visit/${visit.id}`)}
+                                    className={`text-xs px-2 py-0.5 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'}`}>
+                                    {isDone ? '✓ ' : ''}{vendor} {isDone ? '' : '— tap to assess'}
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-gray-500">{vendor}</span>
+                                )}
+                              </div>
+                            )
+                          })
+                        })()}
                       </div>
                       {/* Schedule */}
                       {store.est_arrival && (
