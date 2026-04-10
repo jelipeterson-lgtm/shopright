@@ -913,10 +913,16 @@ function RoutePlanner() {
                 return `${filtered.length} vendors at ${storeCount} stores selected`
               })()}
             </div>
-            <button onClick={handleOptimizeFiltered} disabled={optimizing}
-              className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              Optimize Route
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleOptimizeFiltered} disabled={optimizing}
+                className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                Optimize Route
+              </button>
+              <button onClick={() => setShowFilters(false)}
+                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-200">
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
