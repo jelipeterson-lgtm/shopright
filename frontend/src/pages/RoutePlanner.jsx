@@ -1003,15 +1003,10 @@ function RoutePlanner() {
                           className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 text-sm disabled:opacity-20 active:bg-gray-200">↓</button>
                       </div>
                     </div>
-                    {/* Schedule + stats */}
-                    {store.est_arrival && (
-                      <p className="text-xs text-blue-600 font-medium mt-2">
-                        Arrive {store.est_arrival} — Depart {store.est_depart}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    {/* Stats */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       {store.drive_time_min > 0 && (
-                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Drive: {Math.round(store.drive_time_min)} min</span>
+                        <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-medium">Travel: {Math.round(store.drive_time_min)} min</span>
                       )}
                       {store.drive_distance_mi > 0 && (
                         <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Dist: {store.drive_distance_mi} mi</span>
