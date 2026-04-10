@@ -13,7 +13,7 @@ function RouteMap({ route, startCoords, endAddress }) {
       mapInstance.current = null
     }
 
-    const points = (route || []).filter(s => s.latitude && s.longitude && s.status !== 'completed' && s.status !== 'skipped' && s.status !== 'removed')
+    const points = (route || []).filter(s => s.latitude && s.longitude && s.status === 'upcoming')
     if (points.length < 1) return
 
     const map = L.map(mapRef.current, {

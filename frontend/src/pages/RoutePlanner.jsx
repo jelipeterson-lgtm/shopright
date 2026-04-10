@@ -1216,17 +1216,30 @@ function RoutePlanner() {
             <p className="text-[10px] text-gray-400 mb-2">These stores don't fit in your {startTime}–{endTime} window. Remove upcoming stops or extend your end time to include them.</p>
             {overflowStops.map((store, i) => (
               <div key={i} className="bg-orange-50 rounded-xl border border-orange-100 p-3 mb-2">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-gray-700">{store.retailer_name} #{store.store_number}</p>
-                    <p className="text-xs text-gray-400">{store.vendors?.join(', ')}</p>
-                    <div className="flex gap-2 mt-1">
+                    {store.address && <p className="text-xs text-gray-400">{store.address}, {store.city}</p>}
+                    <p className="text-xs text-gray-500 mt-0.5">{store.vendors?.join(', ')}</p>
+                    <div className="flex flex-wrap gap-2 mt-1">
                       {store.drive_time_min > 0 && <span className="text-[10px] text-gray-400">Travel: {Math.round(store.drive_time_min)} min</span>}
+                      {store.drive_distance_mi > 0 && <span className="text-[10px] text-gray-400">Dist: {store.drive_distance_mi} mi</span>}
                       <span className="text-[10px] text-green-600 font-medium">Est: ${store.earnings}</span>
                     </div>
+                    {/* Vendor flags */}
+                    {(store.vendors || []).map((vendor, vi) => {
+                      const flags = (store.vendor_flags || {})[vendor] || {}
+                      if (!flags.same_week && !flags.month_limit) return null
+                      return (
+                        <div key={vi} className="mt-0.5">
+                          {flags.same_week && <p className="text-[10px] text-orange-600">{vendor}: visited this week ({flags.week_dates?.join(', ')})</p>}
+                          {flags.month_limit && <p className="text-[10px] text-red-500">{vendor}: 2+ this month ({flags.month_dates?.join(', ')})</p>}
+                        </div>
+                      )
+                    })}
                   </div>
                   <button onClick={() => handleSkipOrRemove(store, 'removed')}
-                    className="px-2 py-1 text-[10px] text-red-500 bg-red-50 rounded border border-red-100">Remove</button>
+                    className="px-2 py-1.5 text-[10px] text-red-500 bg-red-50 rounded border border-red-100 shrink-0 ml-2">Remove</button>
                 </div>
               </div>
             ))}
