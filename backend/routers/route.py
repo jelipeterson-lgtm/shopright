@@ -520,6 +520,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
                 overflow.append(store)
             break
 
+        store = stores[best_idx]
         drive_min = drive_times.get((current, best_idx), 0)
         store["drive_time_min"] = round(drive_min, 1)
         store["drive_distance_mi"] = round(drive_distances.get((current, best_idx), 0), 1)
