@@ -1,8 +1,41 @@
 from fastapi import APIRouter, Query
 from db import supabase_admin
 from math import radians, cos, sin, asin, sqrt
+import httpx
 
 router = APIRouter(prefix="/stores", tags=["stores"])
+
+
+def ensure_coordinates(store):
+    """Auto-geocode a store if it has null lat/lng. Updates DB in place."""
+    if store.get("latitude") and store.get("longitude"):
+        return store
+    address = store.get("address", "")
+    city = store.get("city", "")
+    state = store.get("state", "")
+    zip_code = store.get("zip_code", "")
+    if not (address or city):
+        return store
+    full_address = f"{address}, {city}, {state} {zip_code}".strip(", ")
+    try:
+        r = httpx.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": full_address, "format": "json", "limit": 1},
+            headers={"User-Agent": "ShopRight/1.0"},
+            timeout=10,
+        )
+        data = r.json()
+        if data:
+            lat, lon = float(data[0]["lat"]), float(data[0]["lon"])
+            store["latitude"] = lat
+            store["longitude"] = lon
+            if store.get("id"):
+                supabase_admin.table("stores").update(
+                    {"latitude": lat, "longitude": lon}
+                ).eq("id", store["id"]).execute()
+    except Exception:
+        pass
+    return store
 
 
 def haversine(lat1, lon1, lat2, lon2):
@@ -64,6 +97,9 @@ def search_stores(q: str = Query(..., min_length=1)):
         s.get("store_number", ""),
     ))
 
+    # Auto-geocode any matches missing coordinates
+    for m in matches[:25]:
+        ensure_coordinates(m)
     return {"success": True, "data": matches[:25], "error": None}
 
 

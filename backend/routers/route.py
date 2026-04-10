@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from db import supabase_admin
 from routers.auth import get_user_id
+from routers.stores import ensure_coordinates
 from datetime import datetime, date
 import re
 
@@ -237,15 +238,18 @@ def parse_email(body: ParseEmailRequest, authorization: str = Header(...)):
         entries = parse_event_email(body.raw_text)
 
     for entry in entries:
-        store = supabase_admin.table("stores").select("id, latitude, longitude, address").eq(
+        store = supabase_admin.table("stores").select("*").eq(
             "store_number", entry["store_number"]
         ).eq("retailer_name", entry["retailer_name"]).limit(1).execute()
         if store.data:
-            entry["store_id"] = store.data[0]["id"]
-            entry["latitude"] = store.data[0].get("latitude")
-            entry["longitude"] = store.data[0].get("longitude")
-            if not entry.get("address") and store.data[0].get("address"):
-                entry["address"] = store.data[0]["address"]
+            s = ensure_coordinates(store.data[0])
+            entry["store_id"] = s["id"]
+            entry["latitude"] = s.get("latitude")
+            entry["longitude"] = s.get("longitude")
+            if not entry.get("address") and s.get("address"):
+                entry["address"] = s["address"]
+            if not entry.get("city") and s.get("city"):
+                entry["city"] = s["city"]
 
     now = datetime.now()
     visit_month = now.strftime("%Y-%m")
@@ -286,15 +290,17 @@ def parse_checkin(body: ParseCheckinRequest, authorization: str = Header(...)):
         entries = parse_checkin_text(body.raw_text)
 
     for entry in entries:
-        store = supabase_admin.table("stores").select("id, latitude, longitude, address, zip_code").eq(
+        store = supabase_admin.table("stores").select("*").eq(
             "store_number", entry["store_number"]
         ).eq("retailer_name", entry["retailer_name"]).limit(1).execute()
         if store.data:
-            entry["store_id"] = store.data[0]["id"]
-            entry["latitude"] = store.data[0].get("latitude")
-            entry["longitude"] = store.data[0].get("longitude")
-            entry["address"] = store.data[0].get("address", "")
-            entry["zip_code"] = store.data[0].get("zip_code", "")
+            s = ensure_coordinates(store.data[0])
+            entry["store_id"] = s["id"]
+            entry["latitude"] = s.get("latitude")
+            entry["longitude"] = s.get("longitude")
+            entry["address"] = s.get("address", "")
+            entry["city"] = s.get("city", "")
+            entry["zip_code"] = s.get("zip_code", "")
 
     now = datetime.now()
     visit_month = now.strftime("%Y-%m")
