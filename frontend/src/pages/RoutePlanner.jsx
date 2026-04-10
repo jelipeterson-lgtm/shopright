@@ -353,7 +353,7 @@ function RoutePlanner() {
     const miles = parseFloat(maxDistance)
     if (isNaN(miles)) return parsedStores
     return parsedStores.filter(s => {
-      if (!s.latitude || !s.longitude) return true
+      if (!s.latitude || !s.longitude) return false  // exclude stores without coordinates
       return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
     })
   })()
