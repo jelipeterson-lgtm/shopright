@@ -161,6 +161,7 @@ def ai_parse_content(raw_text, content_type, api_key):
 - end_date (MM/DD/YYYY)
 
 Only include entries where the end_date is today or in the future (today is {datetime.now().strftime('%m/%d/%Y')}).
+Only include entries that are staffed/active. Exclude entries marked as unstaffed, cancelled, or not staffed.
 Ignore email headers, greetings, signatures, and image references.
 
 Return ONLY a JSON array of objects. No explanation, no markdown code blocks, just the JSON array.

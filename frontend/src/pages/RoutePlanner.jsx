@@ -40,6 +40,13 @@ function RoutePlanner() {
   const [selectedCities, setSelectedCities] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
   const [startCoords, setStartCoords] = useState(null)
+  const [todayVisits, setTodayVisits] = useState([])
+  const [showAddStore, setShowAddStore] = useState(false)
+  const [storeSearchQuery, setStoreSearchQuery] = useState('')
+  const [storeSearchResults, setStoreSearchResults] = useState([])
+  const [addingVendorStore, setAddingVendorStore] = useState(null)
+  const [programs, setPrograms] = useState([])
+  const [selectedProgram, setSelectedProgram] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -63,6 +70,7 @@ function RoutePlanner() {
 
           // Sync route status with actual visits from Stores page
           const visits = visitsResult.data || []
+          setTodayVisits(visits)
           if (visits.length > 0) {
             setAccepted(true)
             const completedKeys = new Set()
@@ -442,8 +450,18 @@ function RoutePlanner() {
   }
 
   const handleAssessVendors = (store) => {
-    // Navigate to Stores tab — the store's visits are already there from Accept Route
-    navigate('/session')
+    // Navigate to first unfinished vendor assessment at this store
+    const unfinished = todayVisits.find(v =>
+      v.retailer_name === store.retailer_name &&
+      v.store_number === store.store_number &&
+      v.status === 'Draft'
+    )
+    if (unfinished) {
+      navigate(`/visit/${unfinished.id}`)
+    } else {
+      // All done or no visits — go to session page
+      navigate('/session')
+    }
   }
 
   const handleSkipOrRemove = async (store, status) => {
@@ -481,6 +499,82 @@ function RoutePlanner() {
       recalcSummary(updated)
       // Persist changes
       api.saveRoutePlan({ plan_date: today, start_address: startAddress, end_address: endAddress || startAddress, stores_data: updated }).catch(() => {})
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const refreshVisits = async () => {
+    try {
+      const result = await api.getVisits({ session_date: today })
+      setTodayVisits(result.data || [])
+    } catch (err) {}
+  }
+
+  const handleStoreSearch = async (q) => {
+    setStoreSearchQuery(q)
+    if (q.trim().length < 1) { setStoreSearchResults([]); return }
+    try {
+      const result = await api.searchStores(q)
+      setStoreSearchResults(result.data || [])
+    } catch (err) {}
+  }
+
+  const handleAddStoreToRoute = async (store) => {
+    setShowAddStore(false)
+    setStoreSearchQuery('')
+    setStoreSearchResults([])
+    // Load programs for vendor selection
+    setAddingVendorStore(store)
+    try {
+      const result = await api.getPrograms()
+      setPrograms(result.data || [])
+    } catch (err) {}
+  }
+
+  const handleConfirmAddVendor = async () => {
+    if (!addingVendorStore || !selectedProgram?.trim()) return
+    try {
+      const now = new Date()
+      const visitData = {
+        store_id: addingVendorStore.id,
+        retailer_name: addingVendorStore.retailer_name,
+        store_number: addingVendorStore.store_number,
+        program: selectedProgram,
+        address: addingVendorStore.address,
+        city: addingVendorStore.city,
+        state: addingVendorStore.state,
+        visit_date: today,
+        visit_time: now.toTimeString().slice(0, 5),
+        session_date: today,
+      }
+      const result = await api.createVisit(visitData)
+      setAddingVendorStore(null)
+      setSelectedProgram(null)
+      await refreshVisits()
+      // Navigate to the assessment form
+      if (result.data?.id) navigate(`/visit/${result.data.id}`)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleAddVendorToExisting = async (store) => {
+    // Find the store in the database to get full details
+    try {
+      const result = await api.searchStores(`${store.retailer_name} ${store.store_number}`)
+      const match = (result.data || []).find(s =>
+        s.retailer_name === store.retailer_name && s.store_number === store.store_number
+      )
+      if (match) {
+        setAddingVendorStore(match)
+        const progResult = await api.getPrograms()
+        setPrograms(progResult.data || [])
+      } else {
+        setAddingVendorStore({ ...store, id: store.store_id })
+        const progResult = await api.getPrograms()
+        setPrograms(progResult.data || [])
+      }
     } catch (err) {
       setError(err.message)
     }
@@ -792,7 +886,29 @@ function RoutePlanner() {
                         <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
                       </div>
                       {store.address && <p className="text-xs text-gray-400 mt-1 ml-8">{store.address}, {store.city}</p>}
-                      <p className="text-xs text-gray-500 mt-1 ml-8">{store.vendors?.join(', ')}</p>
+                      {/* Individual vendor assessment status */}
+                      <div className="mt-1 ml-8 space-y-1">
+                        {(store.vendors || []).map((vendor, vi) => {
+                          const visit = todayVisits.find(v =>
+                            v.retailer_name === store.retailer_name &&
+                            v.store_number === store.store_number &&
+                            v.program === vendor
+                          )
+                          const isDone = visit?.status === 'Complete'
+                          return (
+                            <div key={vi} className="flex items-center gap-1.5">
+                              {visit ? (
+                                <button onClick={() => navigate(`/visit/${visit.id}`)}
+                                  className={`text-xs px-2 py-0.5 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'}`}>
+                                  {isDone ? '✓ ' : ''}{vendor} {isDone ? '' : '— tap to assess'}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-500">{vendor}</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                       {/* Schedule */}
                       {store.est_arrival && (
                         <p className="text-xs font-medium text-blue-600 mt-1.5 ml-8">
@@ -822,6 +938,10 @@ function RoutePlanner() {
                       className="flex-1 bg-blue-50 text-blue-700 py-1.5 rounded-lg text-xs font-medium border border-blue-200 hover:bg-blue-100">
                       Assess Vendors
                     </button>
+                    <button onClick={() => handleAddVendorToExisting(store)}
+                      className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium border border-blue-200 hover:bg-blue-100">
+                      + Vendor
+                    </button>
                     <button onClick={() => handleSkipOrRemove(store, 'skipped')}
                       className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
                       Skip
@@ -838,27 +958,82 @@ function RoutePlanner() {
         )}
 
         {/* Accept Route button */}
-        {upcomingStops.length > 0 && !optimizing && (
+        {upcomingStops.length > 0 && !optimizing && !accepted && (
           <div className="mb-4">
-            {accepted ? (
-              <button onClick={() => navigate('/session')}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700">
-                Go to Stores
+            <button onClick={handleAcceptRoute} disabled={accepting}
+              className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+              {accepting ? 'Creating visits...' : `Accept Route — Create ${upcomingStops.reduce((sum, s) => sum + (s.vendors?.length || 0), 0)} Vendor Assessments`}
+            </button>
+          </div>
+        )}
+
+        {/* Add Vendor modal */}
+        {addingVendorStore && (
+          <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-4 mb-4">
+            <p className="text-sm font-semibold text-gray-800 mb-2">
+              Add Vendor — {addingVendorStore.retailer_name} #{addingVendorStore.store_number}
+            </p>
+            <select value={selectedProgram || ''} onChange={(e) => setSelectedProgram(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2">
+              <option value="">Select a program...</option>
+              {programs.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <input type="text" placeholder="Or type a custom program code"
+              value={selectedProgram && !programs.includes(selectedProgram) ? selectedProgram : ''}
+              onChange={(e) => setSelectedProgram(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
+            <div className="flex gap-2">
+              <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                Add & Assess
               </button>
-            ) : (
-              <button onClick={handleAcceptRoute} disabled={accepting}
-                className="w-full bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                {accepting ? 'Updating stores...' : `Accept Route — Sync ${upcomingStops.reduce((sum, s) => sum + (s.vendors?.length || 0), 0)} Vendors to Stores`}
-              </button>
+              <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
+                className="px-4 py-2 text-gray-500 text-sm hover:underline">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Add Store search */}
+        {showAddStore && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+            <p className="text-sm font-semibold text-gray-800 mb-2">Add a Store</p>
+            <input type="text" value={storeSearchQuery} onChange={(e) => handleStoreSearch(e.target.value)}
+              placeholder="Search by name, number, city, address..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" autoFocus />
+            {storeSearchResults.length > 0 && (
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {storeSearchResults.map(store => (
+                  <button key={store.id} onClick={() => handleAddStoreToRoute(store)}
+                    className="w-full text-left p-2 rounded-lg hover:bg-blue-50 border border-gray-100">
+                    <p className="text-sm font-medium">{store.retailer_name} #{store.store_number}</p>
+                    <p className="text-xs text-gray-400">{store.address}, {store.city}, {store.state}</p>
+                  </button>
+                ))}
+              </div>
             )}
+            {storeSearchQuery.length > 0 && storeSearchResults.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-2">No stores found</p>
+            )}
+            <button onClick={() => { setShowAddStore(false); setStoreSearchQuery(''); setStoreSearchResults([]) }}
+              className="w-full text-center text-xs text-gray-400 mt-2 hover:text-gray-600">Cancel</button>
+          </div>
+        )}
+
+        {/* Add Store button */}
+        {!showAddStore && !addingVendorStore && !optimizing && (
+          <div className="mb-4">
+            <button onClick={() => setShowAddStore(true)}
+              className="w-full bg-white text-blue-600 py-2.5 rounded-xl text-xs font-medium border border-blue-200 hover:bg-blue-50">
+              + Add Store Manually
+            </button>
           </div>
         )}
 
         {/* Empty state */}
-        {route.length === 0 && !loading && !optimizing && (
+        {route.length === 0 && todayVisits.length === 0 && !loading && !optimizing && (
           <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
             <p className="text-gray-400 text-sm">No route planned yet</p>
-            <p className="text-gray-300 text-xs mt-1">Paste an event email to get started</p>
+            <p className="text-gray-300 text-xs mt-1">Paste an event email or add a store manually</p>
           </div>
         )}
       </div>

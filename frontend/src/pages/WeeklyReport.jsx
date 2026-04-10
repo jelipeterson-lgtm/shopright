@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import api, { getLocalDate } from '../services/api'
 import { supabase } from '../services/supabase'
 import PageHeader from '../components/PageHeader'
 
@@ -154,8 +154,15 @@ function WeeklyReport() {
                         <p className="text-sm text-gray-800">{v.retailer_name} #{v.store_number}</p>
                         <p className="text-xs text-gray-400">{v.program} — {v.visit_time}</p>
                       </div>
-                      <button onClick={() => navigate(`/visit/${v.id}`)}
-                        className="text-xs text-blue-600 hover:underline">Review</button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => navigate(`/visit/${v.id}`)}
+                          className="text-xs text-blue-600 hover:underline">Review</button>
+                        <button onClick={async () => {
+                          if (!confirm(`Delete ${v.retailer_name} #${v.store_number} — ${v.program}?`)) return
+                          await api.discardVisit(v.id)
+                          setVisits(prev => prev.filter(x => x.id !== v.id))
+                        }} className="text-xs text-red-500 hover:underline">Delete</button>
+                      </div>
                     </div>
                   ))}
                 </div>

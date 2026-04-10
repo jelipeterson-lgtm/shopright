@@ -33,17 +33,35 @@ def get_nearby_stores(lat: float = Query(...), lng: float = Query(...)):
 
 @router.get("/search")
 def search_stores(q: str = Query(..., min_length=1)):
-    """Search stores by retailer name or store number."""
-    query = q.strip().lower()
+    """Search stores by any field: retailer name, store number, city, address, zip."""
+    query = q.strip()
 
-    # Try store number first (exact match)
-    result = supabase_admin.table("stores").select("*").eq("store_number", query).execute()
-    if result.data:
-        return {"success": True, "data": result.data, "error": None}
+    # Load all stores and search across multiple fields
+    result = supabase_admin.table("stores").select("*").execute()
+    stores = result.data or []
 
-    # Text search on retailer name
-    result = supabase_admin.table("stores").select("*").ilike("retailer_name", f"%{query}%").execute()
-    return {"success": True, "data": result.data or [], "error": None}
+    terms = query.lower().split()
+    matches = []
+    for store in stores:
+        searchable = " ".join([
+            store.get("retailer_name", ""),
+            store.get("store_number", ""),
+            store.get("address", ""),
+            store.get("city", ""),
+            store.get("state", ""),
+            store.get("zip_code", ""),
+        ]).lower()
+        if all(term in searchable for term in terms):
+            matches.append(store)
+
+    # Sort: exact store number match first, then by retailer + number
+    matches.sort(key=lambda s: (
+        0 if s.get("store_number", "").lower() == query.lower() else 1,
+        s.get("retailer_name", ""),
+        s.get("store_number", ""),
+    ))
+
+    return {"success": True, "data": matches[:25], "error": None}
 
 
 @router.get("/programs")
