@@ -396,7 +396,7 @@ function RoutePlanner() {
       setError('No stores match your filters.')
       return
     }
-    if (!hasGoogleKey) {
+    if (hasGoogleKey === false) {
       setError('Google Maps API key needed to optimize route. Add it in Settings.')
       return
     }
