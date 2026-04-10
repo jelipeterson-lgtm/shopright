@@ -32,7 +32,7 @@ function RoutePlanner() {
   const [parseSuccess, setParseSuccess] = useState(null)
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [showCheckinInput, setShowCheckinInput] = useState(false)
-  const [hasGoogleKey, setHasGoogleKey] = useState(false)
+  const [hasGoogleKey, setHasGoogleKey] = useState(null)
   const [profileCity, setProfileCity] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [accepting, setAccepting] = useState(false)
@@ -672,7 +672,7 @@ function RoutePlanner() {
         {error && <p className="text-red-500 text-sm mb-3 bg-red-50 p-3 rounded-lg">{error}</p>}
         {parseSuccess && <p className="text-green-600 text-sm mb-3 bg-green-50 p-3 rounded-lg">{parseSuccess}</p>}
 
-        {!hasGoogleKey && (
+        {hasGoogleKey === false && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p className="text-yellow-800 text-sm font-medium">Google Maps API key required</p>
             <p className="text-yellow-700 text-xs mt-1">Add your Google Maps API key in Settings to enable route optimization.</p>
