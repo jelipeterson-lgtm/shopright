@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
 
 function formatShortDate(d) {
@@ -31,7 +31,7 @@ function formatLongDate(dateStr) {
 
 function Session() {
   const navigate = useNavigate()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDate()
   const todayLong = formatLongDate(today)
   const [visits, setVisits] = useState([])
   const [emptyStores, setEmptyStores] = useState([])

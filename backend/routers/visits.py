@@ -92,7 +92,7 @@ class BatchCreateVisit(BaseModel):
 @router.post("/batch")
 def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
-    now = datetime.utcnow()
+    now = datetime.now()
     visit_time = now.strftime("%H:%M")
 
     # Check for existing visits on this date to avoid duplicates

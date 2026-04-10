@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import api from '../services/api'
+import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
 
 function NewStore() {
   const navigate = useNavigate()
   const location = useLocation()
-  const sessionDate = location.state?.sessionDate || new Date().toISOString().split('T')[0]
+  const sessionDate = location.state?.sessionDate || getLocalDate()
   const preselectedStore = location.state?.preselectedStore
   const [gpsStatus, setGpsStatus] = useState(preselectedStore ? 'skipped' : 'requesting')
   const [nearbyStores, setNearbyStores] = useState([])

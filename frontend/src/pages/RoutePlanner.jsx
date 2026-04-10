@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
 import RouteMap from '../components/RouteMap'
 
@@ -14,7 +14,7 @@ function haversineMiles(lat1, lon1, lat2, lon2) {
 
 function RoutePlanner() {
   const navigate = useNavigate()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDate()
 
   const [startAddress, setStartAddress] = useState('')
   const [endAddress, setEndAddress] = useState('')

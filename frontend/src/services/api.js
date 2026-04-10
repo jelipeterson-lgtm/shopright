@@ -2,6 +2,11 @@ import { supabase } from './supabase'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// Return today's date in YYYY-MM-DD using LOCAL timezone (not UTC)
+export function getLocalDate(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // Token getter — set by AuthContext so API calls use the current session
 let _getAccessToken = async () => {
   const { data: { session } } = await supabase.auth.getSession()

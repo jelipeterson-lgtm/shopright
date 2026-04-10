@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
 
 function ManualVisit() {
@@ -12,7 +12,7 @@ function ManualVisit() {
   const [selectedProgram, setSelectedProgram] = useState(null)
   const [showCustomProgram, setShowCustomProgram] = useState(false)
   const [customProgram, setCustomProgram] = useState('')
-  const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0])
+  const [visitDate, setVisitDate] = useState(getLocalDate())
   const [visitTime, setVisitTime] = useState(new Date().toTimeString().slice(0, 5))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)

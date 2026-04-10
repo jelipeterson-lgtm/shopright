@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../services/AuthContext'
-import api from '../services/api'
+import api, { getLocalDate } from '../services/api'
 import Paywall from './Paywall'
 import PageHeader from '../components/PageHeader'
 
@@ -9,7 +9,7 @@ function Home() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDate()
   const [todayVisits, setTodayVisits] = useState([])
   const [loading, setLoading] = useState(true)
   const [hasAccess, setHasAccess] = useState(true)
