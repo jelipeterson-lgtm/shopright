@@ -106,15 +106,26 @@ function RoutePlanner() {
           // Sync route status with actual visits
           if (visits.length > 0) {
             setAccepted(true)
-            const completedKeys = new Set()
+            // Group visits by store and check if ALL vendors are complete
+            const storeVisits = {}
             for (const v of visits) {
-              if (v.status === 'Complete') {
-                completedKeys.add(`${v.retailer_name}-${v.store_number}`)
+              const key = `${v.retailer_name}-${v.store_number}`
+              if (!storeVisits[key]) storeVisits[key] = []
+              storeVisits[key].push(v)
+            }
+            const completedKeys = new Set()
+            for (const [key, svs] of Object.entries(storeVisits)) {
+              if (svs.length > 0 && svs.every(v => v.status === 'Complete')) {
+                completedKeys.add(key)
               }
             }
             routeData = routeData.map(s => {
               const key = `${s.retailer_name}-${s.store_number}`
-              if (completedKeys.has(key) && s.status !== 'completed') {
+              // Only mark completed if ALL vendors at this store are complete
+              const vendorCount = (s.vendors || []).length
+              const storeVs = storeVisits[key] || []
+              const allDone = vendorCount > 0 && storeVs.length >= vendorCount && storeVs.every(v => v.status === 'Complete')
+              if (allDone && s.status !== 'completed') {
                 return { ...s, status: 'completed' }
               }
               return s
@@ -885,18 +896,17 @@ function RoutePlanner() {
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Done ({completedStops.length})</p>
             {completedStops.map((store, i) => (
-              <div key={i} className="bg-gray-100 rounded-xl p-3 mb-2">
-                <div className="flex items-center gap-2">
+              <details key={i} className="bg-gray-50 rounded-xl mb-2 overflow-hidden border border-gray-100">
+                <summary className="p-3 flex items-center gap-2 cursor-pointer list-none">
                   {store.status === 'completed' ? (
-                    <span className="text-xs font-bold text-green-600 bg-green-100 w-6 h-6 rounded-full flex items-center justify-center">✓</span>
+                    <span className="text-xs font-bold text-green-600 bg-green-100 w-6 h-6 rounded-full flex items-center justify-center shrink-0">✓</span>
                   ) : (
-                    <span className="text-xs font-bold text-gray-400 bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center">—</span>
+                    <span className="text-xs font-bold text-gray-400 bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center shrink-0">—</span>
                   )}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className={`text-sm font-medium ${store.status === 'removed' ? 'text-gray-400 line-through' : 'text-gray-600'}`}>{store.retailer_name} #{store.store_number}</p>
-                    <p className="text-xs text-gray-400">{store.vendors?.join(', ')} — ${store.earnings}</p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${
                       store.status === 'completed' ? 'bg-green-100 text-green-700'
                         : store.status === 'removed' ? 'bg-red-50 text-red-500'
@@ -904,15 +914,60 @@ function RoutePlanner() {
                     }`}>
                       {store.status === 'completed' ? 'Assessed' : store.status === 'removed' ? 'Removed' : 'Skipped'}
                     </span>
-                    {store.status !== 'completed' && (
-                      <button onClick={() => handleRestoreStop(store)}
-                        className="text-[10px] font-medium text-blue-600 hover:underline">
-                        Restore
-                      </button>
-                    )}
+                    <span className="text-gray-300 text-sm">›</span>
                   </div>
+                </summary>
+                {/* Expanded: show vendor rows */}
+                <div className="border-t border-gray-200">
+                  {(() => {
+                    const routeVendors = store.vendors || []
+                    const extraVisits = todayVisits.filter(v =>
+                      v.retailer_name === store.retailer_name &&
+                      v.store_number === store.store_number &&
+                      !routeVendors.includes(v.program)
+                    )
+                    const allVendors = [...routeVendors, ...extraVisits.map(v => v.program)]
+                    return allVendors.map((vendor, vi) => {
+                      const visit = todayVisits.find(v =>
+                        v.retailer_name === store.retailer_name &&
+                        v.store_number === store.store_number &&
+                        v.program === vendor
+                      )
+                      const isDone = visit?.status === 'Complete'
+                      return (
+                        <button key={vi}
+                          onClick={() => visit ? navigate(`/visit/${visit.id}`) : null}
+                          disabled={!visit}
+                          className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 text-left active:bg-gray-100">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {isDone ? (
+                              <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs shrink-0">✓</span>
+                            ) : (
+                              <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-[10px] shrink-0">●</span>
+                            )}
+                            <span className="text-sm text-gray-700 truncate">{vendor}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                              {isDone ? 'Complete' : 'Open'}
+                            </span>
+                            {visit && <span className="text-gray-300 text-sm">›</span>}
+                          </div>
+                        </button>
+                      )
+                    })
+                  })()}
                 </div>
-              </div>
+                {/* Restore button for skipped/removed */}
+                {store.status !== 'completed' && (
+                  <div className="border-t border-gray-200 p-2">
+                    <button onClick={() => handleRestoreStop(store)}
+                      className="w-full py-2 text-xs font-medium text-blue-600 active:bg-blue-50 rounded">
+                      Restore to Route
+                    </button>
+                  </div>
+                )}
+              </details>
             ))}
           </div>
         )}
