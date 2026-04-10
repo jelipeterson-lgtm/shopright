@@ -57,7 +57,9 @@ class UpdateVisit(BaseModel):
     eval_soft_selling_comment: Optional[str] = None
     eval_resource_guide: Optional[str] = None
     visit_recap: Optional[str] = None
+    visit_date: Optional[str] = None
     visit_time: Optional[str] = None
+    session_date: Optional[str] = None
     status: Optional[str] = None
     stop_open: Optional[bool] = None
 

@@ -26,6 +26,8 @@ function WeeklyReport() {
   const [success, setSuccess] = useState(null)
   const [recipientEmail, setRecipientEmail] = useState('')
   const [downloading, setDownloading] = useState(false)
+  const [reviewMode, setReviewMode] = useState(false)
+  const [signedOff, setSignedOff] = useState(false)
 
   useEffect(() => {
     loadVisits()
@@ -141,35 +143,123 @@ function WeeklyReport() {
           </div>
         ) : (
           <>
-            {/* Visit summary by date */}
-            {sortedDates.map((date) => (
-              <div key={date} className="bg-white rounded-lg shadow mb-3 overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-700">{formatDate(date)}</p>
-                </div>
-                <div className="divide-y divide-gray-50">
-                  {byDate[date].map((v) => (
-                    <div key={v.id} className="px-4 py-2 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-800">{v.retailer_name} #{v.store_number}</p>
-                        <p className="text-xs text-gray-400">{v.program} — {v.visit_time}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => navigate(`/visit/${v.id}`)}
-                          className="text-xs text-blue-600 hover:underline">Review</button>
-                        <button onClick={async () => {
-                          if (!confirm(`Delete ${v.retailer_name} #${v.store_number} — ${v.program}?`)) return
-                          await api.discardVisit(v.id)
-                          setVisits(prev => prev.filter(x => x.id !== v.id))
-                        }} className="text-xs text-red-500 hover:underline">Delete</button>
-                      </div>
+            {/* Review/Edit toggle */}
+            <div className="flex gap-2 mb-3">
+              <button onClick={() => setReviewMode(false)}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium ${!reviewMode ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                Summary
+              </button>
+              <button onClick={() => setReviewMode(true)}
+                className={`flex-1 py-2 rounded-lg text-xs font-medium ${reviewMode ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                Review & Edit
+              </button>
+            </div>
+
+            {!reviewMode ? (
+              <>
+                {/* Summary view */}
+                {sortedDates.map((date) => (
+                  <div key={date} className="bg-white rounded-lg shadow mb-3 overflow-hidden">
+                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-700">{formatDate(date)}</p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+                    <div className="divide-y divide-gray-50">
+                      {byDate[date].map((v) => (
+                        <div key={v.id} className="px-4 py-2 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-800">{v.retailer_name} #{v.store_number}</p>
+                            <p className="text-xs text-gray-400">{v.program} — {v.visit_time}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => navigate(`/visit/${v.id}`)}
+                              className="text-xs text-blue-600 hover:underline">Review</button>
+                            <button onClick={async () => {
+                              if (!confirm(`Delete ${v.retailer_name} #${v.store_number} — ${v.program}?`)) return
+                              await api.discardVisit(v.id)
+                              setVisits(prev => prev.filter(x => x.id !== v.id))
+                            }} className="text-xs text-red-500 hover:underline">Delete</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {/* Review & Edit view — editable fields per visit */}
+                {sortedDates.map((date) => (
+                  <div key={date} className="mb-4">
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">{formatDate(date)}</p>
+                    {byDate[date].map((v) => (
+                      <div key={v.id} className="bg-white rounded-lg shadow mb-2 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-gray-900">{v.retailer_name} #{v.store_number}</p>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => navigate(`/visit/${v.id}`)}
+                              className="text-[10px] text-blue-600 hover:underline">Full Edit</button>
+                            <button onClick={async () => {
+                              if (!confirm(`Delete ${v.retailer_name} #${v.store_number} — ${v.program}?`)) return
+                              await api.discardVisit(v.id)
+                              setVisits(prev => prev.filter(x => x.id !== v.id))
+                            }} className="text-[10px] text-red-500 hover:underline">Delete</button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <label className="text-gray-400">Program</label>
+                            <p className="text-gray-800 font-medium">{v.program}</p>
+                          </div>
+                          <div>
+                            <label className="text-gray-400">Reps Present</label>
+                            <p className={`font-medium ${v.reps_present === 'Fail' ? 'text-red-600' : 'text-gray-800'}`}>{v.reps_present || '—'}</p>
+                          </div>
+                          <div>
+                            <label className="text-gray-400">Date</label>
+                            <input type="date" value={v.visit_date || ''} onChange={async (e) => {
+                              await api.updateVisit(v.id, { visit_date: e.target.value, session_date: e.target.value })
+                              setVisits(prev => prev.map(x => x.id === v.id ? { ...x, visit_date: e.target.value, session_date: e.target.value } : x))
+                            }} className="w-full border border-gray-200 rounded px-1 py-0.5 text-xs" />
+                          </div>
+                          <div>
+                            <label className="text-gray-400">Time</label>
+                            <input type="time" value={v.visit_time?.slice(0, 5) || ''} onChange={async (e) => {
+                              await api.updateVisit(v.id, { visit_time: e.target.value })
+                              setVisits(prev => prev.map(x => x.id === v.id ? { ...x, visit_time: e.target.value } : x))
+                            }} className="w-full border border-gray-200 rounded px-1 py-0.5 text-xs" />
+                          </div>
+                        </div>
+                        {v.visit_recap && (
+                          <div className="mt-2">
+                            <label className="text-xs text-gray-400">Visit Recap</label>
+                            <textarea value={v.visit_recap} rows={2} onChange={async (e) => {
+                              const newRecap = e.target.value
+                              setVisits(prev => prev.map(x => x.id === v.id ? { ...x, visit_recap: newRecap } : x))
+                            }} onBlur={async (e) => {
+                              await api.updateVisit(v.id, { visit_recap: e.target.value })
+                            }} className="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-0.5" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </>
+            )}
 
             <p className="text-sm text-gray-500 text-center mb-4">{visits.length} visit{visits.length !== 1 ? 's' : ''} this week</p>
+
+            {/* Sign Off */}
+            {!signedOff ? (
+              <button onClick={() => setSignedOff(true)}
+                className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 mb-3">
+                Sign Off — Ready for Report
+              </button>
+            ) : (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3 text-center">
+                <p className="text-green-700 text-sm font-medium">Signed off — ready to download or send</p>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="space-y-2">

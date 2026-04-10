@@ -290,13 +290,17 @@ function Visit() {
             <p className="text-sm font-medium text-gray-900">{visit.program || '—'}</p>
           </div>
           <div className="flex gap-4 mt-2">
-            <div>
-              <p className="text-xs text-gray-500">Date</p>
-              <p className="text-sm text-gray-900">{visit.visit_date}</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500 mb-0.5">Date</p>
+              <input type="date" value={visit.visit_date || ''} disabled={isComplete}
+                onChange={(e) => { updateField('visit_date', e.target.value); updateField('session_date', e.target.value) }}
+                className="w-full border border-gray-200 rounded px-2 py-1 text-sm text-gray-900 disabled:bg-gray-100" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500">Time</p>
-              <p className="text-sm text-gray-900">{visit.visit_time ? visit.visit_time.replace(/:00$/, '') : '—'}</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500 mb-0.5">Time</p>
+              <input type="time" value={visit.visit_time ? visit.visit_time.slice(0, 5) : ''} disabled={isComplete}
+                onChange={(e) => updateField('visit_time', e.target.value)}
+                className="w-full border border-gray-200 rounded px-2 py-1 text-sm text-gray-900 disabled:bg-gray-100" />
             </div>
           </div>
         </div>
