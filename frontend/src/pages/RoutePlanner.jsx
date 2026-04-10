@@ -1033,6 +1033,7 @@ function RoutePlanner() {
                           v.program === vendor
                         )
                         const isDone = visit?.status === 'Complete'
+                        const flags = (store.vendor_flags || {})[vendor] || {}
                         const handleVendorTap = async () => {
                           if (visit) {
                             navigate(`/visit/${visit.id}`)
@@ -1062,7 +1063,8 @@ function RoutePlanner() {
                           <button key={vi}
                             onClick={handleVendorTap}
                             className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-b-0 text-left active:bg-gray-50">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
                               {isDone ? (
                                 <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs shrink-0">✓</span>
                               ) : visit ? (
@@ -1071,6 +1073,17 @@ function RoutePlanner() {
                                 <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center text-[10px] shrink-0">○</span>
                               )}
                               <span className="text-sm text-gray-800 truncate">{vendor}</span>
+                              </div>
+                              {(flags.same_week || flags.month_limit) && (
+                                <div className="ml-7 mt-0.5">
+                                  {flags.same_week && (
+                                    <p className="text-[10px] text-orange-600">Already visited this week: {flags.week_dates?.join(', ')}</p>
+                                  )}
+                                  {flags.month_limit && (
+                                    <p className="text-[10px] text-red-500">2+ visits this month: {flags.month_dates?.join(', ')}</p>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={`text-xs font-medium px-2 py-0.5 rounded ${

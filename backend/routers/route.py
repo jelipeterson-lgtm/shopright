@@ -334,7 +334,47 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         return {"success": False, "data": None, "error": "Google Maps API key required. Set it up in Settings."}
 
     end_address = body.end_address or body.start_address
-    candidate_stores = [s for s in body.stores if not s.get("blocked") and s.get("latitude")]
+
+    # Check for same-week and same-month visits to flag duplicates at vendor level
+    all_visits = supabase_admin.table("vendor_visits").select(
+        "retailer_name, store_number, program, visit_date"
+    ).eq("user_id", user_id).execute()
+
+    from datetime import timedelta
+
+    today_dt = date.today()
+    week_start = today_dt - timedelta(days=today_dt.weekday())
+    week_end = week_start + timedelta(days=6)
+    current_month = today_dt.strftime("%Y-%m")
+
+    # Build per-vendor history: key = (retailer, store_number, program)
+    vendor_history = {}
+    for v in (all_visits.data or []):
+        key = (v["retailer_name"], v["store_number"], v.get("program", ""))
+        vd = v.get("visit_date", "")
+        if not vd:
+            continue
+        if key not in vendor_history:
+            vendor_history[key] = {"week_dates": [], "month_dates": []}
+        try:
+            visit_dt = datetime.strptime(vd, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if week_start <= visit_dt <= week_end and visit_dt != today_dt:
+            vendor_history[key]["week_dates"].append(vd)
+        if vd.startswith(current_month):
+            vendor_history[key]["month_dates"].append(vd)
+
+    # Attach flags per vendor (warn but never block)
+    for s in body.stores:
+        key = (s["retailer_name"], s["store_number"], s.get("program", ""))
+        history = vendor_history.get(key, {})
+        s["week_dates"] = history.get("week_dates", [])
+        s["month_dates"] = history.get("month_dates", [])
+        s["same_week"] = len(s["week_dates"]) > 0
+        s["monthly_visits"] = len(s["month_dates"])
+
+    candidate_stores = [s for s in body.stores if s.get("latitude")]
 
     if not candidate_stores:
         return {"success": True, "data": {"route": [], "summary": {"total_stops": 0, "total_vendors": 0, "total_earnings": 0, "total_time_min": 0, "total_miles": 0, "projected_rate_per_hour": 0}}, "error": None}
@@ -353,8 +393,19 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
                 "latitude": s["latitude"],
                 "longitude": s["longitude"],
                 "vendors": [],
+                "vendor_flags": {},
             }
-        store_groups[key]["vendors"].append(s.get("program", ""))
+        program = s.get("program", "")
+        store_groups[key]["vendors"].append(program)
+        flags = {}
+        if s.get("same_week"):
+            flags["same_week"] = True
+            flags["week_dates"] = s.get("week_dates", [])
+        if s.get("monthly_visits", 0) >= 2:
+            flags["month_limit"] = True
+            flags["month_dates"] = s.get("month_dates", [])
+        if flags:
+            store_groups[key]["vendor_flags"][program] = flags
 
     stores = list(store_groups.values())
 
