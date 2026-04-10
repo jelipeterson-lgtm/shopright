@@ -1,0 +1,61 @@
+Hi, here are the checked ins for now in WA and OR:
+Costco	9	RS-CKE	Aloha	OR
+Costco	17	RS-CKE	EUGENE	OR
+Costco	1298	RS-CKE	SPOKANE	WA
+Costco	9	RS-DS WATER-Primo and RSW	Aloha	OR
+Costco	1703	RS-DS WATER-Primo and RSW	Ridgefield	WA
+Costco	766	RTL-Jacuzzi-Roadshow	Wilsonville	OR
+Costco	1086	RTL-Jacuzzi-Roadshow	Vancouver	WA
+Costco	1492	RTL-Jacuzzi-Roadshow	Salem	OR
+Costco	772	RTL-GDI-LeafGuard	Vancouver	WA
+Costco	9	RTL-GDI-LG Exit Fence	Aloha	OR
+Kroger - Fred Meyer	225	RTL-ATT-EDM	SALEM	OR	
+Kroger - Fred Meyer	90	RTL-ATT-EDM	SALEM	OR
+Kroger - Fred Meyer	351	RTL-ATT-EDM	SPOKANE VALLEY	WA
+Kroger - Fred Meyer	355	RTL-ATT-EDM	SALEM	OR
+Kroger - Fred Meyer	195	RTL-ATT-EDM	MEDFORD	OR
+Kroger - Fred Meyer	196	RTL-ATT-EDM	MEDFORD	OR 
+
+I'll update later for additional check ins
+
+------------
+
+Hi Kelsey! Here are the checked ins today:
+Costco	97	RS-CKE	Clackamas	OR
+Costco	103	RS-CKE	CLARKSTON	WA
+Costco	682	RS-CKE	ALBANY	OR
+Costco	2	RTL-Jacuzzi-Roadshow	Portland	OR
+Costco	1492	RTL-Jacuzzi-Roadshow	Salem	OR
+Costco	682	RTL-SCI-HI Exit Fence	ALBANY	OR
+Costco	1086	RTL-SCI-HI Exit Fence	Vancouver	WA
+Lowe's Home Improvement	1600	RTL-LEAF FILTER	Salem	OR
+Lowe's Home Improvement	1693	RTL-LEAF FILTER	Mcminnville	OR
+Lowe's Home Improvement	2619	RTL-LEAF FILTER	Keizer	OR 
+Kroger - Fred Meyer	661	RTL-ATT-EDM	Hillsboro	OR
+Kroger - Fred Meyer	660	RTL-ATT-EDM	Wood Village	OR
+Kroger - Fred Meyer	225	RTL-ATT-EDM	SALEM	OR
+Kroger - Fred Meyer	650	RTL-ATT-EDM	REDMOND	OR
+Kroger - Fred Meyer	5	RTL-ATT-EDM	ALBANY	OR
+Kroger - Fred Meyer	35	RTL-ATT-EDM	Beaverton	OR
+Kroger - Fred Meyer	143	RTL-ATT-EDM	Hillsboro	OR
+Kroger - Fred Meyer	153	RTL-ATT-EDM	Portland	OR
+Kroger - Fred Meyer	355	RTL-ATT-EDM	SALEM	OR
+Kroger - Fred Meyer	351	RTL-ATT-EDM	SPOKANE VALLEY	WA
+
+--------------
+
+++
+Target	636	RTL-ATT-EDM	SPOKANE	WA
+Kroger - Fred Meyer	660	RTL-ATT-EDM	Wood Village	OR
+Kroger - Fred Meyer	683	RTL-ATT-EDM	Vancouver	WA
+Kroger - Fred Meyer	657	RTL-ATT-EDM	SPOKANE	WA
+Kroger - Fred Meyer	5	RTL-ATT-EDM	ALBANY	OR
+Kroger - Fred Meyer	35	RTL-ATT-EDM	Beaverton	OR
+Kroger - Fred Meyer	40	RTL-ATT-EDM	Portland	OR
+Kroger - Fred Meyer	93	RTL-ATT-EDM	Vancouver	WA
+Kroger - Fred Meyer	140	RTL-ATT-EDM	Vancouver	WA
+Kroger - Fred Meyer	143	RTL-ATT-EDM	Hillsboro	OR
+Kroger - Fred Meyer	153	RTL-ATT-EDM	Portland	OR
+Kroger - Fred Meyer	214	RTL-ATT-EDM	SPOKANE	WA
+Kroger - Fred Meyer	328	RTL-ATT-EDM	SPRINGFIELD	OR
+Kroger - Fred Meyer	355	RTL-ATT-EDM	SALEM	OR

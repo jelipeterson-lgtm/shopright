@@ -1,0 +1,1648 @@
+Hey Kelsey,
+
+Sending over your active events list for this week. 😉
+
+And please let us know if you have shops from last week that need to be entered, thanks!
+
+ 
+
+Retailer Name
+
+Store No
+
+Address
+
+City
+
+State
+
+Zip Code
+
+Event Program
+
+Start Date
+
+End Date
+
+Lowe's Home Improvement
+
+1824
+
+13631 S.E. Johnson Rd
+
+Milwaukie
+
+OR
+
+97222
+
+RTL-LEAF FILTER
+
+1/6/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1693
+
+1250 S.W. Booth Bend Rd
+
+Mcminnville
+
+OR
+
+97128
+
+RTL-LEAF FILTER
+
+1/19/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1741
+
+3300 N.W. Aviation Dr
+
+Roseburg
+
+OR
+
+97470
+
+RTL-LEAF FILTER
+
+1/6/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+248
+
+3601 Crater Lake Highway
+
+Medford
+
+OR
+
+97504
+
+RTL-LEAF FILTER
+
+1/6/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2579
+
+1160 N. Hayden Meadows Dr
+
+Portland
+
+OR
+
+97217
+
+RTL-LEAF FILTER
+
+1/6/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2619
+
+6225 Ulali Dr NE
+
+Keizer
+
+OR
+
+97303
+
+RTL-LEAF FILTER
+
+1/19/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2940
+
+3595 West 11th Ave
+
+Eugene
+
+OR
+
+97402
+
+RTL-LEAF FILTER
+
+1/6/2026
+
+12/31/2026
+
+Target
+
+1419
+
+9800 SE Washington St
+
+Portland
+
+OR
+
+97216
+
+RTL-ATT-EDM
+
+8/7/2025
+
+12/31/2026
+
+Target
+
+609
+
+2255 14th Ave SE
+
+ALBANY
+
+OR
+
+97322
+
+RTL-ATT-EDM
+
+8/15/2025
+
+12/31/2026
+
+Costco
+
+1492
+
+4885 27th Ave SE
+
+Salem
+
+OR
+
+97306
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+2
+
+4849 NE 138th Ave
+
+Portland
+
+OR
+
+97230-3401
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+692
+
+1255 NE 48th Ave
+
+Hillsboro
+
+OR
+
+97124-5008
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+9
+
+15901 SW Jenkins Rd
+
+Aloha
+
+OR
+
+97006-5098
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+111
+
+7855 SW Dartmouth Rd
+
+Tigard
+
+OR
+
+97223
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+97
+
+13130 SE 84th Ave
+
+Clackamas
+
+OR
+
+97015-9733
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+766
+
+25900 SW Heather Pl
+
+Wilsonville
+
+OR
+
+97070-5785
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+682
+
+3031 Killdeer Ave SE
+
+ALBANY
+
+OR
+
+97322-5325
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+35
+
+11425 SW BEAVERTON HILLSDALE HWY
+
+Beaverton
+
+OR
+
+97005
+
+RTL-ATT-EDM
+
+2/16/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+661
+
+22075 NW Imbrie Dr.
+
+Hillsboro
+
+OR
+
+97124
+
+RTL-ATT-EDM
+
+7/28/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+153
+
+8955 SE 82nd Ave.
+
+Portland
+
+OR
+
+97266
+
+RTL-ATT-EDM
+
+9/3/2024
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+143
+
+6495 SE Tualatin Valley Hwy
+
+Hillsboro
+
+OR
+
+97123
+
+RTL-ATT-EDM
+
+5/12/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+660
+
+22855 NE Parklane
+
+Wood Village
+
+OR
+
+97060
+
+RTL-ATT-EDM
+
+9/3/2024
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1824
+
+13631 S.E. Johnson Rd
+
+Milwaukie
+
+OR
+
+97222
+
+RTL-LEAF FILTER
+
+1/2/2026
+
+1/6/2026
+
+Lowe's Home Improvement
+
+2579
+
+1160 N. Hayden Meadows Dr
+
+Portland
+
+OR
+
+97217
+
+RTL-LEAF FILTER
+
+1/2/2026
+
+1/6/2026
+
+Kroger - Fred Meyer
+
+417
+
+3333 W. 11th Ave
+
+EUGENE
+
+OR
+
+97402
+
+RTL-ATT-EDM
+
+3/24/2026
+
+4/1/2026
+
+Kroger - Fred Meyer
+
+328
+
+650 Q St.
+
+SPRINGFIELD
+
+OR
+
+97477
+
+RTL-ATT-EDM
+
+3/19/2026
+
+4/1/2026
+
+Kroger - Fred Meyer
+
+325
+
+60 Division Ave.
+
+EUGENE
+
+OR
+
+97404
+
+RTL-ATT-EDM
+
+3/10/2026
+
+4/1/2026
+
+Kroger - Fred Meyer
+
+90
+
+3740 Market St. NE
+
+SALEM
+
+OR
+
+97301
+
+RTL-ATT-EDM
+
+6/2/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+5
+
+2500 Santiam Hwy
+
+ALBANY
+
+OR
+
+97321
+
+RTL-ATT-EDM
+
+6/2/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+355
+
+3450 Commercial Street SE
+
+SALEM
+
+OR
+
+97302
+
+RTL-ATT-EDM
+
+6/2/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+225
+
+2855 Broadway NE
+
+SALEM
+
+OR
+
+97303
+
+RTL-ATT-EDM
+
+6/2/2025
+
+12/31/2026
+
+Costco
+
+1696
+
+62207 NW COSTCO DRIVE
+
+BEND
+
+OR
+
+97703
+
+RTL-ATT-EDM
+
+9/2/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+650
+
+944 SW Veterans Way
+
+REDMOND
+
+OR
+
+97756
+
+RTL-ATT-EDM
+
+9/2/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+21
+
+61535 S Hwy 97
+
+BEND
+
+OR
+
+97702
+
+RTL-ATT-EDM
+
+9/2/2025
+
+12/31/2026
+
+Costco
+
+682
+
+3031 Killdeer Ave SE
+
+ALBANY
+
+OR
+
+97322-5325
+
+RTL-ATT-EDM
+
+1/27/2026
+
+12/31/2026
+
+Costco
+
+2
+
+4849 NE 138th Ave
+
+Portland
+
+OR
+
+97230-3401
+
+RS-DS WATER-Primo and RSW
+
+3/31/2026
+
+4/4/2026
+
+Costco
+
+9
+
+15901 SW Jenkins Rd
+
+Aloha
+
+OR
+
+97006-5098
+
+RS-DS WATER-Primo and RSW
+
+3/31/2026
+
+4/4/2026
+
+Costco
+
+2
+
+4849 NE 138th Ave
+
+Portland
+
+OR
+
+97230-3401
+
+RS-CKE
+
+3/31/2026
+
+4/4/2026
+
+Costco
+
+682
+
+3031 Killdeer Ave SE
+
+ALBANY
+
+OR
+
+97322-5325
+
+RS-CKE
+
+3/31/2026
+
+4/4/2026
+
+Lowe's Home Improvement
+
+1114
+
+1000 Ne Wood Village Blvd
+
+Wood Village
+
+OR
+
+97060
+
+RTL-LEAF FILTER
+
+7/17/2025
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1558
+
+1951 S.E. 24th Ave
+
+Hillsboro
+
+OR
+
+97123
+
+RTL-LEAF FILTER
+
+7/18/2025
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1108
+
+12615 S.W. 72nd Ave
+
+Tigard
+
+OR
+
+97223
+
+RTL-LEAF FILTER
+
+7/17/2025
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2579
+
+1160 N. Hayden Meadows Dr
+
+Portland
+
+OR
+
+97217
+
+RTL-LEAF FILTER
+
+7/17/2025
+
+12/31/2026
+
+Costco
+
+2
+
+4849 NE 138th Ave
+
+Portland
+
+OR
+
+97230-3401
+
+RTL-ATT-EDM
+
+12/2/2025
+
+12/31/2026
+
+Costco
+
+9
+
+15901 SW Jenkins Rd
+
+Aloha
+
+OR
+
+97006-5098
+
+RTL-ATT-EDM
+
+12/2/2025
+
+12/31/2026
+
+Costco
+
+111
+
+7855 SW Dartmouth Rd
+
+Tigard
+
+OR
+
+97223
+
+RTL-ATT-EDM
+
+10/28/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+196
+
+1301 Center Drive
+
+MEDFORD
+
+OR
+
+97501
+
+RTL-ATT-EDM
+
+12/18/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+195
+
+2424 Crater Lake Hwy.
+
+MEDFORD
+
+OR
+
+97504
+
+RTL-ATT-EDM
+
+12/16/2025
+
+12/31/2026
+
+Costco
+
+1287
+
+3075 Hamrick Road
+
+CENTRAL POINT
+
+OR
+
+97502
+
+RTL-ATT-EDM
+
+11/14/2025
+
+12/31/2026
+
+Costco
+
+1059
+
+1804 SE Ensign Lane
+
+WARRENTON
+
+OR
+
+97146
+
+RTL-ATT-EDM
+
+12/5/2025
+
+12/31/2026
+
+Costco
+
+2
+
+4849 NE 138th Ave
+
+Portland
+
+OR
+
+97230-3401
+
+RTL-ATT-EDM
+
+1/23/2026
+
+12/31/2027
+
+Costco
+
+9
+
+15901 SW Jenkins Rd
+
+Aloha
+
+OR
+
+97006-5098
+
+RTL-ATT-EDM
+
+1/23/2026
+
+12/31/2027
+
+Lowe's Home Improvement
+
+1114
+
+1000 Ne Wood Village Blvd
+
+Wood Village
+
+OR
+
+97060
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1558
+
+1951 S.E. 24th Ave
+
+Hillsboro
+
+OR
+
+97123
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1824
+
+13631 S.E. Johnson Rd
+
+Milwaukie
+
+OR
+
+97222
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1693
+
+1250 S.W. Booth Bend Rd
+
+Mcminnville
+
+OR
+
+97128
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1600
+
+1930 Turner Rd Southeast
+
+Salem
+
+OR
+
+97302
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+3057
+
+1300 9th Ave Se
+
+Albany
+
+OR
+
+97322
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1108
+
+12615 S.W. 72nd Ave
+
+Tigard
+
+OR
+
+97223
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1741
+
+3300 N.W. Aviation Dr
+
+Roseburg
+
+OR
+
+97470
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+248
+
+3601 Crater Lake Highway
+
+Medford
+
+OR
+
+97504
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2579
+
+1160 N. Hayden Meadows Dr
+
+Portland
+
+OR
+
+97217
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2619
+
+6225 Ulali Dr NE
+
+Keizer
+
+OR
+
+97303
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2940
+
+3595 West 11th Ave
+
+Eugene
+
+OR
+
+97402
+
+RTL-LEAF FILTER
+
+1/26/2026
+
+12/31/2026
+
+Costco
+
+2
+
+4849 NE 138th Ave
+
+Portland
+
+OR
+
+97230-3401
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Costco
+
+692
+
+1255 NE 48th Ave
+
+Hillsboro
+
+OR
+
+97124-5008
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Costco
+
+9
+
+15901 SW Jenkins Rd
+
+Aloha
+
+OR
+
+97006-5098
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Costco
+
+111
+
+7855 SW Dartmouth Rd
+
+Tigard
+
+OR
+
+97223
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Costco
+
+97
+
+13130 SE 84th Ave
+
+Clackamas
+
+OR
+
+97015-9733
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Costco
+
+766
+
+25900 SW Heather Pl
+
+Wilsonville
+
+OR
+
+97070-5785
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Kroger - Fred Meyer
+
+242
+
+1839 Molalla Ave.
+
+Oregon City
+
+OR
+
+97045
+
+RTL-ATT-EDM
+
+3/23/2026
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+375
+
+11565 SW Pacific Highway
+
+Tigard
+
+OR
+
+97223
+
+RTL-ATT-EDM
+
+3/23/2026
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+63
+
+16301 SE 82nd Drive
+
+Clackamas
+
+OR
+
+97015
+
+RTL-ATT-EDM
+
+3/23/2026
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+40
+
+7555 SW Barbur Boulevard
+
+Portland
+
+OR
+
+97219
+
+RTL-ATT-EDM
+
+3/23/2026
+
+12/31/2026
+
+Target
+
+1444
+
+16200 SE Mill Plain Blvd
+
+Vancouver
+
+WA
+
+98684
+
+RTL-ATT-EDM
+
+7/24/2025
+
+12/31/2026
+
+Target
+
+343
+
+7809C NE Vancouver Plaza Dr
+
+Vancouver
+
+WA
+
+98662
+
+RTL-ATT-EDM
+
+7/24/2025
+
+12/31/2026
+
+Costco
+
+1703
+
+519 N. 56TH PL.
+
+Ridgefield
+
+WA
+
+98642
+
+RTL-SCI-HI Exit Fence
+
+2/17/2026
+
+12/31/2027
+
+Costco
+
+1086
+
+19610 SE 1st St
+
+Vancouver
+
+WA
+
+98607-7472
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Costco
+
+772
+
+6720 NE 84th St
+
+Vancouver
+
+WA
+
+98665-2016
+
+RTL-ATT-EDM
+
+11/26/2025
+
+12/31/2026
+
+Costco
+
+772
+
+6720 NE 84th St
+
+Vancouver
+
+WA
+
+98665-2016
+
+RTL-SCI-HI Exit Fence
+
+6/3/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+93
+
+16600 SE Mcgillivray Blvd
+
+Vancouver
+
+WA
+
+98683
+
+RTL-ATT-EDM
+
+3/24/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+236
+
+7411 NE 117th Ave
+
+Vancouver
+
+WA
+
+98662
+
+RTL-ATT-EDM
+
+12/8/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+683
+
+2500 Columbia House Boulevard
+
+Vancouver
+
+WA
+
+98661
+
+RTL-ATT-EDM
+
+12/1/2025
+
+12/31/2026
+
+Kroger - Fred Meyer
+
+140
+
+7700 Highway 99
+
+Vancouver
+
+WA
+
+98665
+
+RTL-ATT-EDM
+
+1/21/2026
+
+12/31/2026
+
+Lowe's Home Improvement
+
+1632
+
+11413 Northeast 76th St
+
+Vancouver
+
+WA
+
+98662
+
+RTL-LEAF FILTER
+
+7/18/2025
+
+12/31/2026
+
+Lowe's Home Improvement
+
+2954
+
+18801 SE Mill Plain Blvd
+
+Vancouver
+
+WA
+
+98683
+
+RTL-LEAF FILTER
+
+7/18/2025
+
+12/31/2026
+
+Costco
+
+1086
+
+19610 SE 1st St
+
+Vancouver
+
+WA
+
+98607-7472
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Costco
+
+772
+
+6720 NE 84th St
+
+Vancouver
+
+WA
+
+98665-2016
+
+RTL-GDI-LG Exit Fence
+
+2/16/2026
+
+12/31/2027
+
+Kroger - Fred Meyer
+
+486
+
+1206 N 40th
+
+YAKIMA
+
+WA
+
+98908
+
+RTL-ATT-EDM
+
+3/9/2026
+
+12/31/2026
+
+ 
+
+ 
+
+image001.jpg
+
+ 
+
+Phoebe Foss | Retail Compliance Administrator
+
+Smart Circle International | pfoss@thesmartcircle.com
+
+T: 949.592.0337 |  www.smartcircle.com
+
+image002.png
+
+image003.png
+
+image004.png
+
