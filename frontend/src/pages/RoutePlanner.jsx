@@ -352,9 +352,28 @@ function RoutePlanner() {
     if (!maxDistance || !startCoords) return parsedStores
     const miles = parseFloat(maxDistance)
     if (isNaN(miles)) return parsedStores
+    // For stores without coords, check if other stores in the same city ARE within range
+    const cityInRange = new Set()
+    const cityOutOfRange = new Set()
+    for (const s of parsedStores) {
+      if (s.latitude && s.longitude) {
+        const city = (s.city || '').toLowerCase()
+        if (city && haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles) {
+          cityInRange.add(city)
+        } else if (city) {
+          cityOutOfRange.add(city)
+        }
+      }
+    }
     return parsedStores.filter(s => {
-      if (!s.latitude || !s.longitude) return false  // exclude stores without coordinates
-      return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
+      if (s.latitude && s.longitude) {
+        return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
+      }
+      // No coords — use city as fallback
+      const city = (s.city || '').toLowerCase()
+      if (cityInRange.has(city)) return true
+      if (cityOutOfRange.has(city)) return false
+      return true  // unknown city, include it
     })
   })()
 
