@@ -107,24 +107,27 @@ function RouteMap({ route, startCoords, endAddress }) {
         if (endCoords) osrmPoints.push(`${endCoords.lng},${endCoords.lat}`)
 
         if (osrmPoints.length >= 2) {
-          fetch(`https://router.project-osrm.org/route/v1/driving/${osrmPoints.join(';')}?overview=full&geometries=geojson`)
-            .then(r => r.json())
-            .then(data => {
-              if (data.code === 'Ok' && data.routes?.[0]?.geometry && mapInstance.current) {
-                L.geoJSON(data.routes[0].geometry, {
-                  style: { color: '#2563EB', weight: 4, opacity: 0.7 },
-                }).addTo(mapInstance.current)
-              }
-            })
-            .catch(() => {
-              if (mapInstance.current) {
-                const fallbackPoints = []
-                if (startCoords) fallbackPoints.push([startCoords.lat, startCoords.lng])
-                points.forEach(p => fallbackPoints.push([p.latitude, p.longitude]))
-                if (endCoords) fallbackPoints.push([endCoords.lat, endCoords.lng])
-                L.polyline(fallbackPoints, { color: '#2563EB', weight: 3, opacity: 0.5, dashArray: '8,8' }).addTo(mapInstance.current)
-              }
-            })
+          // Try OSRM for road routes, retry once on failure
+          const fetchRoute = (attempt = 1) => {
+            fetch(`https://router.project-osrm.org/route/v1/driving/${osrmPoints.join(';')}?overview=full&geometries=geojson`)
+              .then(r => r.json())
+              .then(data => {
+                if (data.code === 'Ok' && data.routes?.[0]?.geometry && mapInstance.current) {
+                  L.geoJSON(data.routes[0].geometry, {
+                    style: { color: '#2563EB', weight: 4, opacity: 0.7 },
+                  }).addTo(mapInstance.current)
+                } else if (attempt < 2) {
+                  setTimeout(() => fetchRoute(2), 1000)
+                }
+              })
+              .catch(() => {
+                if (attempt < 2) {
+                  setTimeout(() => fetchRoute(2), 1000)
+                }
+                // No fallback straight lines — just show markers without route line
+              })
+          }
+          fetchRoute()
         }
       }
     }
