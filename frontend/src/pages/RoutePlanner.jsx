@@ -24,8 +24,12 @@ function RoutePlanner() {
   const [route, setRoute] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [startTime, setStartTime] = useState('10:00')
-  const [endTime, setEndTime] = useState('18:00')
+  const [startTime, setStartTime] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`shopright_times_${getLocalDate()}`))?.start || '10:00' } catch { return '10:00' }
+  })
+  const [endTime, setEndTime] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`shopright_times_${getLocalDate()}`))?.end || '18:00' } catch { return '18:00' }
+  })
   const [parsing, setParsing] = useState(false)
   const [optimizing, setOptimizing] = useState(false)
   const [error, setError] = useState(null)
@@ -53,6 +57,7 @@ function RoutePlanner() {
   const LS_SUMMARY = `shopright_summary_${today}`
   const LS_PARSED = `shopright_parsed_${today}`
   const LS_ACCEPTED = `shopright_accepted_${today}`
+  const LS_TIMES = `shopright_times_${today}`
 
   // Save route to localStorage whenever it changes
   const saveToLocal = (routeData, summaryData, parsedData, acceptedState) => {
@@ -168,6 +173,23 @@ function RoutePlanner() {
       // Keep localStorage data — don't clear on API failure
     }).finally(() => setLoading(false))
   }, [today])
+
+  // Auto-refresh travel times when returning to route page (e.g., after assessment)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && route.length > 0) {
+        // Refresh visits to sync assessment completions
+        refreshVisits()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [route.length])
+
+  // Persist start/end times
+  useEffect(() => {
+    try { localStorage.setItem(LS_TIMES, JSON.stringify({ start: startTime, end: endTime })) } catch {}
+  }, [startTime, endTime])
 
   // Persist to localStorage on every change
   useEffect(() => {
