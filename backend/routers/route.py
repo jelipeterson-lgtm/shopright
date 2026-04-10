@@ -480,17 +480,20 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             display_h = 12
         return f"{display_h}:{m:02d} {ampm}"
 
-    # Greedy optimization with time window and schedule tracking
+    # Greedy optimization: maintain $100/hr minimum, maximize vendor count as secondary
+    MIN_HOURLY_RATE = 100  # dollars per hour target
     max_minutes = body.time_window_minutes or 99999
     route = []
     remaining = list(range(num_stores))
     current = 0
     elapsed = 0
+    total_earnings_so_far = 0
     clock = start_hour * 60 + start_minute  # minutes from midnight
 
     while remaining:
         best_score = -1
         best_idx = None
+        best_projected_rate = 0
 
         for idx in remaining:
             drive_min = drive_times.get((current, idx), 9999)
@@ -502,12 +505,32 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             if elapsed + time_at_store + return_from_store > max_minutes:
                 continue
 
-            score = store["earnings"] / max(time_at_store, 1)
+            # Calculate what the overall $/hr would be if we add this store
+            new_total_earnings = total_earnings_so_far + store["earnings"]
+            new_total_time = elapsed + time_at_store + return_from_store
+            projected_rate = (new_total_earnings / max(new_total_time / 60, 0.01)) if new_total_time > 0 else 0
+
+            # Score: prioritize stores that keep rate above $100/hr
+            # Among those, prefer higher earnings per minute (closer + more vendors)
+            earnings_per_min = store["earnings"] / max(time_at_store, 1)
+
+            if projected_rate >= MIN_HOURLY_RATE:
+                # Above threshold: score by earnings/min + small bonus for vendor count
+                score = earnings_per_min + (len(store.get("vendors", [])) * 0.01)
+            else:
+                # Below threshold: heavily penalize — only pick if nothing better
+                score = earnings_per_min * 0.1
+
             if score > best_score:
                 best_score = score
                 best_idx = idx
+                best_projected_rate = projected_rate
 
         if best_idx is None:
+            break
+
+        # If adding this store drops us below $100/hr and we already have stores, stop
+        if best_projected_rate < MIN_HOURLY_RATE and len(route) > 0:
             break
 
         store = stores[best_idx]
@@ -522,6 +545,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         store["est_depart"] = minutes_to_time(arrival + store["est_minutes"])
 
         elapsed += drive_min + store["est_minutes"]
+        total_earnings_so_far += store["earnings"]
         clock = arrival + store["est_minutes"]
         route.append(store)
         remaining.remove(best_idx)

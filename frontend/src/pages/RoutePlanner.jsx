@@ -886,7 +886,7 @@ function RoutePlanner() {
         {/* Route map overview */}
         {route.length > 1 && !optimizing && !showFilters && (
           <div className="mb-4">
-            <RouteMap route={route} startCoords={startCoords} endAddress={endAddress || startAddress} />
+            <RouteMap key={route.filter(s => s.status === 'upcoming').map(s => `${s.retailer_name}-${s.store_number}`).join('|')} route={route} startCoords={startCoords} endAddress={endAddress || startAddress} />
             <p className="text-[10px] text-gray-400 text-center mt-1">Tap a marker for details</p>
           </div>
         )}
@@ -989,7 +989,7 @@ function RoutePlanner() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${i === 0 ? 'text-white bg-blue-600' : 'text-blue-600 bg-blue-100'}`}>
-                          {completedStops.length + i + 1}
+                          {i + 1}
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{store.retailer_name} #{store.store_number}</p>
