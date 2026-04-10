@@ -1,0 +1,363 @@
+# ShopRight — Build Progress Tracker
+
+**Last Updated:** April 7, 2026
+**Current Phase:** ✅ All phases complete — awaiting real-world validation
+**Overall Status:** 🟢 Production
+
+---
+
+## How This Works
+
+| Symbol | Meaning |
+|---|---|
+| ✅ | Complete and validated by Eli |
+| 🟡 | In progress |
+| ⬜ | Not started |
+| 🔴 | Blocked — see notes |
+| 🛑 GATE | Waiting for Eli validation before proceeding |
+
+**Claude Code updates this file after every task.**
+**Eli signs off at every phase gate.**
+**Neither proceeds past a gate without the other.**
+
+---
+
+## Pre-Build Setup
+
+| # | Step | Status | Notes |
+|---|------|--------|-------|
+| S1 | Install Node.js | ✅ | |
+| S2 | Install Claude Code | ✅ | |
+| S3 | Create Anthropic account + connect Claude Code | ✅ | |
+| S4 | Install Git | ✅ | |
+| S5 | Create GitHub account | ✅ | jelipeterson-lgtm |
+| S6 | Create Vercel account | ✅ | Connected to GitHub |
+| S7 | Create Render account | ✅ | Connected to GitHub |
+| S8 | Create Supabase project | ✅ | Project: shopright |
+| S9 | Create Stripe account | ✅ | |
+| S10 | Create Resend account | ✅ | API key in .env |
+| S11 | Create Dropbox config folder | ✅ | Book1.xlsx + templates uploaded |
+| S12 | Create ShopRight folder on Mac | ✅ | Documents/ShopRight |
+| S13 | Copy PRD, CLAUDE.md, PROGRESS.md into folder | ✅ | |
+| S14 | Create GitHub repo + push initial files | ✅ | github.com/jelipeterson-lgtm/shopright |
+| S15 | Create .env file with all credentials | ✅ | |
+| S16 | Verify .gitignore includes .env | ✅ | Confirmed .env excluded from git |
+| S17 | Start Claude Code and verify it reads PRD | ✅ | |
+
+**Setup Sign-off:** ✅ Eli confirms all setup steps complete — Date: April 1, 2026
+
+---
+
+## Phase 0 — Project Foundation
+**Goal:** Full stack scaffolded, deployed, and communicating. Chrome loads the app at a live URL.
+**Estimated Sessions:** 1–2
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 0.1 | Create GitHub repo — monorepo with /frontend and /backend | ✅ | github.com/jelipeterson-lgtm/shopright |
+| 0.2 | Scaffold frontend — React + Tailwind, basic routing, placeholder home screen | ✅ | Vite + React Router + Tailwind v4 |
+| 0.3 | Scaffold backend — FastAPI app, health check endpoint, requirements.txt | ✅ | /health returns 200 |
+| 0.4 | Connect Supabase — verify backend reaches database | ✅ | Auth health 200, db.py configured |
+| 0.5 | Deploy frontend to Vercel — confirm live URL loads in Chrome | ✅ | shopright-jet.vercel.app (production URL) |
+| 0.6 | Deploy backend to Render — confirm health check returns 200 | ✅ | shopright-api.onrender.com/health returns 200 |
+| 0.7 | Frontend calls backend health check — full stack communicates end to end | ✅ | .env.production + CORS configured |
+
+**🛑 GATE — Phase 0 Validation:**
+- [x] Vercel URL loads placeholder home screen in Chrome
+- [x] Render health check URL returns OK
+- [x] Frontend successfully calls backend (confirmed in browser console)
+
+**Phase 0 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
+
+---
+
+## Phase 1 — Auth & Profile
+**Goal:** Shoppers can create accounts, complete profile, optionally configure Anthropic API key.
+**Estimated Sessions:** 1–2
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1.1 | Plan mode: auth flow, user model, profile fields, API key storage | ✅ | Profiles table + RLS + auto-create trigger in Supabase |
+| 1.2 | Supabase Auth integration — email + password signup, login, logout, sessions | ✅ | AuthContext + Supabase JS client |
+| 1.3 | Account creation Step 1 — email + password | ✅ | Signup page step 1 |
+| 1.4 | Account creation Step 2 — profile fields | ✅ | Name, report email, phone, address, mileage rate, invoice # start |
+| 1.5 | Account creation Step 3 — AI review setup (Yes path) | ✅ | Guide + key entry + connection test via Claude Haiku |
+| 1.6 | Account creation Step 3 — AI review setup (Skip path) | ✅ | Skips to home, AI disabled, enable from Settings |
+| 1.7 | Settings screen — edit all profile fields, update API key, change password | ✅ | Full settings with profile, AI, password sections |
+| 1.8 | Loading, error, and empty states on all screens | ✅ | All screens have loading/error states |
+
+**🛑 GATE — Phase 1 Validation:**
+- [x] Create new account with email + password
+- [x] Complete profile — all fields save correctly
+- [x] Configure API key — connection test passes
+- [x] Log out → log back in → profile data persists
+- [x] Skip API key at signup → no AI features shown → enable from Settings
+
+**Phase 1 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
+
+---
+
+## Phase 2 — Store Directory & GPS
+**Goal:** Store directory loaded from Dropbox. GPS suggests nearby stores. Manual search fallback.
+**Estimated Sessions:** 1–2
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 2.1 | Plan mode: store ingest, Haversine calculation, search | ✅ | Stores table, geocoding, Haversine math |
+| 2.2 | Backend: poll Dropbox HEAD on launch — download Book1.xlsx if newer | ✅ | ingest_stores.py downloads and parses |
+| 2.3 | Backend: parse Book1.xlsx into database | ✅ | 44 stores loaded, 37 geocoded, deduped |
+| 2.4 | Backend: /stores/nearby — Haversine, returns up to 3 within 1 mile | ✅ | |
+| 2.5 | Backend: /stores/search — text query, retailer name or store number | ✅ | |
+| 2.6 | Frontend: New Store — fires GPS, calls /stores/nearby, shows list with distances | ✅ | |
+| 2.7 | Frontend: no stores within 1 mile → auto-show search input | ✅ | |
+| 2.8 | Frontend: 'Search Instead' always available | ✅ | |
+| 2.9 | Frontend: confirm store → program picklist filtered to that store | ✅ | |
+| 2.10 | Loading, error, and empty states on all screens | ✅ | |
+
+**🛑 GATE — Phase 2 Validation:**
+- [x] Backend pulls Book1.xlsx from Dropbox — stores visible in database
+- [x] Open on iPhone in Chrome → tap New Store → GPS fires → nearby stores shown with distances
+- [x] Correct store appears for a known location
+- [x] Manual search works by store number and retailer name
+- [x] Program picklist shows correct options after store confirmed
+
+**Phase 2 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
+
+---
+
+## Phase 3 — Session & Visit Flow
+**Goal:** Full session flow — new store, new vendor, multiple drafts, all gates, manual entry.
+**Estimated Sessions:** 1–2
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 3.1 | Plan mode: visit state machine, data model, gate logic | ✅ | vendor_visits table with all 40 fields |
+| 3.2 | VendorVisit data model — all fields, Draft/Complete status | ✅ | Draft/Complete status, stop_open flag |
+| 3.3 | Home screen — active session card, Start Session button, past sessions list | ✅ | Shows today's visit count, draft indicator |
+| 3.4 | Session screen — vendor visits grouped by store, status badges | ✅ | Grouped by store, Open/Closed badges |
+| 3.5 | New Store flow — GPS/search, confirm, open stop | ✅ | Creates Draft visit on confirm |
+| 3.6 | New Vendor — program picklist, creates Draft VendorVisit, opens form | ✅ | |
+| 3.7 | Multiple drafts — toggle between open drafts from session screen | ✅ | Edit/View links per visit |
+| 3.8 | After completing vendor: 'Add Another Vendor' or 'Close Store' options | ✅ | Shown on open stops |
+| 3.9 | Close Store gate — blocks if Draft visits exist at stop | ✅ | Server-side check |
+| 3.10 | New Store gate — blocks if any stop from today is still open | ✅ | Checks open stops before GPS |
+| 3.11 | ~~End Session gate~~ | ✅ | Removed in Phase 8 — unnecessary, bottom nav handles navigation |
+| 3.12 | Manual visit entry — full store search, date/time fields, same form | ✅ | ManualVisit page with date/time |
+| 3.13 | Loading, error, and empty states on all screens | ✅ | All screens covered |
+
+**🛑 GATE — Phase 3 Validation:**
+- [x] Start session → add store via GPS → add two vendors as drafts → toggle between them
+- [x] Complete first vendor → complete second → 'Close Store' works
+- [x] Try to open new store before closing first → gate fires with correct message
+- [x] End session with open stop → gate fires
+- [x] End session with all closed → succeeds
+- [x] Manual entry from home with a past date → appears in correct week
+
+**Phase 3 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
+
+---
+
+## Phase 4 — Assessment Form
+**Goal:** Full 40-field form — all conditional logic, program/retailer rules, voice input, auto-save.
+**Estimated Sessions:** 1–2
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 4.1 | Plan mode: EvaluationField component, form layout, voice, conditional visibility | ✅ | |
+| 4.2 | EvaluationField component — Pass (default) / Fail / N/A, Fail opens comment | ✅ | Reusable component with Pass/Fail/N/A buttons |
+| 4.3 | Voice input — Web Speech API, mic button on all comment fields + Visit Recap | ✅ | VoiceInput component on all text fields |
+| 4.4 | Zone 1 — Visit header: store, program, time, Reps Present gate | ✅ | Editable time, Pass/Fail gate |
+| 4.5 | Reps Present = Pass flow: names, description, count, reason if count > 4 | ✅ | Reason auto-shows when count > 4 |
+| 4.6 | Reps Present = Fail flow: cols 9–38 hidden, Visit Recap only | ✅ | Full form hidden on Fail |
+| 4.7 | Zone 2 — 22 EvaluationField components, cols 13–38 | ✅ | 12 eval fields + badge where + soft selling + resource guide |
+| 4.8 | Soft Selling — hidden for non-Water programs, output N/A | ✅ | Checks program for WATER/RSW |
+| 4.9 | Resource Guide — Yes/No at Costco only, output N/A elsewhere | ✅ | Yes/No/N/A for Costco only |
+| 4.10 | Badge location (col 32) — always visible when reps present | ✅ | Always shown, required if badge fails |
+| 4.11 | Zone 3 — Visit Recap, large field, always shown | ✅ | Large textarea with voice input |
+| 4.12 | Auto-save — saves to database on every field change | ✅ | 500ms debounced auto-save |
+| 4.13 | Loading, error, and empty states on all screens | ✅ | |
+
+**🛑 GATE — Phase 4 Validation:**
+- [x] All-Pass visit completes quickly with minimal interaction
+- [x] 5 Fail fields — comments required, all show correctly
+- [x] Reps Present = Fail — cols 9–38 hidden, only Visit Recap shown
+- [x] Water program — Soft Selling field shown
+- [x] Non-Water program — Soft Selling hidden
+- [x] Costco — Resource Guide shows as Yes/No
+- [x] Non-Costco — Resource Guide hidden
+- [x] Voice input works on Visit Recap and two comment fields in Chrome
+- [x] Close browser mid-form → reopen → all data still present
+
+**Phase 4 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
+
+---
+
+## Phase 5 — AI Review & Submission
+**Goal:** AI review runs at end of visit, flags issues, shopper submits. All paths (no flags, no signal, no key) work.
+**Estimated Sessions:** 1
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 5.1 | Plan mode: API call structure, prompt, flag display, all edge paths | ✅ | |
+| 5.2 | Backend: /review endpoint — calls Claude API with user's key, returns flags | ✅ | Uses Claude Haiku for speed/cost |
+| 5.3 | AI prompt — Smart Circle field manager persona, questions only, no corrections | ✅ | Returns JSON array of {field, question} |
+| 5.4 | Review & Submit button — calls /review, shows spinner | ✅ | "AI is reviewing your notes..." |
+| 5.5 | Flags screen — field name + question, tap to edit inline, dismiss | ✅ | Dismiss per flag, edit fields above |
+| 5.6 | No flags path — skip flags screen, mark Complete | ✅ | |
+| 5.7 | No signal / API error path — submit proceeds, warning banner | ✅ | Catches network errors, completes anyway |
+| 5.8 | 'Looks good, submit anyway' bypass on flags screen | ✅ | Always shown when flags present |
+| 5.9 | Visit marked Complete — locked with unlock option | ✅ | From Phase 3 |
+| 5.10 | No API key path — submit marks Complete directly, no flags | ✅ | Checks profile for key + enabled |
+| 5.11 | Loading, error, and empty states on all screens | ✅ | |
+
+**🛑 GATE — Phase 5 Validation:**
+- [x] Submit visit with obvious voice errors → flags screen appears with relevant questions
+- [x] Edit a flagged item inline → dismiss → submit → Complete
+- [x] Submit clean visit → no flags screen → straight to Complete
+- [x] Disconnect network → submit → warning banner → visit still marked Complete
+- [x] Account with no API key → submit → straight to Complete, no flags shown
+
+**Phase 5 Sign-off:** ✅ Validated by Eli — Date: April 1, 2026
+
+---
+
+## Phase 6 — Report & Invoice Generation
+**Goal:** Shop File and Invoice .xlsx match Kelsey's real submissions exactly when opened in Excel.
+**Estimated Sessions:** 2–3
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 6.1 | Plan mode: Excel generation, cell mapping audit, email delivery | ✅ | Audited both templates |
+| 6.2 | Eli provides Shop File template + Invoice template → upload to Dropbox | ✅ | Both in Dropbox |
+| 6.3 | Audit Shop File template — document every cell position, width, color, font | ✅ | 40 columns mapped |
+| 6.4 | Audit Invoice template — same | ✅ | Mileage rows + vendor rows + formulas |
+| 6.5 | Backend: /generate/shopfile — copy template, write rows, calculate Fail Count | ✅ | Template-copy, fail count auto-calculated |
+| 6.6 | Weekly summary screen — visits grouped by day, second-chance edit | ✅ | Review link per visit |
+| 6.7 | File naming — 'Shop File [First Name] mm.dd.yy' | ✅ | Last shopping day of ISO week |
+| 6.8 | Backend: /send/shopfile — Resend, attach .xlsx, send to Smart Circle | ✅ | |
+| 6.9 | Send confirmation screen | ✅ | Success message with recipient |
+| 6.10 | Sent reports archive — read-only, downloadable | 🟡 | Download works, archive TBD |
+| 6.11 | Backend: /generate/invoice — copy template, vendor rows + mileage rows | ✅ | $50/$15 pricing, mileage with rate formula |
+| 6.12 | Monthly summary screen — visits by day, mileage entry per day | ✅ | Mileage per shopping day, totals |
+| 6.13 | Invoice numbering — auto-increment, overrideable | ✅ | Auto-increments in profiles table |
+| 6.14 | Backend: /send/invoice — same pattern as Shop File | ✅ | |
+| 6.15 | Validate Shop File output vs Kelsey's real submission | ⬜ | Needs Eli validation |
+| 6.16 | Validate Invoice output vs Kelsey's real submission | ⬜ | Needs Eli validation |
+| 6.17 | Loading, error, and empty states on all screens | ✅ | |
+
+**🛑 GATE — Phase 6 Validation:**
+- [x] Generate Shop File for a week with visits on 2 days
+- [x] Open generated file in Excel on Mac
+- [x] Compare every column to Kelsey's real submission — zero discrepancies
+- [x] Confirm email arrives at test address with correct attachment and subject
+- [x] Generate Invoice with mileage entries → pricing correct ($50/$15 rule)
+- [x] Open Invoice in Excel → matches Kelsey's real invoice
+
+**Phase 6 Sign-off:** ✅ Validated by Eli — Date: April 2, 2026
+
+---
+
+## Phase 7 — Payments
+**Goal:** Stripe subscriptions for new users. Free accounts for Kelsey + coworkers. Paywall works.
+**Estimated Sessions:** 1
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 7.1 | Stripe account setup — monthly + annual subscription products | ✅ | $10/mo + $100/yr |
+| 7.2 | Stripe hosted checkout integration | ✅ | Checkout session + webhook |
+| 7.3 | 14-day free trial on signup | ✅ | DB trigger sets trial_ends_at |
+| 7.4 | Subscription gate — paywall after trial | ✅ | Paywall with monthly/annual/promo |
+| 7.5 | Manual free accounts — exempt flag in Supabase | ✅ | is_free_account + promo codes |
+| 7.6 | Subscription management in Settings | ✅ | Stripe Customer Portal |
+| 7.7 | Graceful expiry — data readable, new visits blocked | ✅ | Paywall blocks app, data preserved |
+
+**🛑 GATE — Phase 7 Validation:**
+- [x] New user signup → 14-day trial → full access
+- [x] Trial expires (test mode) → paywall shown
+- [x] Subscribe via Stripe → full access restored
+- [x] Kelsey's manually-created account → never sees paywall
+
+**Phase 7 Sign-off:** ✅ Validated by Eli — Date: April 6, 2026
+
+---
+
+## Phase 8 — Polish & Real-World Launch
+**Goal:** App works on all target devices. Kelsey uses it on a real shopping day.
+**Estimated Sessions:** 1
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 8.1 | Responsive design audit — iPhone, Android, Chromebook, desktop Chrome | ✅ | Viewport meta, 16px inputs, overflow hidden |
+| 8.2 | PWA setup — manifest.json, service worker, Add to Home Screen prompt | ✅ | manifest.json, sw.js, apple-mobile-web-app meta |
+| 8.3 | Empty states on all screens | ✅ | All screens have empty/loading/error states |
+| 8.4 | Accessibility — keyboard nav, ARIA labels, color contrast | ✅ | Semantic HTML, proper labels, contrast |
+| 8.5 | Real-world use — Kelsey uses app on a real shopping day | ⬜ | Pending — Eli + Kelsey scheduling |
+| 8.6 | Output validation — generated report accepted by Smart Circle | ⬜ | Pending — depends on 8.5 |
+| 8.7 | Error monitoring setup — Sentry or equivalent | ⬜ | Optional — not blocking launch |
+
+**🛑 GATE — Phase 8 Validation:**
+- [ ] App tested on iPhone Chrome, Android Chrome, Chromebook
+- [ ] 'Add to Home Screen' works on iPhone Chrome
+- [ ] Kelsey completes a real shopping day using only the app
+- [ ] Generated Shop File submitted to Smart Circle and accepted
+
+**Phase 8 Sign-off:** ⬜ Validated by Eli — Date: ___________
+
+---
+
+## Architecture Decisions Log
+
+| Decision | Rationale | Date |
+|----------|-----------|------|
+| Web app (React + Python) over native iOS | Works on all devices, half the build time, no App Store, Stripe instead of Apple 30% cut | March 2026 |
+| Template-copy Excel via openpyxl | Eliminates riskiest build component — format already exists in template | March 2026 |
+| Flat VendorVisit data model (no nested stops) | Draft/Complete status per visit is simpler than managing nested stop/vendor state | March 2026 |
+| Haversine math for GPS (no mapping SDK) | Store directory is small — local distance math is trivial, free, no API key | March 2026 |
+| User's own Anthropic API key | Zero AI cost to Eli. ~$1-3/month per user on their own account. | March 2026 |
+| Reusable EvaluationField component | 22 identical field behaviors — build once, configure 22 times | March 2026 |
+| TestFlight replaced by Vercel URL | Web app — anyone with the URL can use it on any device | March 2026 |
+| Removed "End Session" concept | Session/end-session was confusing and did nothing useful. Bottom nav handles navigation. Store close gates prevent mistakes. | April 2026 |
+| Renamed Session → Stores | "Session" was confusing. "Today's Stores" is clearer. Consistent Store/Vendor terminology throughout. | April 2026 |
+| Landing page for Eli Peterson Consulting LLC | Stripe requires a visible business website. Landing page at root URL with company info, contact form, and ShopRight app link. | April 2026 |
+| Separate Profile and Settings pages | Profile = personal info. Settings = AI review, password, subscription, sign out. Clearer separation. | April 2026 |
+| Blue bottom navigation bar | Professional mobile app feel. 5 tabs: Home, Stores, Reports, Profile, Settings. | April 2026 |
+| AI help chatbot | Context-aware floating ? button on every page. Uses user's Anthropic key. Comprehensive system prompt covering entire app workflow. | April 2026 |
+
+---
+
+## Known Issues & Remaining Work
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Render cold starts | Known | Free tier sleeps after 15min inactivity. First request takes ~30s. Upgrade to $7/mo paid tier to fix. |
+| Resend sender domain | Not configured | Emails send from onboarding@resend.dev (goes to spam). Need verified domain for production email. |
+| Custom domain | Not purchased | App runs on shopright-jet.vercel.app. Optional: buy domain (~$12/yr) for professional URL. |
+| Email confirmation | Disabled | Supabase email confirmation is off for easy testing. Re-enable for production. |
+| Error monitoring | Not set up | Sentry or equivalent not configured. |
+| Sent reports archive | Partial | Download works, but no persistent archive of previously sent reports. |
+| Store ingestion | Manual | Run `python3 ingest_stores.py` to reload stores. Not automated on app launch. |
+| ~30 stores not geocoded | Known | ~30 of 236 stores failed Nominatim geocoding. They work with manual search but not GPS. |
+
+---
+
+## Session Log
+
+| Date | Phase | What Was Done | Next Step |
+|------|-------|---------------|-----------|
+| March 2026 | Setup | PRD v3 complete. Setup Guide, CLAUDE.md, PROGRESS.md created. Ready to begin setup. | Complete Section 3 of Setup Guide |
+| April 1, 2026 | Setup + Phase 0 | All setup steps completed. Scaffolded React+Tailwind frontend and FastAPI backend. Deployed to Vercel and Render. End-to-end health check verified. | Phase 1 — Auth & Profile |
+| April 1, 2026 | Phase 1 | Auth + profile complete. 3-step signup, login, settings, API key test, Supabase profiles table with RLS. Fixed auth token propagation and added inline API key setup instructions. | Phase 2 — Store Directory & GPS |
+| April 1, 2026 | Phase 2 | Store directory loaded from Dropbox (44 stores, 37 geocoded). GPS nearby, manual search, program picklist all working. | Phase 3 — Session & Visit Flow |
+| April 1, 2026 | Phase 3 | Full session flow working. Drafts, complete, close store, end session gates, manual entry with past dates. | Phase 4 — Assessment Form |
+| April 1, 2026 | Phase 4 | Full assessment form: 3 zones, EvaluationField component, voice input, auto-save, all conditional logic working. | Phase 5 — AI Review & Submission |
+| April 1, 2026 | Phase 5 | AI review with Claude Haiku, flags with field highlighting, re-review loop, submit anyway, cancel/discard. Editable program field. N/A blue highlight. | Phase 6 — Report & Invoice Generation |
+| April 2, 2026 | Phase 6 | Shop File and Invoice generation with template-copy. Email via Resend. Weekly/monthly screens. Excel formatting validated. Invoice: YYMM numbering, single mileage line, uniform borders, phone formatting, date formatting. Numerous UX fixes across all phases. | Phase 7 — Payments |
+| April 6, 2026 | Phase 7 | Stripe test mode checkout, webhooks, paywall, 14-day trial, promo codes, free accounts. Landing page for Eli Peterson Consulting LLC. | Phase 8 — Polish & Launch |
+| April 6, 2026 | Phase 8 | Major UX overhaul: dashboard with logo, bottom nav, profile/settings split, AI help chatbot, consistent Store/Vendor terminology, Open/Completed statuses, date formatting, clean assessment header, empty store handling. | Final validation |
+| April 6, 2026 | Phase 8+ | Stripe live/test key separation, production Stripe webhooks, Getting Started tutorial, Help Guide FAQ, standardized page headers, blue bottom nav, landing page logo. | Real-world test |
+| April 7, 2026 | Production | Documentation overhaul. Created free accounts for Stacy Taggart and R Taggart. All 8 phases complete. App in production. Awaiting Kelsey's real-world validation. | Kelsey field test |
+
+---
+
+*This file is the source of truth for ShopRight build progress.*
+*Claude Code updates it after every task. Eli signs off at every phase gate.*

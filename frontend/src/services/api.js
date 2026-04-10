@@ -1,0 +1,191 @@
+import { supabase } from './supabase'
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+// Return today's date in YYYY-MM-DD using LOCAL timezone (not UTC)
+export function getLocalDate(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Token getter — set by AuthContext so API calls use the current session
+let _getAccessToken = async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
+
+export function setTokenGetter(fn) {
+  _getAccessToken = fn
+}
+
+async function getAuthHeaders() {
+  const token = await _getAccessToken()
+  if (!token) throw new Error('Not authenticated')
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  }
+}
+
+async function request(path, options = {}) {
+  const headers = options.auth !== false
+    ? await getAuthHeaders()
+    : { 'Content-Type': 'application/json' }
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    let msg = body.error || `Request failed: ${res.status}`
+    if (body.detail) {
+      msg = typeof body.detail === 'string'
+        ? body.detail
+        : Array.isArray(body.detail)
+          ? body.detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+          : JSON.stringify(body.detail)
+    }
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
+const api = {
+  healthCheck: () => request('/health', { auth: false }),
+
+  getProfile: () => request('/auth/profile'),
+
+  updateProfile: (data) => request('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+
+  testApiKey: (apiKey) => request('/auth/test-api-key', {
+    method: 'POST',
+    body: JSON.stringify({ api_key: apiKey }),
+  }),
+
+  getNearbyStores: (lat, lng) => request(`/stores/nearby?lat=${lat}&lng=${lng}`),
+
+  searchStores: (query) => request(`/stores/search?q=${encodeURIComponent(query)}`),
+
+  getPrograms: () => request('/stores/programs'),
+
+  // Visits
+  createVisit: (data) => request('/visits', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  batchCreateVisits: (stores, sessionDate) => request('/visits/batch', {
+    method: 'POST',
+    body: JSON.stringify({ stores, session_date: sessionDate }),
+  }),
+
+  getVisits: (params = {}) => {
+    const qs = new URLSearchParams(params).toString()
+    return request(`/visits${qs ? '?' + qs : ''}`)
+  },
+
+  getVisit: (id) => request(`/visits/${id}`),
+
+  updateVisit: (id, data) => request(`/visits/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+
+  completeVisit: (id) => request(`/visits/${id}/complete`, { method: 'POST' }),
+
+  unlockVisit: (id) => request(`/visits/${id}/unlock`, { method: 'POST' }),
+
+  discardVisit: (id) => request(`/visits/${id}`, { method: 'DELETE' }),
+
+  deleteVisitsByStore: (storeNumber, retailerName, sessionDate) =>
+    request(`/visits/by-store?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}&session_date=${sessionDate}`, {
+      method: 'DELETE',
+    }),
+
+  closeStop: (storeNumber, retailerName, sessionDate) =>
+    request(`/visits/close-stop?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}&session_date=${sessionDate}`, {
+      method: 'POST',
+    }),
+
+  checkOpenStops: (sessionDate) => request(`/visits/check/open-stops?session_date=${sessionDate}`),
+
+  // Reports
+  getWeeklyVisits: (year, week) => request(`/reports/weekly?year=${year}&week=${week}`),
+
+  generateShopFile: (year, week) =>
+    `${API_BASE}/reports/generate/shopfile?year=${year}&week=${week}`,
+
+  sendShopFile: (data) => request('/reports/send/shopfile', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  generateInvoice: (data) => request('/reports/generate/invoice', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  sendInvoice: (data) => request('/reports/send/invoice', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  // Payments
+  getSubscriptionStatus: () => request('/payments/status'),
+
+  createCheckout: (priceId) => request('/payments/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ price_id: priceId }),
+  }),
+
+  createPortalSession: () => request('/payments/portal', { method: 'POST' }),
+
+  redeemPromoCode: (code) => request('/payments/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  }),
+
+  helpChat: (message, pageContext) => request('/help/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, page_context: pageContext }),
+  }),
+
+  // Route Planner
+  parseEmail: (rawText) => request('/route/parse-email', {
+    method: 'POST',
+    body: JSON.stringify({ raw_text: rawText }),
+  }),
+
+  parseCheckin: (rawText) => request('/route/parse-checkin', {
+    method: 'POST',
+    body: JSON.stringify({ raw_text: rawText }),
+  }),
+
+  optimizeRoute: (stores, startAddress, endAddress, timeWindowMinutes, startTime) => request('/route/optimize', {
+    method: 'POST',
+    body: JSON.stringify({ stores, start_address: startAddress, end_address: endAddress, time_window_minutes: timeWindowMinutes, start_time: startTime }),
+  }),
+
+  geocodeAddress: (address) => request(`/route/geocode?address=${encodeURIComponent(address)}`),
+
+  getRoutePlan: (date) => request(`/route/plan/${date}`),
+
+  saveRoutePlan: (data) => request('/route/plan', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+
+  completeRouteStop: (date, storeNumber, retailerName) =>
+    request(`/route/plan/${date}/complete-stop?store_number=${encodeURIComponent(storeNumber)}&retailer_name=${encodeURIComponent(retailerName)}`, {
+      method: 'POST',
+    }),
+
+  getVisitHistory: () => request('/route/visit-history'),
+
+  reviewVisit: (visitId) => request('/review', {
+    method: 'POST',
+    body: JSON.stringify({ visit_id: visitId }),
+  }),
+}
+
+export default api
