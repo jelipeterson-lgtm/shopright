@@ -488,6 +488,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     remaining = list(range(num_stores))
     current = 0
     elapsed = 0
+    total_earnings_so_far = 0
     clock = start_hour * 60 + start_minute  # minutes from midnight
 
     while remaining:
