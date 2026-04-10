@@ -978,28 +978,52 @@ function RoutePlanner() {
                           v.program === vendor
                         )
                         const isDone = visit?.status === 'Complete'
+                        const handleVendorTap = async () => {
+                          if (visit) {
+                            navigate(`/visit/${visit.id}`)
+                          } else {
+                            // Auto-create visit for pending vendor and open it
+                            try {
+                              const now = new Date()
+                              const result = await api.createVisit({
+                                store_id: store.store_id,
+                                retailer_name: store.retailer_name,
+                                store_number: store.store_number,
+                                program: vendor,
+                                address: store.address,
+                                city: store.city,
+                                state: store.state,
+                                visit_date: today,
+                                visit_time: now.toTimeString().slice(0, 5),
+                                session_date: today,
+                              })
+                              if (result.data?.id) navigate(`/visit/${result.data.id}`)
+                            } catch (err) {
+                              setError(err.message)
+                            }
+                          }
+                        }
                         return (
                           <button key={vi}
-                            onClick={() => visit ? navigate(`/visit/${visit.id}`) : null}
-                            disabled={!visit}
-                            className={`w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-b-0 text-left ${visit ? 'active:bg-gray-50' : ''}`}>
+                            onClick={handleVendorTap}
+                            className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-b-0 text-left active:bg-gray-50">
                             <div className="flex items-center gap-2 min-w-0">
                               {isDone ? (
                                 <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs shrink-0">✓</span>
                               ) : visit ? (
                                 <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-[10px] shrink-0">●</span>
                               ) : (
-                                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-[10px] shrink-0">○</span>
+                                <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center text-[10px] shrink-0">○</span>
                               )}
                               <span className="text-sm text-gray-800 truncate">{vendor}</span>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                                isDone ? 'bg-green-100 text-green-700' : visit ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-400'
+                                isDone ? 'bg-green-100 text-green-700' : visit ? 'bg-yellow-50 text-yellow-700' : 'bg-blue-50 text-blue-600'
                               }`}>
-                                {isDone ? 'Complete' : visit ? 'Open' : 'Pending'}
+                                {isDone ? 'Complete' : visit ? 'Open' : 'Start'}
                               </span>
-                              {visit && <span className="text-gray-300 text-sm">›</span>}
+                              <span className="text-gray-300 text-sm">›</span>
                             </div>
                           </button>
                         )
