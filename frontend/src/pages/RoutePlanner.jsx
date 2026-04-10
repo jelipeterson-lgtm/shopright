@@ -352,13 +352,15 @@ function RoutePlanner() {
     if (!maxDistance || !startCoords) return parsedStores
     const miles = parseFloat(maxDistance)
     if (isNaN(miles)) return parsedStores
+    // Expand radius by 40% to approximate road distance (roads are longer than straight-line)
+    const roadMiles = miles * 1.4
     // For stores without coords, check if other stores in the same city ARE within range
     const cityInRange = new Set()
     const cityOutOfRange = new Set()
     for (const s of parsedStores) {
       if (s.latitude && s.longitude) {
         const city = (s.city || '').toLowerCase()
-        if (city && haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles) {
+        if (city && haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= roadMiles) {
           cityInRange.add(city)
         } else if (city) {
           cityOutOfRange.add(city)
@@ -367,7 +369,7 @@ function RoutePlanner() {
     }
     return parsedStores.filter(s => {
       if (s.latitude && s.longitude) {
-        return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= miles
+        return haversineMiles(startCoords.lat, startCoords.lng, s.latitude, s.longitude) <= roadMiles
       }
       // No coords — use city as fallback
       const city = (s.city || '').toLowerCase()
@@ -811,7 +813,7 @@ function RoutePlanner() {
 
             {/* Max distance filter — applies first, limits which cities appear */}
             <div className="mb-3">
-              <label className="block text-xs text-gray-500 mb-1">Max Radius from Start (straight-line miles)</label>
+              <label className="block text-xs text-gray-500 mb-1">Max Distance from Start (miles)</label>
               <input type="number" value={maxDistance} onChange={(e) => {
                 setMaxDistance(e.target.value)
                 setSelectedCities(null)
