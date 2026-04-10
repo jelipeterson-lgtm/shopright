@@ -201,7 +201,28 @@ def complete_visit(visit_id: str, authorization: str = Header(...)):
         .eq("user_id", user_id)
         .execute()
     )
-    return {"success": True, "data": result.data[0] if result.data else None, "error": None}
+    visit = result.data[0] if result.data else None
+
+    # Auto-close store when all vendors at this store are complete
+    if visit:
+        siblings = (
+            supabase_admin.table("vendor_visits")
+            .select("id, status")
+            .eq("user_id", user_id)
+            .eq("retailer_name", visit["retailer_name"])
+            .eq("store_number", visit["store_number"])
+            .eq("session_date", visit["session_date"])
+            .execute()
+        )
+        all_complete = all(v["status"] == "Complete" for v in (siblings.data or []))
+        if all_complete:
+            supabase_admin.table("vendor_visits").update({"stop_open": False}).eq(
+                "user_id", user_id
+            ).eq("retailer_name", visit["retailer_name"]).eq(
+                "store_number", visit["store_number"]
+            ).eq("session_date", visit["session_date"]).execute()
+
+    return {"success": True, "data": visit, "error": None}
 
 
 @router.post("/{visit_id}/unlock")

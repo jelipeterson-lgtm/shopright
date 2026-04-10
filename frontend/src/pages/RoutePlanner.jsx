@@ -862,15 +862,15 @@ function RoutePlanner() {
                 className="flex-1 bg-blue-100 text-blue-700 py-2 rounded-xl text-xs font-medium border border-blue-200 hover:bg-blue-200">
                 Re-optimize Route
               </button>
+              <button onClick={() => setShowFilters(true)}
+                className="flex-1 bg-green-50 text-green-700 py-2 rounded-xl text-xs font-medium border border-green-200 hover:bg-green-100">
+                Add Cities
+              </button>
               <button onClick={handleClearRoute}
                 className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-medium border border-red-200 hover:bg-red-100">
-                Clear Route
+                Clear
               </button>
             </div>
-            <button onClick={() => setShowFilters(true)}
-              className="w-full text-center text-xs text-gray-400 mt-1.5 hover:text-gray-600">
-              Change distance & city filters
-            </button>
           </div>
         )}
 
