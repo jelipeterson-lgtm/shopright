@@ -987,8 +987,8 @@ function RoutePlanner() {
                   </div>
                   {/* Inline Add Vendor */}
                   {addingVendorStore && addingVendorStore.retailer_name === store.retailer_name && addingVendorStore.store_number === store.store_number && (
-                    <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
-                      <p className="text-xs font-medium text-gray-700 mb-2">Add Vendor</p>
+                    <div className="mt-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Add Vendor</p>
                       <select value={selectedProgram || ''} onChange={(e) => setSelectedProgram(e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2">
                         <option value="">Select a program...</option>
@@ -1004,7 +1004,9 @@ function RoutePlanner() {
                           Add & Assess
                         </button>
                         <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
-                          className="px-3 py-1.5 text-gray-500 text-xs hover:underline">Cancel</button>
+                          className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
+                          Cancel
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1044,8 +1046,8 @@ function RoutePlanner() {
 
         {/* Add Vendor panel for manually added stores (not in route) */}
         {addingVendorStore && !route.some(s => s.retailer_name === addingVendorStore.retailer_name && s.store_number === addingVendorStore.store_number) && (
-          <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-4 mb-4">
-            <p className="text-sm font-semibold text-gray-800 mb-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">
               Add Vendor — {addingVendorStore.retailer_name} #{addingVendorStore.store_number}
             </p>
             <select value={selectedProgram || ''} onChange={(e) => setSelectedProgram(e.target.value)}
@@ -1059,11 +1061,13 @@ function RoutePlanner() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
             <div className="flex gap-2">
               <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
                 Add & Assess
               </button>
               <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
-                className="px-4 py-2 text-gray-500 text-sm hover:underline">Cancel</button>
+                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-200">
+                Cancel
+              </button>
             </div>
           </div>
         )}
