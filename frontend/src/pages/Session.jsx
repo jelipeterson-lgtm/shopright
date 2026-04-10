@@ -79,23 +79,8 @@ function Session() {
   }
   const storeList = Object.values(stores)
 
-  const handleNewStore = async () => {
-    // Gate: check for open stops
-    setError(null)
-    setActionLoading(true)
-    try {
-      const result = await api.checkOpenStops(today)
-      if (result.data.length > 0) {
-        const stop = result.data[0]
-        setError(`Close out ${stop.retailer_name} #${stop.store_number} before starting a new stop.`)
-        return
-      }
-      navigate('/new-store', { state: { sessionDate: today } })
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setActionLoading(false)
-    }
+  const handleNewStore = () => {
+    navigate('/new-store', { state: { sessionDate: today } })
   }
 
   const handleCloseStop = async (store) => {
@@ -285,32 +270,22 @@ function Session() {
             )}
 
             {/* Store actions */}
-            {store.stop_open && (
-              <div className="p-4 border-t border-gray-100 flex gap-2">
+            <div className="p-4 border-t border-gray-100 flex gap-2">
+              <button
+                onClick={() => handleAddVendor(store)}
+                className="flex-1 bg-blue-50 text-blue-700 py-2 rounded-md text-xs font-medium hover:bg-blue-100"
+              >
+                {store.visits.length === 0 ? 'Add Vendor' : 'Add Another Vendor'}
+              </button>
+              {store.visits.length === 0 && (
                 <button
-                  onClick={() => handleAddVendor(store)}
-                  className="flex-1 bg-blue-50 text-blue-700 py-2 rounded-md text-xs font-medium hover:bg-blue-100"
+                  onClick={() => handleDeleteStore(store)}
+                  className="flex-1 bg-red-50 text-red-600 py-2 rounded-md text-xs font-medium hover:bg-red-100"
                 >
-                  {store.visits.length === 0 ? 'Add Vendor' : 'Add Another Vendor'}
+                  Delete Store
                 </button>
-                {store.visits.length === 0 ? (
-                  <button
-                    onClick={() => handleDeleteStore(store)}
-                    className="flex-1 bg-red-50 text-red-600 py-2 rounded-md text-xs font-medium hover:bg-red-100"
-                  >
-                    Delete Store
-                  </button>
-                ) : (
-                <button
-                  onClick={() => handleCloseStop(store)}
-                  disabled={actionLoading}
-                  className="flex-1 bg-gray-50 text-gray-700 py-2 rounded-md text-xs font-medium hover:bg-gray-100 disabled:opacity-50"
-                >
-                  Close Store
-                </button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
 

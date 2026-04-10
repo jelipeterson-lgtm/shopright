@@ -82,9 +82,34 @@ function RoutePlanner() {
 
           setRoute(routeData)
           recalcSummary(routeData)
+
+          // Populate parsedStores from saved plan so SMS check-ins can merge
+          setParsedStores(prev => {
+            if (prev.length > 0) return prev
+            // Flatten route stores into individual vendor entries for the pool
+            const entries = []
+            for (const s of routeData) {
+              for (const program of (s.vendors || [])) {
+                entries.push({
+                  retailer_name: s.retailer_name,
+                  store_number: s.store_number,
+                  address: s.address,
+                  city: s.city,
+                  state: s.state,
+                  latitude: s.latitude,
+                  longitude: s.longitude,
+                  store_id: s.store_id,
+                  program,
+                })
+              }
+            }
+            return entries
+          })
         }
       }
-    }).catch(() => {}).finally(() => setLoading(false))
+    }).catch((err) => {
+      console.error('Failed to load route plan:', err)
+    }).finally(() => setLoading(false))
   }, [today])
 
   const recalcSummary = (routeData) => {
@@ -434,6 +459,8 @@ function RoutePlanner() {
       )
       setRoute(updated)
       recalcSummary(updated)
+      // Persist changes
+      api.saveRoutePlan({ plan_date: today, start_address: startAddress, end_address: endAddress || startAddress, stores_data: updated }).catch(() => {})
     } catch (err) {
       setError(err.message)
     }
@@ -452,6 +479,8 @@ function RoutePlanner() {
       )
       setRoute(updated)
       recalcSummary(updated)
+      // Persist changes
+      api.saveRoutePlan({ plan_date: today, start_address: startAddress, end_address: endAddress || startAddress, stores_data: updated }).catch(() => {})
     } catch (err) {
       setError(err.message)
     }

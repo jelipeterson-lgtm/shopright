@@ -9,7 +9,7 @@ router = APIRouter(prefix="/visits", tags=["visits"])
 
 
 class CreateVisit(BaseModel):
-    store_id: int
+    store_id: Optional[int] = None
     retailer_name: str
     store_number: str
     program: str
