@@ -1004,17 +1004,20 @@ function RoutePlanner() {
                       </div>
                     </div>
                     {/* Schedule + stats */}
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      {store.est_arrival && (
-                        <span className="text-xs font-medium text-blue-600">{store.est_arrival} — {store.est_depart}</span>
-                      )}
+                    {store.est_arrival && (
+                      <p className="text-xs text-blue-600 font-medium mt-2">
+                        Arrive {store.est_arrival} — Depart {store.est_depart}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       {store.drive_time_min > 0 && (
-                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{Math.round(store.drive_time_min)} min</span>
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Drive: {Math.round(store.drive_time_min)} min</span>
                       )}
                       {store.drive_distance_mi > 0 && (
-                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">{store.drive_distance_mi} mi</span>
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Dist: {store.drive_distance_mi} mi</span>
                       )}
-                      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">${store.earnings}</span>
+                      <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">On-site: ~{Math.round(store.est_minutes)} min</span>
+                      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">Est: ${store.earnings}</span>
                     </div>
                   </div>
 
