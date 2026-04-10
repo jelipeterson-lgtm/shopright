@@ -899,18 +899,20 @@ function RoutePlanner() {
               <details key={i} className="bg-gray-50 rounded-xl mb-2 overflow-hidden border border-gray-100">
                 <summary className="p-3 flex items-center gap-2 cursor-pointer list-none">
                   {store.status === 'completed' ? (
-                    <span className="text-xs font-bold text-green-600 bg-green-100 w-6 h-6 rounded-full flex items-center justify-center shrink-0">✓</span>
+                    <span className="text-xs font-bold text-white bg-blue-600 w-6 h-6 rounded-full flex items-center justify-center shrink-0">✓</span>
+                  ) : store.status === 'removed' ? (
+                    <span className="text-xs font-bold text-red-400 bg-red-50 w-6 h-6 rounded-full flex items-center justify-center shrink-0">×</span>
                   ) : (
-                    <span className="text-xs font-bold text-gray-400 bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center shrink-0">—</span>
+                    <span className="text-xs font-bold text-yellow-600 bg-yellow-50 w-6 h-6 rounded-full flex items-center justify-center shrink-0">—</span>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-medium ${store.status === 'removed' ? 'text-gray-400 line-through' : 'text-gray-600'}`}>{store.retailer_name} #{store.store_number}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className={`text-[10px] font-medium px-2 py-0.5 rounded ${
-                      store.status === 'completed' ? 'bg-green-100 text-green-700'
-                        : store.status === 'removed' ? 'bg-red-50 text-red-500'
-                        : 'bg-gray-200 text-gray-500'
+                      store.status === 'completed' ? 'bg-blue-600 text-white'
+                        : store.status === 'removed' ? 'bg-red-50 text-red-600'
+                        : 'bg-yellow-50 text-yellow-700'
                     }`}>
                       {store.status === 'completed' ? 'Assessed' : store.status === 'removed' ? 'Removed' : 'Skipped'}
                     </span>
@@ -941,14 +943,14 @@ function RoutePlanner() {
                           className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 text-left active:bg-gray-100">
                           <div className="flex items-center gap-2 min-w-0">
                             {isDone ? (
-                              <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs shrink-0">✓</span>
+                              <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs shrink-0">✓</span>
                             ) : (
-                              <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-[10px] shrink-0">●</span>
+                              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] shrink-0">●</span>
                             )}
                             <span className="text-sm text-gray-700 truncate">{vendor}</span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${isDone ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
                               {isDone ? 'Complete' : 'Open'}
                             </span>
                             {visit && <span className="text-gray-300 text-sm">›</span>}
@@ -1066,9 +1068,9 @@ function RoutePlanner() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                               {isDone ? (
-                                <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs shrink-0">✓</span>
+                                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs shrink-0">✓</span>
                               ) : visit ? (
-                                <span className="w-5 h-5 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-[10px] shrink-0">●</span>
+                                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] shrink-0">●</span>
                               ) : (
                                 <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center text-[10px] shrink-0">○</span>
                               )}
@@ -1087,7 +1089,7 @@ function RoutePlanner() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                                isDone ? 'bg-green-100 text-green-700' : visit ? 'bg-yellow-50 text-yellow-700' : 'bg-blue-50 text-blue-600'
+                                isDone ? 'bg-blue-600 text-white' : visit ? 'bg-blue-50 text-blue-600' : 'bg-blue-50 text-blue-600'
                               }`}>
                                 {isDone ? 'Complete' : visit ? 'Open' : 'Start'}
                               </span>
@@ -1128,15 +1130,15 @@ function RoutePlanner() {
                   {/* Store actions */}
                   <div className="flex border-t border-gray-100">
                     <button onClick={() => handleAddVendorToExisting(store)}
-                      className="flex-1 py-3 text-xs font-medium text-blue-600 active:bg-blue-50 border-r border-gray-100">
+                      className="flex-1 py-3 text-xs font-medium text-blue-600 bg-blue-50 active:bg-blue-100 border-r border-gray-100">
                       + Vendor
                     </button>
                     <button onClick={() => handleSkipOrRemove(store, 'skipped')}
-                      className="flex-1 py-3 text-xs font-medium text-gray-500 active:bg-gray-50 border-r border-gray-100">
+                      className="flex-1 py-3 text-xs font-medium text-yellow-700 bg-yellow-50 active:bg-yellow-100 border-r border-gray-100">
                       Skip
                     </button>
                     <button onClick={() => handleSkipOrRemove(store, 'removed')}
-                      className="flex-1 py-3 text-xs font-medium text-red-500 active:bg-red-50">
+                      className="flex-1 py-3 text-xs font-medium text-red-600 bg-red-50 active:bg-red-100">
                       Remove
                     </button>
                   </div>
