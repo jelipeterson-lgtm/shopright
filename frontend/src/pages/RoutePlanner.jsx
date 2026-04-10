@@ -48,8 +48,40 @@ function RoutePlanner() {
   const [programs, setPrograms] = useState([])
   const [selectedProgram, setSelectedProgram] = useState(null)
 
+  // localStorage keys for persistence
+  const LS_ROUTE = `shopright_route_${today}`
+  const LS_SUMMARY = `shopright_summary_${today}`
+  const LS_PARSED = `shopright_parsed_${today}`
+  const LS_ACCEPTED = `shopright_accepted_${today}`
+
+  // Save route to localStorage whenever it changes
+  const saveToLocal = (routeData, summaryData, parsedData, acceptedState) => {
+    try {
+      localStorage.setItem(LS_ROUTE, JSON.stringify(routeData))
+      if (summaryData) localStorage.setItem(LS_SUMMARY, JSON.stringify(summaryData))
+      if (parsedData) localStorage.setItem(LS_PARSED, JSON.stringify(parsedData))
+      localStorage.setItem(LS_ACCEPTED, JSON.stringify(acceptedState))
+    } catch (e) {}
+  }
+
   useEffect(() => {
-    setLoading(true)
+    // Load from localStorage instantly (no loading state)
+    try {
+      const cachedRoute = JSON.parse(localStorage.getItem(LS_ROUTE) || '[]')
+      const cachedSummary = JSON.parse(localStorage.getItem(LS_SUMMARY) || 'null')
+      const cachedParsed = JSON.parse(localStorage.getItem(LS_PARSED) || '[]')
+      const cachedAccepted = JSON.parse(localStorage.getItem(LS_ACCEPTED) || 'false')
+      if (cachedRoute.length > 0) {
+        setRoute(cachedRoute)
+        if (cachedSummary) setSummary(cachedSummary)
+        if (cachedParsed.length > 0) setParsedStores(cachedParsed)
+        setAccepted(cachedAccepted)
+        setLoading(false)
+      }
+    } catch (e) {}
+
+    // Then sync with API in background
+    setLoading(prev => prev)
     Promise.all([
       api.getProfile(),
       api.getRoutePlan(today),
@@ -61,6 +93,9 @@ function RoutePlanner() {
       setEndAddress(p.default_end_address || p.default_start_address || homeAddr)
       setHasGoogleKey(!!p.google_maps_api_key)
 
+      const visits = visitsResult.data || []
+      setTodayVisits(visits)
+
       if (planResult.data) {
         const plan = planResult.data
         if (plan.start_address) setStartAddress(plan.start_address)
@@ -68,9 +103,7 @@ function RoutePlanner() {
         if (plan.stores_data && plan.stores_data.length > 0) {
           let routeData = plan.stores_data
 
-          // Sync route status with actual visits from Stores page
-          const visits = visitsResult.data || []
-          setTodayVisits(visits)
+          // Sync route status with actual visits
           if (visits.length > 0) {
             setAccepted(true)
             const completedKeys = new Set()
@@ -90,11 +123,11 @@ function RoutePlanner() {
 
           setRoute(routeData)
           recalcSummary(routeData)
+          saveToLocal(routeData, null, null, visits.length > 0)
 
-          // Populate parsedStores from saved plan so SMS check-ins can merge
+          // Populate parsedStores from saved plan
           setParsedStores(prev => {
             if (prev.length > 0) return prev
-            // Flatten route stores into individual vendor entries for the pool
             const entries = []
             for (const s of routeData) {
               for (const program of (s.vendors || [])) {
@@ -114,11 +147,23 @@ function RoutePlanner() {
             return entries
           })
         }
+      } else if (visits.length > 0) {
+        // No saved plan but visits exist — show visits
+        setTodayVisits(visits)
+        setAccepted(true)
       }
     }).catch((err) => {
       console.error('Failed to load route plan:', err)
+      // Keep localStorage data — don't clear on API failure
     }).finally(() => setLoading(false))
   }, [today])
+
+  // Persist to localStorage on every change
+  useEffect(() => {
+    if (route.length > 0 || parsedStores.length > 0) {
+      saveToLocal(route, summary, parsedStores, accepted)
+    }
+  }, [route, summary, parsedStores, accepted])
 
   const recalcSummary = (routeData) => {
     const active = routeData.filter(s => s.status === 'upcoming' || s.status === 'completed')
@@ -427,6 +472,13 @@ function RoutePlanner() {
     setParseSuccess(null)
     setError(null)
     setShowFilters(false)
+    setAccepted(false)
+    try {
+      localStorage.removeItem(LS_ROUTE)
+      localStorage.removeItem(LS_SUMMARY)
+      localStorage.removeItem(LS_PARSED)
+      localStorage.removeItem(LS_ACCEPTED)
+    } catch (e) {}
   }
 
   const handleAcceptRoute = async () => {
