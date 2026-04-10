@@ -985,6 +985,29 @@ function RoutePlanner() {
                         className="w-7 h-7 flex items-center justify-center bg-gray-100 rounded text-gray-500 text-xs disabled:opacity-30 hover:bg-gray-200">↓</button>
                     </div>
                   </div>
+                  {/* Inline Add Vendor */}
+                  {addingVendorStore && addingVendorStore.retailer_name === store.retailer_name && addingVendorStore.store_number === store.store_number && (
+                    <div className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                      <p className="text-xs font-medium text-gray-700 mb-2">Add Vendor</p>
+                      <select value={selectedProgram || ''} onChange={(e) => setSelectedProgram(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2">
+                        <option value="">Select a program...</option>
+                        {programs.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      <input type="text" placeholder="Or type a custom program code"
+                        value={selectedProgram && !programs.includes(selectedProgram) ? selectedProgram : ''}
+                        onChange={(e) => setSelectedProgram(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
+                      <div className="flex gap-2">
+                        <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
+                          className="flex-1 bg-blue-600 text-white py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                          Add & Assess
+                        </button>
+                        <button onClick={() => { setAddingVendorStore(null); setSelectedProgram(null) }}
+                          className="px-3 py-1.5 text-gray-500 text-xs hover:underline">Cancel</button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => handleAssessVendors(store)}
                       className="flex-1 bg-blue-50 text-blue-700 py-1.5 rounded-lg text-xs font-medium border border-blue-200 hover:bg-blue-100">
@@ -1019,8 +1042,8 @@ function RoutePlanner() {
           </div>
         )}
 
-        {/* Add Vendor modal */}
-        {addingVendorStore && (
+        {/* Add Vendor panel for manually added stores (not in route) */}
+        {addingVendorStore && !route.some(s => s.retailer_name === addingVendorStore.retailer_name && s.store_number === addingVendorStore.store_number) && (
           <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-4 mb-4">
             <p className="text-sm font-semibold text-gray-800 mb-2">
               Add Vendor — {addingVendorStore.retailer_name} #{addingVendorStore.store_number}
