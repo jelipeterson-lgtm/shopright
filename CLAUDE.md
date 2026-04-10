@@ -359,7 +359,9 @@ RLS: Users can read/insert/update/delete their own visits.
 
 14. **Phone numbers**: Always formatted as (555) 555-5555 in invoice output regardless of input format.
 
-15. **Route Planner**: Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using Google Maps Distance Matrix API with time window constraint (start/end times). Schedule shows estimated arrival/departure at each stop. "Accept Route" batch-creates Draft vendor visits on Stores tab. "Skip"/"Remove" deletes Draft visits from Stores. Completing assessment on Stores syncs back to Route as "Assessed". Re-optimize uses current time and traffic. Distance Matrix batched at 10×10 elements per request (free tier).
+15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using Google Maps Distance Matrix API with time window constraint. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize uses current time and traffic. Stores tab removed from nav — all workflow through Route page. Close-store gate removed.
+
+16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific.
 
 ---
 
