@@ -67,6 +67,42 @@ def search_stores(q: str = Query(..., min_length=1)):
     return {"success": True, "data": matches[:25], "error": None}
 
 
+@router.post("/fix-coords")
+def fix_missing_coordinates():
+    """Geocode stores that have null lat/lng."""
+    import httpx
+    import time as _time
+
+    result = supabase_admin.table("stores").select("*").is_("latitude", "null").execute()
+    stores = result.data or []
+
+    if not stores:
+        return {"success": True, "data": {"fixed": 0, "total_missing": 0}, "error": None}
+
+    fixed = 0
+    for store in stores:
+        full_address = f"{store.get('address', '')}, {store.get('city', '')}, {store.get('state', '')} {store.get('zip_code', '')}"
+        try:
+            r = httpx.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": full_address, "format": "json", "limit": 1},
+                headers={"User-Agent": "ShopRight/1.0"},
+                timeout=10,
+            )
+            data = r.json()
+            if data:
+                lat, lon = float(data[0]["lat"]), float(data[0]["lon"])
+                supabase_admin.table("stores").update(
+                    {"latitude": lat, "longitude": lon}
+                ).eq("id", store["id"]).execute()
+                fixed += 1
+            _time.sleep(1.1)  # Nominatim rate limit
+        except Exception:
+            pass
+
+    return {"success": True, "data": {"fixed": fixed, "total_missing": len(stores)}, "error": None}
+
+
 @router.get("/programs")
 def get_programs():
     """Get all available program codes from the programs table."""
