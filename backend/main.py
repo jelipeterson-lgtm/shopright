@@ -45,6 +45,24 @@ def health_check():
     return {"success": True, "data": "ShopRight API is running", "error": None}
 
 
+# Keep-alive: prevent Render free tier from sleeping
+import threading
+import time
+import httpx
+
+def keep_alive():
+    """Ping self every 14 minutes to prevent Render free tier sleep."""
+    url = os.getenv("RENDER_EXTERNAL_URL", "https://shopright-api.onrender.com") + "/health"
+    while True:
+        time.sleep(840)  # 14 minutes
+        try:
+            httpx.get(url, timeout=10)
+        except Exception:
+            pass
+
+threading.Thread(target=keep_alive, daemon=True).start()
+
+
 from pydantic import BaseModel
 import resend
 
