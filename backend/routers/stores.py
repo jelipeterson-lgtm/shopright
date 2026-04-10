@@ -40,7 +40,10 @@ def search_stores(q: str = Query(..., min_length=1)):
     result = supabase_admin.table("stores").select("*").execute()
     stores = result.data or []
 
-    terms = query.lower().split()
+    import re
+    # Strip special characters like # from search terms
+    cleaned = re.sub(r'[#\-.,]', ' ', query.lower())
+    terms = [t for t in cleaned.split() if t]
     matches = []
     for store in stores:
         searchable = " ".join([

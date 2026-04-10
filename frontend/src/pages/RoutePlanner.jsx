@@ -98,8 +98,15 @@ function RoutePlanner() {
     ]).then(([profileResult, planResult, visitsResult]) => {
       const p = profileResult.data
       const homeAddr = p.home_address || ''
-      setStartAddress(p.default_start_address || homeAddr)
+      const effectiveStart = p.default_start_address || homeAddr
+      setStartAddress(effectiveStart)
       setEndAddress(p.default_end_address || p.default_start_address || homeAddr)
+      // Pre-geocode start address for distance filtering
+      if (effectiveStart && !startCoords) {
+        api.geocodeAddress(effectiveStart).then(r => {
+          if (r.success) setStartCoords({ lat: r.data.latitude, lng: r.data.longitude })
+        }).catch(() => {})
+      }
       setHasGoogleKey(!!p.google_maps_api_key)
 
       const visits = visitsResult.data || []
@@ -669,6 +676,35 @@ function RoutePlanner() {
         session_date: today,
       }
       await api.createVisit(visitData)
+
+      // Add to route if not already there
+      const existsInRoute = route.some(s =>
+        s.retailer_name === addingVendorStore.retailer_name &&
+        s.store_number === addingVendorStore.store_number
+      )
+      if (!existsInRoute) {
+        const newStop = {
+          retailer_name: addingVendorStore.retailer_name,
+          store_number: addingVendorStore.store_number,
+          store_id: addingVendorStore.id,
+          address: addingVendorStore.address,
+          city: addingVendorStore.city,
+          state: addingVendorStore.state,
+          latitude: addingVendorStore.latitude,
+          longitude: addingVendorStore.longitude,
+          vendors: [selectedProgram],
+          earnings: 50,
+          est_minutes: 20,
+          drive_time_min: 0,
+          drive_distance_mi: 0,
+          status: 'upcoming',
+        }
+        const updated = [...route, newStop]
+        setRoute(updated)
+        recalcSummary(updated)
+        api.saveRoutePlan({ plan_date: today, start_address: startAddress, end_address: endAddress || startAddress, stores_data: updated }).catch(() => {})
+      }
+
       setAddingVendorStore(null)
       setSelectedProgram(null)
       await refreshVisits()
@@ -817,7 +853,7 @@ function RoutePlanner() {
               <input type="number" value={maxDistance} onChange={(e) => {
                 setMaxDistance(e.target.value)
                 setSelectedCities(null)
-                if (e.target.value && !startCoords && startAddress) {
+                if (e.target.value && startAddress && !startCoords) {
                   api.geocodeAddress(startAddress).then(r => {
                     if (r.success) setStartCoords({ lat: r.data.latitude, lng: r.data.longitude })
                   }).catch(() => {})
