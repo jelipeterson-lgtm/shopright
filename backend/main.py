@@ -63,6 +63,19 @@ def keep_alive():
 threading.Thread(target=keep_alive, daemon=True).start()
 
 
+# Store directory sync: on startup, check Dropbox Last-Modified for Book1.xlsx
+# and re-ingest only if the file has changed. Runs in a background thread so
+# it never blocks the API from starting (Render cold starts already take time).
+def _sync_store_directory():
+    try:
+        from ingest_stores import check_and_ingest
+        check_and_ingest()
+    except Exception as e:
+        print(f"Store directory sync failed: {e}")
+
+threading.Thread(target=_sync_store_directory, daemon=True).start()
+
+
 from pydantic import BaseModel
 import resend
 

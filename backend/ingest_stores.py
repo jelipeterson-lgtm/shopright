@@ -1,7 +1,11 @@
 """
 Download Book1.xlsx from Dropbox, geocode addresses, and load into stores table.
 Also loads program list into a programs table.
-Run manually: python3 ingest_stores.py
+
+- Can be run manually: python3 ingest_stores.py
+- Can be called on backend startup: check_and_ingest() HEADs the Dropbox URL,
+  compares Last-Modified against a cached value, and only re-ingests if the
+  file has changed.
 """
 import os
 import time
@@ -12,18 +16,76 @@ from db import supabase_admin
 
 load_dotenv()
 
-DROPBOX_URL = os.getenv("DROPBOX_STORES_URL", "").replace("dl=0", "dl=1")
+
+def normalize_dropbox_url(url):
+    """Ensure a Dropbox shared URL uses dl=1 for direct download.
+
+    Handles three cases:
+    - `...dl=0`  -> `...dl=1`
+    - `...dl=1`  -> unchanged
+    - no dl param -> append `dl=1`
+    """
+    if not url:
+        return url
+    if "dl=0" in url:
+        return url.replace("dl=0", "dl=1")
+    if "dl=1" in url:
+        return url
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}dl=1"
+
+
+DROPBOX_URL = normalize_dropbox_url(os.getenv("DROPBOX_STORES_URL", ""))
+
+# Cache file tracks the Dropbox Last-Modified we last ingested, so we can skip
+# re-downloading when the file hasn't changed. /tmp is wiped on Render cold
+# starts, so cold starts will re-ingest — the geocoding step below skips
+# already-geocoded stores, which keeps re-ingests fast.
+LAST_MODIFIED_CACHE = "/tmp/book1_last_modified.txt"
+BOOK1_PATH = "/tmp/Book1.xlsx"
+
+
+def _read_cached_last_modified():
+    try:
+        with open(LAST_MODIFIED_CACHE) as f:
+            return f.read().strip() or None
+    except (FileNotFoundError, OSError):
+        return None
+
+
+def _write_cached_last_modified(value):
+    if not value:
+        return
+    try:
+        with open(LAST_MODIFIED_CACHE, "w") as f:
+            f.write(value)
+    except OSError as e:
+        print(f"Failed to write Last-Modified cache: {e}")
+
+
+def _fetch_remote_last_modified():
+    """HEAD the Dropbox URL and return its Last-Modified header, or None."""
+    if not DROPBOX_URL:
+        return None
+    try:
+        r = httpx.head(DROPBOX_URL, follow_redirects=True, timeout=15)
+        if r.status_code >= 400:
+            print(f"HEAD {DROPBOX_URL} returned {r.status_code}")
+            return None
+        return r.headers.get("last-modified")
+    except Exception as e:
+        print(f"HEAD request for Dropbox stores URL failed: {e}")
+        return None
 
 
 def download_book1():
     print("Downloading Book1.xlsx from Dropbox...")
-    r = httpx.get(DROPBOX_URL, follow_redirects=True, timeout=30)
+    r = httpx.get(DROPBOX_URL, follow_redirects=True, timeout=60)
     r.raise_for_status()
-    path = "/tmp/Book1.xlsx"
-    with open(path, "wb") as f:
+    with open(BOOK1_PATH, "wb") as f:
         f.write(r.content)
-    print(f"Downloaded {len(r.content)} bytes")
-    return path
+    print(f"Downloaded {len(r.content)} bytes to {BOOK1_PATH}")
+    return BOOK1_PATH
 
 
 def geocode_address(address, city, state, zip_code):
@@ -41,6 +103,29 @@ def geocode_address(address, city, state, zip_code):
     except Exception as e:
         print(f"  Geocode failed for {full_address}: {e}")
     return None, None
+
+
+def _load_existing_geocodes():
+    """Return {(address, city, state, zip_code): (lat, lon)} for rows already geocoded."""
+    existing = {}
+    try:
+        resp = (
+            supabase_admin.table("stores")
+            .select("address,city,state,zip_code,latitude,longitude")
+            .execute()
+        )
+        for row in (resp.data or []):
+            if row.get("latitude") and row.get("longitude"):
+                key = (
+                    (row.get("address") or "").strip(),
+                    (row.get("city") or "").strip(),
+                    (row.get("state") or "").strip(),
+                    str(row.get("zip_code") or "").strip(),
+                )
+                existing[key] = (row["latitude"], row["longitude"])
+    except Exception as e:
+        print(f"Failed to load existing geocodes: {e}")
+    return existing
 
 
 def parse_and_load(path):
@@ -95,8 +180,12 @@ def parse_and_load(path):
 
     print(f"Parsed {len(stores)} unique stores (from {ws.max_row - 1} rows)")
 
-    # Geocode each unique address
-    geocoded = {}
+    # Pre-populate geocode cache from DB so we only call Nominatim for new
+    # addresses. Dramatically speeds up re-ingests after cold starts.
+    geocoded = _load_existing_geocodes()
+    print(f"Loaded {len(geocoded)} existing geocodes from database")
+
+    # Geocode each unique address not already known
     for store in stores:
         addr_key = (store["address"], store["city"], store["state"], store["zip_code"])
         if addr_key not in geocoded:
@@ -120,6 +209,35 @@ def parse_and_load(path):
     print(f"Done. {len(stores)} stores loaded.")
 
 
+def check_and_ingest(force=False):
+    """Check Dropbox Last-Modified; re-ingest Book1.xlsx only if changed.
+
+    Safe to call on every backend startup. Swallows all errors so a Dropbox
+    outage can't take the API down.
+    """
+    if not DROPBOX_URL:
+        print("DROPBOX_STORES_URL not set — skipping store directory check")
+        return
+
+    try:
+        remote = _fetch_remote_last_modified()
+        cached = _read_cached_last_modified()
+
+        if not force and remote and cached and remote == cached:
+            print(f"Store directory unchanged (Last-Modified: {remote}) — skipping re-ingest")
+            return
+
+        print(
+            f"Store directory changed — re-ingesting "
+            f"(remote Last-Modified: {remote}, cached: {cached})"
+        )
+        path = download_book1()
+        parse_and_load(path)
+        _write_cached_last_modified(remote)
+    except Exception as e:
+        print(f"check_and_ingest failed: {e}")
+
+
 if __name__ == "__main__":
-    path = download_book1()
-    parse_and_load(path)
+    # Manual runs always force re-ingest regardless of cached Last-Modified.
+    check_and_ingest(force=True)

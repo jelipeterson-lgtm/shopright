@@ -10,8 +10,10 @@ from openpyxl.styles import Alignment
 from datetime import datetime, date
 from collections import defaultdict
 
-DROPBOX_SHOPFILE_URL = os.getenv("DROPBOX_SHOPFILE_TEMPLATE_URL", "").replace("dl=0", "dl=1")
-DROPBOX_INVOICE_URL = os.getenv("DROPBOX_INVOICE_TEMPLATE_URL", "").replace("dl=0", "dl=1")
+from ingest_stores import normalize_dropbox_url
+
+DROPBOX_SHOPFILE_URL = normalize_dropbox_url(os.getenv("DROPBOX_SHOPFILE_TEMPLATE_URL", ""))
+DROPBOX_INVOICE_URL = normalize_dropbox_url(os.getenv("DROPBOX_INVOICE_TEMPLATE_URL", ""))
 
 # Cache templates in memory
 _template_cache = {}
