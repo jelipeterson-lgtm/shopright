@@ -320,7 +320,7 @@ RLS: Users can read/insert/update/delete their own visits.
 | DELETE | /visits/by-store | Yes | Delete Draft visits by store/date (route skip/remove) |
 | POST | /route/parse-email | Yes | Parse event email into store/vendor entries (AI + fallback) |
 | POST | /route/parse-checkin | Yes | Parse check-in text into store/vendor entries (AI + fallback) |
-| POST | /route/optimize | Yes | Optimize route via Google Maps Distance Matrix API |
+| POST | /route/optimize | Yes | Optimize route via OpenRouteService Distance Matrix API |
 | GET | /route/geocode | Yes | Geocode address to lat/lng via Nominatim |
 | GET | /route/plan/{date} | Yes | Get saved route plan for date |
 | POST | /route/plan | Yes | Save route plan |
@@ -358,7 +358,7 @@ RLS: Users can read/insert/update/delete their own visits.
 
 14. **Phone numbers**: Always formatted as (555) 555-5555 in invoice output regardless of input format.
 
-15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using Google Maps Distance Matrix API with time window constraint. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize uses current time and traffic. Stores tab removed from nav — all workflow through Route page. Close-store gate removed.
+15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using OpenRouteService Distance Matrix API with time window constraint. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize uses current time and traffic. Stores tab removed from nav — all workflow through Route page. Close-store gate removed.
 
 16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific.
 

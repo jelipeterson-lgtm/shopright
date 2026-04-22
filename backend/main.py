@@ -177,7 +177,7 @@ ROUTE PLANNER:
 - Found in the bottom nav. Helps you plan your shopping day before you start.
 - Paste an event email or SMS check-in text and the app parses out store and vendor data automatically.
 - Filter stores by max distance from your start location and by city.
-- Set a time window (start and end times) and tap "Optimize Route" — uses Google Maps to find the fastest order based on real drive times and traffic.
+- Set a time window (start and end times) and tap "Optimize Route" — finds the fastest order based on real drive times.
 - The optimized route shows estimated arrival/departure times at each stop, expected earnings, and drive times between stops.
 - An interactive map displays your route on actual roads.
 - "Accept Route" creates Draft vendor visits on your Stores tab so you're ready to go.
@@ -185,7 +185,7 @@ ROUTE PLANNER:
 - "Skip" or "Remove" a stop to delete its Draft visits from Stores. "Restore" brings them back.
 - "Re-optimize Route" recalculates using the current time and live traffic.
 - Completing assessments on the Stores tab automatically syncs back to the Route Planner — stops show as "Assessed."
-- Requires a Google Maps API key with the Distance Matrix API enabled. Set this up in Settings under "Google Maps API Key." You'll need a Google Cloud Console account with the Distance Matrix API turned on.
+- No API key setup required — route optimization is built in.
 
 TROUBLESHOOTING:
 - "Load failed": usually means the server is starting up. Wait 30 seconds and try again.
