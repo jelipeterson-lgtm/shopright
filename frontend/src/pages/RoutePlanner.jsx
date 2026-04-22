@@ -847,7 +847,10 @@ function RoutePlanner() {
   const endMins = endTime ? toMins(endTime) : null
   const totalMins = summary?.total_time_min || 0
   const arriveDisplay = startMins !== null && totalMins > 0 ? fmtMins(startMins + totalMins) : (summary?.arrive_home || null)
-  const isOverWindow = arriveDisplay && endMins !== null && startMins !== null && (startMins + totalMins) > endMins
+  // Compare durations: is total route time longer than the available window?
+  // Duration comparison avoids midnight-wrap false negatives from absolute clock math.
+  const windowMins = endMins !== null && startMins !== null && endMins > startMins ? endMins - startMins : null
+  const isOverWindow = windowMins !== null && totalMins > 0 && totalMins > windowMins
 
   return (
     <div className="min-h-screen bg-gray-50">
