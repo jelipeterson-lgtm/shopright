@@ -1256,8 +1256,8 @@ function RoutePlanner() {
                       )
                     })}
                   </div>
-                  <button onClick={() => handleSkipOrRemove(store, 'removed')}
-                    className="px-2 py-1.5 text-[10px] text-red-500 bg-red-50 rounded border border-red-100 shrink-0 ml-2">Remove</button>
+                  <button onClick={() => handleRestoreStop(store)}
+                    className="px-2 py-1.5 text-[10px] text-green-700 bg-green-50 rounded border border-green-200 shrink-0 ml-2">Add to Route</button>
                 </div>
               </div>
             ))}
