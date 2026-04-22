@@ -226,7 +226,7 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
 
     # Rows 2-4: User info (keep original template fonts)
     ws.cell(2, 2, full_name)
-    ws.cell(3, 2, profile.get("home_address", ""))
+    ws.cell(3, 2, profile.get("billing_address") or profile.get("home_address", ""))
     ws.cell(4, 2, f"{phone}  {email}")
 
     # Row 6: Date (mm/dd/yyyy format)

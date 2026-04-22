@@ -14,6 +14,8 @@ function Profile() {
   const [reportEmail, setReportEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [homeAddress, setHomeAddress] = useState('')
+  const [billingAddressSameAsHome, setBillingAddressSameAsHome] = useState(true)
+  const [billingAddress, setBillingAddress] = useState('')
   const [mileageRate, setMileageRate] = useState('')
   const [invoiceNumberStart, setInvoiceNumberStart] = useState('')
 
@@ -24,6 +26,10 @@ function Profile() {
       setReportEmail(p.report_email || '')
       setPhone(p.phone || '')
       setHomeAddress(p.home_address || '')
+      if (p.billing_address) {
+        setBillingAddressSameAsHome(false)
+        setBillingAddress(p.billing_address)
+      }
       setMileageRate(p.mileage_rate?.toString() || '0.700')
       setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
     }).catch(() => setError('Failed to load profile'))
@@ -41,6 +47,7 @@ function Profile() {
         report_email: reportEmail,
         phone,
         home_address: homeAddress,
+        billing_address: billingAddressSameAsHome ? '' : billingAddress,
         mileage_rate: parseFloat(mileageRate),
         invoice_number_start: parseInt(invoiceNumberStart),
       })
@@ -94,6 +101,21 @@ function Profile() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Home Address</label>
             <input type="text" value={homeAddress} onChange={(e) => setHomeAddress(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Billing Address</label>
+            <label className="flex items-center gap-2 mb-2 cursor-pointer">
+              <input type="checkbox" checked={billingAddressSameAsHome}
+                onChange={(e) => setBillingAddressSameAsHome(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600" />
+              <span className="text-sm text-gray-600">Same as home address</span>
+            </label>
+            {!billingAddressSameAsHome && (
+              <input type="text" value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)}
+                placeholder="Billing address for monthly invoice"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            )}
+            <p className="text-xs text-gray-400 mt-1">Used on Monthly Invoice reports</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Rate ($/mile)</label>

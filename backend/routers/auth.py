@@ -40,6 +40,7 @@ class ProfileUpdate(BaseModel):
     invoice_number_start: Optional[int] = None
     anthropic_api_key: Optional[str] = None
     ai_review_enabled: Optional[bool] = None
+    billing_address: Optional[str] = None
     default_start_address: Optional[str] = None
     default_end_address: Optional[str] = None
 
