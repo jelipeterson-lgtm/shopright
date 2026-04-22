@@ -54,6 +54,11 @@ function RoutePlanner() {
   const [addingVendorStore, setAddingVendorStore] = useState(null)
   const [programs, setPrograms] = useState([])
   const [selectedProgram, setSelectedProgram] = useState(null)
+  const [dragIdx, setDragIdx] = useState(null)
+  const [dragOver, setDragOver] = useState(null)
+  const dragIdxRef = useRef(null)
+  const dragOverRef = useRef(null)
+  const routeRef = useRef(route)
 
   // localStorage keys for persistence
   const LS_ROUTE = `shopright_route_${today}`
@@ -747,6 +752,80 @@ function RoutePlanner() {
     setRoute(newRoute)
   }
 
+  // Keep routeRef current so touch-drag closures always see latest route
+  useEffect(() => { routeRef.current = route }, [route])
+
+  const reorderByDrag = (from, to) => {
+    const cur = routeRef.current
+    const upcoming = cur.filter(s => s.status === 'upcoming')
+    const reordered = [...upcoming]
+    const [moved] = reordered.splice(from, 1)
+    reordered.splice(to, 0, moved)
+    let c = 0
+    const newRoute = cur.map(s => s.status === 'upcoming' ? reordered[c++] : s)
+    setRoute(newRoute)
+    recalcSummary(newRoute)
+    api.saveRoutePlan({ plan_date: today, start_address: startAddress, end_address: endAddress || startAddress, stores_data: newRoute }).catch(() => {})
+  }
+
+  const handleListTouchMove = (e) => {
+    if (dragIdxRef.current === null) return
+    e.preventDefault()
+    const touch = e.touches[0]
+    const el = document.elementFromPoint(touch.clientX, touch.clientY)
+    const card = el?.closest('[data-upcoming-index]')
+    if (card) {
+      const over = parseInt(card.getAttribute('data-upcoming-index'))
+      if (!isNaN(over) && over !== dragOverRef.current) {
+        dragOverRef.current = over
+        setDragOver(over)
+      }
+    }
+  }
+
+  const handleListTouchEnd = () => {
+    const from = dragIdxRef.current
+    const to = dragOverRef.current
+    if (from !== null && to !== null && from !== to) reorderByDrag(from, to)
+    dragIdxRef.current = null
+    dragOverRef.current = null
+    setDragIdx(null)
+    setDragOver(null)
+  }
+
+  const handleReoptimizeNoLimit = async () => {
+    const storePool = parsedStores.length > 0 ? parsedStores : route
+    if (!storePool.length) return
+    setOptimizing(true)
+    setError(null)
+    setParseSuccess(null)
+    try {
+      const completedKeys = new Set(route.filter(s => s.status === 'completed').map(s => `${s.retailer_name}-${s.store_number}`))
+      const candidates = parsedStores.length > 0
+        ? getFilteredStores().filter(s => !completedKeys.has(`${s.retailer_name}-${s.store_number}`))
+        : route.filter(s => !completedKeys.has(`${s.retailer_name}-${s.store_number}`))
+      const now = new Date()
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const effectiveStart = route.some(s => s.status === 'completed') ? currentTime : startTime
+      setAccepted(false)
+      const result = await api.optimizeRoute(candidates, startAddress, endAddress || startAddress, null, effectiveStart)
+      if (result.success) {
+        const kept = route.filter(s => s.status === 'completed')
+        const newRoute = [...kept, ...result.data.route]
+        setRoute(newRoute)
+        setSummary(result.data.summary)
+        setParseSuccess(`Route re-optimized with no time limit: ${result.data.route.length} stops.`)
+        await api.saveRoutePlan({ plan_date: today, start_address: startAddress, end_address: endAddress || startAddress, stores_data: newRoute })
+      } else {
+        setError(result.error)
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setOptimizing(false)
+    }
+  }
+
   const assessedStops = route.filter(s => s.status === 'completed')
   const skippedStops = route.filter(s => s.status === 'skipped' || s.status === 'removed')
   const upcomingStops = route.filter(s => s.status === 'upcoming')
@@ -760,6 +839,15 @@ function RoutePlanner() {
       </div>
     )
   }
+
+  // Estimated return time from start + total route time; highlight red if past end time
+  const toMins = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+  const fmtMins = (m) => { const h = Math.floor(m / 60) % 24; const mn = Math.round(m % 60); const ap = h < 12 ? 'AM' : 'PM'; const dh = h === 0 ? 12 : h > 12 ? h - 12 : h; return `${dh}:${String(mn).padStart(2, '0')} ${ap}` }
+  const startMins = startTime ? toMins(startTime) : null
+  const endMins = endTime ? toMins(endTime) : null
+  const totalMins = summary?.total_time_min || 0
+  const arriveDisplay = startMins !== null && totalMins > 0 ? fmtMins(startMins + totalMins) : (summary?.arrive_home || null)
+  const isOverWindow = arriveDisplay && endMins !== null && startMins !== null && (startMins + totalMins) > endMins
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -944,10 +1032,23 @@ function RoutePlanner() {
               {(summary.total_miles || 0) > 0 && <span>{summary.total_miles} miles</span>}
               {summary.total_vendors > 0 && <span>{summary.total_vendors} vendors</span>}
             </div>
-            {(summary.depart_home || summary.arrive_home) && (
-              <div className="flex justify-center gap-3 mt-1 text-[10px] text-blue-200">
-                {summary.depart_home && <span>Leave {summary.depart_home}</span>}
-                {summary.arrive_home && <span>Home by {summary.arrive_home}</span>}
+            {(summary.depart_home || arriveDisplay) && (
+              <div className="flex justify-center gap-3 mt-1 text-[10px]">
+                {summary.depart_home && <span className="text-blue-200">Leave {summary.depart_home}</span>}
+                {arriveDisplay && (
+                  <span className={isOverWindow ? 'text-red-300 font-bold' : 'text-blue-200'}>
+                    Home by {arriveDisplay}{isOverWindow ? ' ⚠' : ''}
+                  </span>
+                )}
+              </div>
+            )}
+            {isOverWindow && (
+              <div className="text-center mt-1.5">
+                <p className="text-[10px] text-yellow-300">Route extends past your {endTime} end time</p>
+                <button onClick={handleReoptimizeNoLimit}
+                  className="text-[10px] text-yellow-200 underline mt-0.5">
+                  Re-optimize without time limit
+                </button>
               </div>
             )}
             {summary.overflow_count > 0 && (
@@ -1057,14 +1158,15 @@ function RoutePlanner() {
 
         {/* Upcoming stops */}
         {upcomingStops.length > 0 && (
-          <div className="mb-4">
+          <div className="mb-4" onTouchMove={handleListTouchMove} onTouchEnd={handleListTouchEnd}>
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">
               {assessedStops.length > 0 ? `Upcoming (${upcomingStops.length})` : `Route (${upcomingStops.length} stops)`}
             </p>
-            {upcomingStops.map((store, i) => {
-              const globalIndex = route.indexOf(store)
-              return (
-                <div key={i} className={`bg-white rounded-xl shadow-sm border mb-3 overflow-hidden ${i === 0 ? 'border-blue-300' : 'border-gray-100'}`}>
+            {upcomingStops.map((store, i) => (
+                <div key={i} data-upcoming-index={i}
+                  className={`bg-white rounded-xl shadow-sm border mb-3 overflow-hidden transition-opacity
+                    ${dragIdx === i ? 'opacity-40' : ''}
+                    ${dragOver === i && dragIdx !== i ? 'border-2 border-blue-400' : i === 0 ? 'border-blue-300' : 'border-gray-100'}`}>
                   {/* Store header */}
                   <div className="p-4 pb-2">
                     <div className="flex items-start justify-between">
@@ -1077,11 +1179,17 @@ function RoutePlanner() {
                           {store.address && <p className="text-xs text-gray-400">{store.address}, {store.city}</p>}
                         </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={() => moveStop(globalIndex, -1)} disabled={globalIndex === 0}
-                          className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 text-sm disabled:opacity-20 active:bg-gray-200">↑</button>
-                        <button onClick={() => moveStop(globalIndex, 1)} disabled={globalIndex === route.length - 1}
-                          className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 text-sm disabled:opacity-20 active:bg-gray-200">↓</button>
+                      <div
+                        className="w-8 h-8 flex items-center justify-center text-gray-400 text-xl shrink-0 touch-none select-none cursor-grab active:cursor-grabbing"
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                          dragIdxRef.current = i
+                          dragOverRef.current = i
+                          setDragIdx(i)
+                          setDragOver(i)
+                        }}
+                      >
+                        ≡
                       </div>
                     </div>
                     {/* Stats */}
@@ -1222,8 +1330,7 @@ function RoutePlanner() {
                     </button>
                   </div>
                 </div>
-              )
-            })}
+            ))}
           </div>
         )}
 

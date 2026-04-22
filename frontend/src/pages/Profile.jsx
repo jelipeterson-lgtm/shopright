@@ -30,7 +30,7 @@ function Profile() {
         setBillingAddressSameAsHome(false)
         setBillingAddress(p.billing_address)
       }
-      setMileageRate(p.mileage_rate?.toString() || '0.700')
+      setMileageRate(p.mileage_rate?.toString() || '0.725')
       setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
     }).catch(() => setError('Failed to load profile'))
       .finally(() => setLoading(false))
@@ -121,7 +121,7 @@ function Profile() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Rate ($/mile)</label>
             <input type="number" step="0.001" value={mileageRate} onChange={(e) => setMileageRate(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <p className="text-xs text-gray-400 mt-1">2025 IRS rate: $0.70/mile</p>
+            <p className="text-xs text-gray-400 mt-1">2025 IRS rate: $0.725/mile</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Starting Invoice Number</label>
