@@ -201,7 +201,7 @@ shopright/
 | report_email | text | Email for sending reports |
 | phone | text | |
 | home_address | text | |
-| mileage_rate | numeric(4,3) | Default 0.700 (IRS rate) |
+| mileage_rate | numeric(4,3) | Default 0.725 (2025 IRS rate) |
 | invoice_number_start | integer | Default 1 |
 | next_invoice_number | integer | Default 1 |
 | anthropic_api_key | text | User's own key for AI review |

@@ -20,7 +20,7 @@ function Signup() {
   const [reportEmail, setReportEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [homeAddress, setHomeAddress] = useState('')
-  const [mileageRate, setMileageRate] = useState('0.700')
+  const [mileageRate, setMileageRate] = useState('0.725')
   const [invoiceNumberStart, setInvoiceNumberStart] = useState('1')
 
   // Step 3 — API key

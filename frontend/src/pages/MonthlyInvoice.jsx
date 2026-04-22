@@ -16,6 +16,7 @@ function MonthlyInvoice() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [recipientEmail, setRecipientEmail] = useState('')
+  const [mileageRate, setMileageRate] = useState(0.725)
 
   useEffect(() => {
     loadData()
@@ -39,6 +40,7 @@ function MonthlyInvoice() {
 
       const profile = await api.getProfile()
       setRecipientEmail(profile.data.report_email || '')
+      if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -121,7 +123,7 @@ function MonthlyInvoice() {
 
     let mileageTotal = 0
     for (const [_, miles] of Object.entries(mileage)) {
-      if (miles > 0) mileageTotal += parseFloat(miles) * 0.70
+      if (miles > 0) mileageTotal += parseFloat(miles) * mileageRate
     }
 
     return { vendorTotal, mileageTotal, total: vendorTotal + mileageTotal }
