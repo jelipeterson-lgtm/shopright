@@ -56,6 +56,8 @@ function RoutePlanner() {
   const [selectedProgram, setSelectedProgram] = useState(null)
   const [dragIdx, setDragIdx] = useState(null)
   const [dragOver, setDragOver] = useState(null)
+  const [dragPos, setDragPos] = useState(null)
+  const [dragCardInfo, setDragCardInfo] = useState(null)
   const dragIdxRef = useRef(null)
   const dragOverRef = useRef(null)
   const routeRef = useRef(route)
@@ -772,6 +774,7 @@ function RoutePlanner() {
     if (dragIdxRef.current === null) return
     e.preventDefault()
     const touch = e.touches[0]
+    setDragPos({ x: touch.clientX, y: touch.clientY })
     const el = document.elementFromPoint(touch.clientX, touch.clientY)
     const card = el?.closest('[data-upcoming-index]')
     if (card) {
@@ -791,6 +794,8 @@ function RoutePlanner() {
     dragOverRef.current = null
     setDragIdx(null)
     setDragOver(null)
+    setDragPos(null)
+    setDragCardInfo(null)
   }
 
   const handleReoptimizeNoLimit = async () => {
@@ -1166,10 +1171,15 @@ function RoutePlanner() {
               {assessedStops.length > 0 ? `Upcoming (${upcomingStops.length})` : `Route (${upcomingStops.length} stops)`}
             </p>
             {upcomingStops.map((store, i) => (
-                <div key={i} data-upcoming-index={i}
-                  className={`bg-white rounded-xl shadow-sm border mb-3 overflow-hidden transition-opacity
-                    ${dragIdx === i ? 'opacity-40' : ''}
-                    ${dragOver === i && dragIdx !== i ? 'border-2 border-blue-400' : i === 0 ? 'border-blue-300' : 'border-gray-100'}`}>
+              <div key={i}>
+                {dragIdx !== null && dragOver === i && dragIdx !== i && (
+                  <div className="h-1 bg-blue-500 rounded-full mb-2 mx-1" />
+                )}
+                <div data-upcoming-index={i}
+                  className={`rounded-xl shadow-sm border mb-3 overflow-hidden
+                    ${dragIdx === i
+                      ? 'bg-blue-50 border-dashed border-2 border-blue-300 opacity-50'
+                      : 'bg-white ' + (i === 0 ? 'border-blue-300' : 'border-gray-100')}`}>
                   {/* Store header */}
                   <div className="p-4 pb-2">
                     <div className="flex items-start justify-between">
@@ -1183,13 +1193,27 @@ function RoutePlanner() {
                         </div>
                       </div>
                       <div
-                        className="w-8 h-8 flex items-center justify-center text-gray-400 text-xl shrink-0 touch-none select-none cursor-grab active:cursor-grabbing"
+                        className="w-8 h-8 flex items-center justify-center text-gray-400 text-xl shrink-0 touch-none select-none"
                         onTouchStart={(e) => {
                           e.stopPropagation()
+                          const cardEl = e.currentTarget.closest('[data-upcoming-index]')
+                          const rect = cardEl ? cardEl.getBoundingClientRect() : null
                           dragIdxRef.current = i
                           dragOverRef.current = i
                           setDragIdx(i)
                           setDragOver(i)
+                          if (rect) {
+                            setDragCardInfo({
+                              retailer_name: store.retailer_name,
+                              store_number: store.store_number,
+                              vendors: store.vendors,
+                              earnings: store.earnings,
+                              left: rect.left,
+                              width: rect.width,
+                              offsetY: e.touches[0].clientY - rect.top,
+                            })
+                            setDragPos({ x: e.touches[0].clientX, y: e.touches[0].clientY })
+                          }
                         }}
                       >
                         ≡
@@ -1333,6 +1357,7 @@ function RoutePlanner() {
                     </button>
                   </div>
                 </div>
+              </div>
             ))}
           </div>
         )}
@@ -1484,6 +1509,34 @@ function RoutePlanner() {
           </div>
         )}
       </div>
+
+      {/* Ghost card — floats under finger while dragging */}
+      {dragPos && dragCardInfo && (
+        <div
+          style={{
+            position: 'fixed',
+            left: dragCardInfo.left,
+            top: dragPos.y - dragCardInfo.offsetY,
+            width: dragCardInfo.width,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            transform: 'rotate(1.5deg) scale(1.04)',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.22)',
+          }}
+          className="bg-white rounded-xl border-2 border-blue-500 p-3"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0">≡</span>
+            <p className="text-sm font-semibold text-gray-900">{dragCardInfo.retailer_name} #{dragCardInfo.store_number}</p>
+          </div>
+          {dragCardInfo.vendors?.length > 0 && (
+            <p className="text-xs text-gray-500 ml-8">{dragCardInfo.vendors.join(', ')}</p>
+          )}
+          {dragCardInfo.earnings > 0 && (
+            <p className="text-xs text-green-600 font-medium ml-8">Est: ${dragCardInfo.earnings}</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
