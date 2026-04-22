@@ -40,7 +40,6 @@ function RoutePlanner() {
   const [parseSuccess, setParseSuccess] = useState(null)
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [showCheckinInput, setShowCheckinInput] = useState(false)
-  const [hasGoogleKey, setHasGoogleKey] = useState(null)
   const [profileCity, setProfileCity] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [accepting, setAccepting] = useState(false)
@@ -107,8 +106,6 @@ function RoutePlanner() {
           if (r.success) setStartCoords({ lat: r.data.latitude, lng: r.data.longitude })
         }).catch(() => {})
       }
-      setHasGoogleKey(!!p.google_maps_api_key)
-
       const visits = visitsResult.data || []
       setTodayVisits(visits)
 
@@ -421,10 +418,6 @@ function RoutePlanner() {
     const filtered = getFilteredStores()
     if (!filtered.length) {
       setError('No stores match your filters.')
-      return
-    }
-    if (hasGoogleKey === false) {
-      setError('Google Maps API key needed to optimize route. Add it in Settings.')
       return
     }
     if (!startAddress) {
@@ -775,14 +768,6 @@ function RoutePlanner() {
       <div className="max-w-lg mx-auto px-4 py-4">
         {error && <p className="text-red-500 text-sm mb-3 bg-red-50 p-3 rounded-lg">{error}</p>}
         {parseSuccess && <p className="text-green-600 text-sm mb-3 bg-green-50 p-3 rounded-lg">{parseSuccess}</p>}
-
-        {hasGoogleKey === false && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p className="text-yellow-800 text-sm font-medium">Google Maps API key required</p>
-            <p className="text-yellow-700 text-xs mt-1">Add your Google Maps API key in Settings to enable route optimization.</p>
-            <button onClick={() => navigate('/settings')} className="mt-2 px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 shadow-sm">Go to Settings</button>
-          </div>
-        )}
 
         {/* Start/End addresses */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4 space-y-3">

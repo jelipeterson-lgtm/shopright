@@ -43,7 +43,7 @@ function HelpGuide() {
         { q: 'How do I start an assessment from the Route tab?', a: 'Tap "Assess Vendors" on any store to go to the Stores tab.' },
         { q: 'What happens when I Skip or Remove a store?', a: 'Removes the Draft visits from the Stores tab. Use "Restore" to add them back.' },
         { q: 'How does Re-optimize Route work?', a: 'Recalculates the best route using current time and traffic, skipping stores you already assessed.' },
-        { q: 'Do I need a Google Maps API key?', a: 'Yes, set it up in Settings. You need the Distance Matrix API enabled in your Google Cloud Console.' },
+        { q: 'Do I need to set up anything for Route Optimization?', a: 'No setup needed. Route optimization is built in — just enter your start address and tap Optimize Route.' },
       ],
     },
     {

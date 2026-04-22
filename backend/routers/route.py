@@ -333,11 +333,10 @@ class OptimizeRequest(BaseModel):
 def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
 
-    profile = supabase_admin.table("profiles").select("google_maps_api_key").eq("id", user_id).single().execute()
-    api_key = profile.data.get("google_maps_api_key") if profile.data else None
-
+    import os
+    api_key = os.environ.get("OPENROUTESERVICE_API_KEY")
     if not api_key:
-        return {"success": False, "data": None, "error": "Google Maps API key required. Set it up in Settings."}
+        return {"success": False, "data": None, "error": "Route optimization unavailable. Contact support."}
 
     end_address = body.end_address or body.start_address
 
@@ -421,49 +420,71 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         store["est_minutes"] = 20 + (7.5 * (vendor_count - 1))
 
     import httpx
+    import time
 
-    all_origins = [body.start_address] + [f"{s['latitude']},{s['longitude']}" for s in stores]
-    all_destinations = [f"{s['latitude']},{s['longitude']}" for s in stores] + [end_address]
     num_stores = len(stores)
+
+    # Geocode start and end addresses via Nominatim
+    def _geocode(address):
+        try:
+            r = httpx.get("https://nominatim.openstreetmap.org/search", params={
+                "q": address, "format": "json", "limit": 1,
+            }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
+            results = r.json()
+            if results:
+                return [float(results[0]["lon"]), float(results[0]["lat"])]  # ORS: [lon, lat]
+        except Exception:
+            pass
+        return None
+
+    start_ll = _geocode(body.start_address)
+    if not start_ll:
+        return {"success": False, "data": None, "error": "Could not geocode start address. Try a more specific address."}
+
+    if end_address != body.start_address:
+        time.sleep(1)  # Nominatim rate limit: 1 req/sec
+        end_ll = _geocode(end_address) or start_ll
+    else:
+        end_ll = start_ll
+
+    # Build ORS locations: [start, store0..storeN-1, end]
+    # ORS expects [longitude, latitude] (GeoJSON order)
+    locations = [start_ll] + [[s["longitude"], s["latitude"]] for s in stores] + [end_ll]
+
+    # sources: indices 0..num_stores (start + all stores)
+    # destinations: indices 1..num_stores+1 (all stores + end)
+    # This maps drive_times[(i, j)] directly to response[i][j]
+    sources = list(range(num_stores + 1))
+    destinations = list(range(1, num_stores + 2))
 
     drive_times = {}
     drive_distances = {}
 
-    # Batch requests: max 10 origins × 10 destinations = 100 elements per request (free tier limit)
-    BATCH_SIZE = 10
     try:
-        for o_start in range(0, len(all_origins), BATCH_SIZE):
-            batch_origins = all_origins[o_start:o_start + BATCH_SIZE]
-            for d_start in range(0, len(all_destinations), BATCH_SIZE):
-                batch_destinations = all_destinations[d_start:d_start + BATCH_SIZE]
+        r = httpx.post(
+            "https://api.openrouteservice.org/v2/matrix/driving-car",
+            headers={
+                "Authorization": api_key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "locations": locations,
+                "sources": sources,
+                "destinations": destinations,
+                "metrics": ["duration", "distance"],
+            },
+            timeout=30,
+        )
+        if r.status_code != 200:
+            return {"success": False, "data": None, "error": f"Route service error: {r.status_code} — {r.text[:200]}"}
 
-                r = httpx.get(
-                    "https://maps.googleapis.com/maps/api/distancematrix/json",
-                    params={
-                        "origins": "|".join(batch_origins),
-                        "destinations": "|".join(batch_destinations),
-                        "key": api_key,
-                        "departure_time": "now",
-                        "traffic_model": "best_guess",
-                    },
-                    timeout=30,
-                )
-                matrix = r.json()
-
-                if matrix.get("status") != "OK":
-                    return {"success": False, "data": None, "error": f"Google Maps error: {matrix.get('error_message', matrix.get('status'))}"}
-
-                for i, row in enumerate(matrix.get("rows", [])):
-                    actual_i = o_start + i
-                    for j, elem in enumerate(row.get("elements", [])):
-                        actual_j = d_start + j
-                        if elem.get("status") == "OK":
-                            duration = elem.get("duration_in_traffic", elem.get("duration", {}))
-                            drive_times[(actual_i, actual_j)] = duration.get("value", 9999) / 60
-                            drive_distances[(actual_i, actual_j)] = elem.get("distance", {}).get("value", 0) / 1609.34
-                        else:
-                            drive_times[(actual_i, actual_j)] = 9999
-                            drive_distances[(actual_i, actual_j)] = 0
+        matrix = r.json()
+        for i, row in enumerate(matrix.get("durations", [])):
+            for j, val in enumerate(row):
+                drive_times[(i, j)] = (val / 60) if val is not None else 9999  # seconds → minutes
+        for i, row in enumerate(matrix.get("distances", [])):
+            for j, val in enumerate(row):
+                drive_distances[(i, j)] = (val / 1609.34) if val is not None else 0  # meters → miles
     except Exception as e:
         return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
 

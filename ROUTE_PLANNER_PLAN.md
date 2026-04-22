@@ -15,7 +15,7 @@ Optional feature that helps shoppers plan their shopping day route to maximize e
 5. App parses the email → extracts stores + vendors active today
 6. Filters to stores within reasonable driving distance of start location
 7. Checks which stores have already been visited 2x this calendar month (skip those unless they have an unassessed vendor)
-8. Builds initial optimized route using Google Maps Distance Matrix API
+8. Builds initial optimized route using OpenRouteService Distance Matrix API
 
 ### 11am Check-in
 1. User receives text message with check-ins
@@ -36,7 +36,7 @@ Optional feature that helps shoppers plan their shopping day route to maximize e
 - Store coordinates (from stores table, geocoded)
 - Start location + end location (coordinates)
 - Time constraints: ~20min per store + ~7.5min per additional vendor
-- Drive times between all locations (Google Maps Distance Matrix, traffic-aware)
+- Drive times between all locations (OpenRouteService Distance Matrix)
 - Monthly visit history (max 2 visits per store per calendar month unless unassessed vendor)
 
 ### Earnings Model
@@ -47,7 +47,7 @@ Optional feature that helps shoppers plan their shopping day route to maximize e
 ### Algorithm
 1. Calculate earnings per store: $50 + ($15 × additional_vendors)
 2. Calculate time per store: 20min + (7.5min × additional_vendors)
-3. Get drive time matrix between all candidate stores (Google Maps)
+3. Get drive time matrix between all candidate stores (OpenRouteService)
 4. Use greedy nearest-neighbor with earnings weighting:
    - Score each next store = earnings / (drive_time + assessment_time)
    - Pick highest score
@@ -70,7 +70,6 @@ Optional feature that helps shoppers plan their shopping day route to maximize e
 ## Database Changes
 
 ### profiles table — new columns
-- `google_maps_api_key` text — user's own Google Maps API key
 - `default_start_address` text — default route start (falls back to home_address)
 - `default_end_address` text — default route end (falls back to start address)
 
@@ -130,7 +129,6 @@ This tracks the "2 visits per store per calendar month" rule. Updated when a ven
 - **Manual add**: search for a store and add it to the route
 
 ### Settings additions
-- Google Maps API key (same pattern as Anthropic key: instructions, paste, test, save)
 - Default start address
 - Default end address
 
@@ -143,11 +141,11 @@ This tracks the "2 visits per store per calendar month" rule. Updated when a ven
 - Backend: email parser (handles the 3 sample formats)
 - Backend: check-in text parser (handles tab-delimited format)
 - Backend: monthly visit history tracking
-- Settings: Google Maps API key + default addresses
+- Settings: default addresses
 - Lowe's N/A rule: when Reps Present = N/A at Lowe's, default all fields to N/A
 
 ### Phase 9B — Route Optimization (1 session)
-- Backend: Google Maps Distance Matrix integration
+- Backend: OpenRouteService Distance Matrix integration
 - Backend: route optimization algorithm
 - Backend: re-optimization with completed stops
 - Frontend: Route Planner page with paste + parse + display
@@ -171,12 +169,5 @@ Applies to ALL stores (not just Lowe's):
 
 ---
 
-## Google Maps API Setup Instructions (for Settings)
-1. Go to console.cloud.google.com
-2. Create a project (or select existing)
-3. Go to APIs & Services > Library
-4. Enable "Distance Matrix API"
-5. Go to APIs & Services > Credentials
-6. Create API Key (or copy existing)
-7. Paste in ShopRight Settings
-8. Typical cost: $5/1000 route calculations
+## Route Optimization
+Uses OpenRouteService (ORS) Distance Matrix API via a single central server-side key (`OPENROUTESERVICE_API_KEY` on Render). No per-user key setup required. Start/end addresses are geocoded via Nominatim before calling ORS. ORS endpoint: `https://api.openrouteservice.org/v2/matrix/driving-car`.

@@ -42,7 +42,7 @@ Read this file at the start of every session. This is the comprehensive referenc
 | **Dropbox** | dropbox.com | ShopRight-Config folder | Store directory + Excel templates |
 | **GitHub** | github.com/jelipeterson-lgtm | jelipeterson-lgtm | Version control |
 | **Anthropic** | console.anthropic.com | Per-user | AI review API keys (user's own account) |
-| **Google Cloud** | console.cloud.google.com | Per-user | Google Maps Distance Matrix API key (user's own account) |
+| **OpenRouteService** | openrouteservice.org | Eli's account | Route optimization Distance Matrix API (central key) |
 
 ---
 
@@ -59,7 +59,7 @@ Read this file at the start of every session. This is the comprehensive referenc
 | Voice input | Web Speech API | Chrome browser | $0 |
 | AI review | Anthropic Claude API (Haiku) | Render backend | User's own key |
 | AI help chat | Anthropic Claude API (Haiku) | Render backend | User's own key |
-| Route optimization | Google Maps Distance Matrix API | Render backend | User's own key |
+| Route optimization | OpenRouteService Distance Matrix API | Render backend | Central key (OPENROUTESERVICE_API_KEY) |
 | Payments | Stripe (hosted checkout) | External | 2.9% + 30¢/txn |
 | GPS | Browser Geolocation API + Haversine | Chrome browser | $0 |
 | Store directory | Book1.xlsx on Dropbox | Dropbox | $0 |
@@ -205,7 +205,6 @@ shopright/
 | invoice_number_start | integer | Default 1 |
 | next_invoice_number | integer | Default 1 |
 | anthropic_api_key | text | User's own key for AI review |
-| google_maps_api_key | text | User's own key for route optimization |
 | default_start_address | text | Default start address for Route Planner |
 | default_end_address | text | Default end address for Route Planner |
 | ai_review_enabled | boolean | Default false |
@@ -218,7 +217,7 @@ shopright/
 
 RLS: Users can only read/update their own profile. Auto-created on signup via database trigger (`handle_new_user`) which also sets `trial_ends_at` to 14 days from creation.
 
-**Note**: `next_invoice_number` is legacy — invoice IDs are now derived from YYMM format, not sequential. `anthropic_api_key` and `google_maps_api_key` are stored in plaintext — acceptable because each user stores only their own key.
+**Note**: `next_invoice_number` is legacy — invoice IDs are now derived from YYMM format, not sequential. `anthropic_api_key` is stored in plaintext — acceptable because each user stores only their own key.
 
 ### stores
 | Column | Type | Notes |

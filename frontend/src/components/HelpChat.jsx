@@ -31,13 +31,12 @@ Route Planner:
 1. Go to Route tab, paste your event email from Smart Circle
 2. Set your start/end address and start/end times
 3. Filter by max distance from start and select cities
-4. Tap Optimize Route — calculates best order using Google Maps
+4. Tap Optimize Route — calculates best order using drive times
 5. Review the route with estimated arrival/departure times and map
 6. Tap Accept Route to create vendor visits on the Stores tab
 7. Tap Assess Vendors to go to Stores and fill out assessments
 8. Skip or Remove stores you won't visit (removes them from Stores tab too)
 9. Re-optimize Route anytime to recalculate with current traffic
-- Requires Google Maps API key (set up in Settings, needs Distance Matrix API enabled in Google Cloud Console)
 
 Setting up AI Review:
 1. Go to Settings
