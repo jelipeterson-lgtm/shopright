@@ -180,12 +180,18 @@ ROUTE PLANNER:
 - Set a time window (start and end times) and tap "Optimize Route" — finds the fastest order based on real drive times.
 - The optimized route shows estimated arrival/departure times at each stop, expected earnings, and drive times between stops.
 - An interactive map displays your route on actual roads.
-- "Accept Route" creates Draft vendor visits on your Stores tab so you're ready to go.
-- "Assess Vendors" takes you to the Stores tab to fill out your assessments.
-- "Skip" or "Remove" a stop to delete its Draft visits from Stores. "Restore" brings them back.
+- "Accept Route" creates vendor assessments for each store so you're ready to start.
+- "Assess Vendors" opens the assessment form for a store.
+- "Skip" or "Remove" a stop to remove its vendor assessments. "Restore" brings them back.
 - "Re-optimize Route" recalculates using the current time and live traffic.
-- Completing assessments on the Stores tab automatically syncs back to the Route Planner — stops show as "Assessed."
+- When all vendors at a store are submitted, the stop moves to the "Completed" section at the top of the route.
 - No API key setup required — route optimization is built in.
+
+ROUTE PLANNER STATUS LABELS:
+- "Completed" (blue badge on a stop) = all vendor assessments at that store have been submitted. Your data is fully saved.
+- "Open" (on a vendor row) = that vendor assessment has not been submitted yet.
+- "Complete" (on a vendor row) = that vendor assessment has been submitted.
+- If you see a stop marked Completed, your assessments are recorded — nothing is lost.
 
 TROUBLESHOOTING:
 - "Load failed": usually means the server is starting up. Wait 30 seconds and try again.

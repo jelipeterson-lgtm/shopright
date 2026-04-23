@@ -1103,7 +1103,7 @@ function RoutePlanner() {
         {/* Assessed stops */}
         {assessedStops.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Assessed ({assessedStops.length})</p>
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Completed ({assessedStops.length})</p>
             {assessedStops.map((store, i) => (
               <details key={i} className="bg-gray-50 rounded-xl mb-2 overflow-hidden border border-gray-100">
                 <summary className="p-3 flex items-center gap-2 cursor-pointer list-none">
@@ -1113,7 +1113,7 @@ function RoutePlanner() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-blue-600 text-white">
-                      Assessed
+                      Completed
                     </span>
                     <span className="text-gray-300 text-sm">›</span>
                   </div>

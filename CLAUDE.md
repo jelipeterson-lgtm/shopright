@@ -374,7 +374,7 @@ RLS: Users can read/insert/update/delete their own visits.
 | **Open** | Store or vendor not yet completed (green badge) |
 | **Completed** | Store or vendor assessment submitted (blue badge) |
 
-Never use "visit," "session," or "draft" in user-facing text.
+Never use "visit," "session," "draft," or "assessed" in user-facing text. Internal route stop status `completed` surfaces to the user as "Completed" — never "Assessed."
 
 **Known variance**: The Stores page URL path is `/session` (not `/stores`). This is internal only — visible in the browser address bar but not in any UI text. Not renamed to avoid breaking user bookmarks. Zero user impact.
 

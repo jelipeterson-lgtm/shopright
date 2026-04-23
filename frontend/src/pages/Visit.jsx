@@ -607,7 +607,7 @@ function Visit() {
                   onClick={() => navigate('/route')}
                   className="w-full bg-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-300"
                 >
-                  Save Draft & Go Back
+                  Save & Go Back
                 </button>
                 <button
                   onClick={async () => {
