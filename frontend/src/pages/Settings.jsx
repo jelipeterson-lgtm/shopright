@@ -54,6 +54,11 @@ function Settings() {
   const [success, setSuccess] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isFreeAccount, setIsFreeAccount] = useState(false)
+
+  // Store Directory refresh
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshDone, setRefreshDone] = useState(false)
 
   // AI Review
   const [aiEnabled, setAiEnabled] = useState(false)
@@ -75,6 +80,7 @@ function Settings() {
       const p = result.data
       setAiEnabled(p.ai_review_enabled || false)
       setHasApiKey(!!p.anthropic_api_key)
+      setIsFreeAccount(p.is_free_account || false)
     }).catch(() => setError('Failed to load settings'))
       .finally(() => setLoading(false))
   }, [])
@@ -260,6 +266,27 @@ function Settings() {
             </form>
           )}
         </div>
+
+        {/* Store Directory — admin only */}
+        {isFreeAccount && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+            <h2 className="text-sm font-semibold text-gray-800">Store Directory</h2>
+            <p className="text-xs text-gray-500">After updating Book1.xlsx on Dropbox, tap below to sync new stores — including addresses and coordinates — to the app.</p>
+            {refreshDone && <p className="text-xs text-green-600 bg-green-50 rounded p-2">Store directory sync started. New stores will appear within 1–2 minutes.</p>}
+            <button
+              onClick={async () => {
+                setRefreshing(true)
+                setRefreshDone(false)
+                try { await api.refreshStoreDirectory() } catch (e) {}
+                setRefreshing(false)
+                setRefreshDone(true)
+              }}
+              disabled={refreshing}
+              className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              {refreshing ? 'Syncing...' : 'Sync Store Directory'}
+            </button>
+          </div>
+        )}
 
         {/* Help Guide */}
         <button onClick={() => navigate('/help')}

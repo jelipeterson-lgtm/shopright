@@ -62,6 +62,8 @@ const api = {
     body: JSON.stringify({ api_key: apiKey }),
   }),
 
+  refreshStoreDirectory: () => request('/admin/ingest', { method: 'POST' }),
+
   getNearbyStores: (lat, lng) => request(`/stores/nearby?lat=${lat}&lng=${lng}`),
 
   searchStores: (query) => request(`/stores/search?q=${encodeURIComponent(query)}`),
