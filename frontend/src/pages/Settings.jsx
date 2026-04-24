@@ -273,10 +273,11 @@ function Settings() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
             <h2 className="text-sm font-semibold text-gray-800">Store Directory</h2>
             <p className="text-xs text-gray-500">After updating Book1.xlsx on Dropbox, tap below to sync new stores — including addresses and coordinates — to the app.</p>
-            {refreshResult && (
+            {refreshResult !== null && (
               <p className="text-xs text-green-600 bg-green-50 rounded p-2">
-                Sync complete — {refreshResult.total} stores loaded, {refreshResult.geocoded} newly geocoded.
-                {refreshResult.failed?.length > 0 && ` Could not geocode: ${refreshResult.failed.join(', ')}.`}
+                {refreshResult?.total != null
+                  ? `Sync complete — ${refreshResult.total} stores loaded, ${refreshResult.geocoded} newly geocoded.${refreshResult.failed?.length > 0 ? ` Could not geocode: ${refreshResult.failed.join(', ')}.` : ''}`
+                  : 'Sync complete — store directory updated.'}
               </p>
             )}
             {refreshError && <p className="text-xs text-red-600 bg-red-50 rounded p-2">{refreshError}</p>}
