@@ -94,8 +94,6 @@ class BatchCreateVisit(BaseModel):
 @router.post("/batch")
 def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
-    now = datetime.now()
-    visit_time = now.strftime("%H:%M")
 
     # Check for existing visits on this date to avoid duplicates
     existing = supabase_admin.table("vendor_visits").select(
@@ -127,7 +125,6 @@ def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)
                 "city": store.get("city", ""),
                 "state": store.get("state", ""),
                 "visit_date": body.session_date,
-                "visit_time": visit_time,
                 "session_date": body.session_date,
                 "status": "Draft",
                 "stop_open": True,
