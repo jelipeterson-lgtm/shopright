@@ -82,6 +82,13 @@ def download_book1():
     print("Downloading Book1.xlsx from Dropbox...")
     r = httpx.get(DROPBOX_URL, follow_redirects=True, timeout=60)
     r.raise_for_status()
+    content_type = r.headers.get("content-type", "")
+    if "html" in content_type or (len(r.content) < 1000 and b"<!DOCTYPE" in r.content[:100]):
+        raise ValueError(
+            "Dropbox returned an HTML page instead of the Excel file. "
+            "The DROPBOX_STORES_URL on Render may be expired or missing '?dl=1'. "
+            f"Content-Type: {content_type}"
+        )
     with open(BOOK1_PATH, "wb") as f:
         f.write(r.content)
     print(f"Downloaded {len(r.content)} bytes to {BOOK1_PATH}")
