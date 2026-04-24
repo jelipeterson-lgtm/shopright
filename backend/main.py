@@ -82,8 +82,11 @@ def force_ingest(authorization: str = Header(...)):
     from routers.auth import get_user_id
     get_user_id(authorization)
     from ingest_stores import check_and_ingest
-    stats = check_and_ingest(force=True)
-    return {"success": True, "data": stats, "error": None}
+    try:
+        stats = check_and_ingest(force=True)
+        return {"success": True, "data": stats, "error": None}
+    except Exception as e:
+        return {"success": False, "data": None, "error": str(e)}
 
 
 from pydantic import BaseModel

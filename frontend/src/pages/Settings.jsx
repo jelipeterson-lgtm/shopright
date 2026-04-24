@@ -288,9 +288,9 @@ function Settings() {
                 try {
                   const result = await api.refreshStoreDirectory()
                   if (result.success) setRefreshResult(result.data)
-                  else setRefreshError('Sync failed — check that Book1.xlsx is saved to Dropbox.')
+                  else setRefreshError(`Sync failed: ${result.error || 'Unknown error'}`)
                 } catch (e) {
-                  setRefreshError('Sync failed — check that Book1.xlsx is saved to Dropbox.')
+                  setRefreshError(`Sync failed: ${e.message || 'Unknown error'}`)
                 } finally {
                   setRefreshing(false)
                 }
