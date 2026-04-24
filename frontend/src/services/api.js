@@ -63,6 +63,7 @@ const api = {
   }),
 
   refreshStoreDirectory: () => request('/admin/ingest', { method: 'POST' }),
+  ingestStatus: () => request('/admin/ingest/status'),
 
   getNearbyStores: (lat, lng) => request(`/stores/nearby?lat=${lat}&lng=${lng}`),
 

@@ -76,17 +76,31 @@ def _sync_store_directory():
 threading.Thread(target=_sync_store_directory, daemon=True).start()
 
 
+_ingest_state = {"running": False, "result": None, "error": None}
+
 @app.post("/admin/ingest")
 def force_ingest(authorization: str = Header(...)):
-    """Force re-ingest of store directory from Dropbox. Runs synchronously."""
     from routers.auth import get_user_id
     get_user_id(authorization)
-    from ingest_stores import check_and_ingest
-    try:
-        stats = check_and_ingest(force=True)
-        return {"success": True, "data": stats, "error": None}
-    except Exception as e:
-        return {"success": False, "data": None, "error": str(e)}
+    if _ingest_state["running"]:
+        return {"success": True, "data": {"status": "already_running"}, "error": None}
+    _ingest_state.update({"running": True, "result": None, "error": None})
+    def _run():
+        try:
+            from ingest_stores import check_and_ingest
+            _ingest_state["result"] = check_and_ingest(force=True)
+        except Exception as e:
+            _ingest_state["error"] = str(e)
+        finally:
+            _ingest_state["running"] = False
+    threading.Thread(target=_run, daemon=True).start()
+    return {"success": True, "data": {"status": "started"}, "error": None}
+
+@app.get("/admin/ingest/status")
+def ingest_status(authorization: str = Header(...)):
+    from routers.auth import get_user_id
+    get_user_id(authorization)
+    return {"success": True, "data": _ingest_state, "error": None}
 
 
 from pydantic import BaseModel

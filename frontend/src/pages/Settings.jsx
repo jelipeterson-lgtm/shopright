@@ -286,18 +286,27 @@ function Settings() {
                 setRefreshResult(null)
                 setRefreshError(null)
                 try {
-                  const result = await api.refreshStoreDirectory()
-                  if (result.success) setRefreshResult(result.data)
-                  else setRefreshError(`Sync failed: ${result.error || 'Unknown error'}`)
+                  await api.refreshStoreDirectory()
+                  // Poll for completion
+                  const poll = setInterval(async () => {
+                    try {
+                      const s = await api.ingestStatus()
+                      if (!s.data.running) {
+                        clearInterval(poll)
+                        setRefreshing(false)
+                        if (s.data.error) setRefreshError(`Sync failed: ${s.data.error}`)
+                        else setRefreshResult(s.data.result)
+                      }
+                    } catch (e) { clearInterval(poll); setRefreshing(false); setRefreshError(`Sync failed: ${e.message}`) }
+                  }, 3000)
                 } catch (e) {
-                  setRefreshError(`Sync failed: ${e.message || 'Unknown error'}`)
-                } finally {
                   setRefreshing(false)
+                  setRefreshError(`Sync failed: ${e.message || 'Unknown error'}`)
                 }
               }}
               disabled={refreshing}
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-              {refreshing ? 'Syncing...' : 'Sync Store Directory'}
+              {refreshing ? 'Syncing… this may take a minute' : 'Sync Store Directory'}
             </button>
           </div>
         )}
