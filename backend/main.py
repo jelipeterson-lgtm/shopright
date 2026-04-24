@@ -78,17 +78,12 @@ threading.Thread(target=_sync_store_directory, daemon=True).start()
 
 @app.post("/admin/ingest")
 def force_ingest(authorization: str = Header(...)):
-    """Force re-ingest of store directory from Dropbox. Runs in background."""
+    """Force re-ingest of store directory from Dropbox. Runs synchronously."""
     from routers.auth import get_user_id
-    get_user_id(authorization)  # require valid auth
-    def _run():
-        try:
-            from ingest_stores import check_and_ingest
-            check_and_ingest(force=True)
-        except Exception as e:
-            print(f"Force ingest failed: {e}")
-    threading.Thread(target=_run, daemon=True).start()
-    return {"success": True, "data": "Re-ingest started", "error": None}
+    get_user_id(authorization)
+    from ingest_stores import check_and_ingest
+    stats = check_and_ingest(force=True)
+    return {"success": True, "data": stats, "error": None}
 
 
 from pydantic import BaseModel

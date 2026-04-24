@@ -89,19 +89,27 @@ def download_book1():
 
 
 def geocode_address(address, city, state, zip_code):
-    full_address = f"{address}, {city}, {state} {zip_code}"
-    try:
-        r = httpx.get(
-            "https://nominatim.openstreetmap.org/search",
-            params={"q": full_address, "format": "json", "limit": 1},
-            headers={"User-Agent": "ShopRight/1.0"},
-            timeout=10,
-        )
-        data = r.json()
-        if data:
-            return float(data[0]["lat"]), float(data[0]["lon"])
-    except Exception as e:
-        print(f"  Geocode failed for {full_address}: {e}")
+    # Try progressively simpler queries until one returns a result
+    candidates = [
+        f"{address}, {city}, {state} {zip_code}",
+        f"{address}, {city}, {state}",
+        f"{city}, {state} {zip_code}",
+    ]
+    for query in candidates:
+        try:
+            r = httpx.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": query, "format": "json", "limit": 1},
+                headers={"User-Agent": "ShopRight/1.0 (shopright-api.onrender.com)"},
+                timeout=10,
+            )
+            data = r.json()
+            if data:
+                return float(data[0]["lat"]), float(data[0]["lon"])
+        except Exception as e:
+            print(f"  Geocode attempt failed for '{query}': {e}")
+        time.sleep(1.1)
+    print(f"  FAILED all geocode attempts for {address}, {city}, {state} {zip_code}")
     return None, None
 
 
@@ -112,6 +120,7 @@ def _load_existing_geocodes():
         resp = (
             supabase_admin.table("stores")
             .select("address,city,state,zip_code,latitude,longitude")
+            .limit(10000)
             .execute()
         )
         for row in (resp.data or []):
@@ -186,16 +195,18 @@ def parse_and_load(path):
     print(f"Loaded {len(geocoded)} existing geocodes from database")
 
     # Geocode each unique address not already known
+    new_geocoded = 0
+    geocode_failed = []
     for store in stores:
         addr_key = (store["address"], store["city"], store["state"], store["zip_code"])
         if addr_key not in geocoded:
             lat, lon = geocode_address(*addr_key)
             geocoded[addr_key] = (lat, lon)
             if lat:
+                new_geocoded += 1
                 print(f"  Geocoded: {store['retailer_name']} #{store['store_number']} -> {lat}, {lon}")
             else:
-                print(f"  FAILED: {store['retailer_name']} #{store['store_number']}")
-            time.sleep(1.1)  # Nominatim rate limit
+                geocode_failed.append(f"{store['retailer_name']} #{store['store_number']}")
 
         store["latitude"], store["longitude"] = geocoded[addr_key]
 
@@ -206,7 +217,8 @@ def parse_and_load(path):
             store, on_conflict="retailer_name,store_number"
         ).execute()
 
-    print(f"Done. {len(stores)} stores loaded.")
+    print(f"Done. {len(stores)} stores loaded. {new_geocoded} newly geocoded. {len(geocode_failed)} failed.")
+    return {"total": len(stores), "geocoded": new_geocoded, "failed": geocode_failed}
 
 
 def check_and_ingest(force=False):
@@ -232,10 +244,12 @@ def check_and_ingest(force=False):
             f"(remote Last-Modified: {remote}, cached: {cached})"
         )
         path = download_book1()
-        parse_and_load(path)
+        stats = parse_and_load(path)
         _write_cached_last_modified(remote)
+        return stats
     except Exception as e:
         print(f"check_and_ingest failed: {e}")
+        raise
 
 
 if __name__ == "__main__":

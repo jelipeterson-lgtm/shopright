@@ -58,7 +58,8 @@ function Settings() {
 
   // Store Directory refresh
   const [refreshing, setRefreshing] = useState(false)
-  const [refreshDone, setRefreshDone] = useState(false)
+  const [refreshResult, setRefreshResult] = useState(null)
+  const [refreshError, setRefreshError] = useState(null)
 
   // AI Review
   const [aiEnabled, setAiEnabled] = useState(false)
@@ -272,14 +273,27 @@ function Settings() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
             <h2 className="text-sm font-semibold text-gray-800">Store Directory</h2>
             <p className="text-xs text-gray-500">After updating Book1.xlsx on Dropbox, tap below to sync new stores — including addresses and coordinates — to the app.</p>
-            {refreshDone && <p className="text-xs text-green-600 bg-green-50 rounded p-2">Store directory sync started. New stores will appear within 1–2 minutes.</p>}
+            {refreshResult && (
+              <p className="text-xs text-green-600 bg-green-50 rounded p-2">
+                Sync complete — {refreshResult.total} stores loaded, {refreshResult.geocoded} newly geocoded.
+                {refreshResult.failed?.length > 0 && ` Could not geocode: ${refreshResult.failed.join(', ')}.`}
+              </p>
+            )}
+            {refreshError && <p className="text-xs text-red-600 bg-red-50 rounded p-2">{refreshError}</p>}
             <button
               onClick={async () => {
                 setRefreshing(true)
-                setRefreshDone(false)
-                try { await api.refreshStoreDirectory() } catch (e) {}
-                setRefreshing(false)
-                setRefreshDone(true)
+                setRefreshResult(null)
+                setRefreshError(null)
+                try {
+                  const result = await api.refreshStoreDirectory()
+                  if (result.success) setRefreshResult(result.data)
+                  else setRefreshError('Sync failed — check that Book1.xlsx is saved to Dropbox.')
+                } catch (e) {
+                  setRefreshError('Sync failed — check that Book1.xlsx is saved to Dropbox.')
+                } finally {
+                  setRefreshing(false)
+                }
               }}
               disabled={refreshing}
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
