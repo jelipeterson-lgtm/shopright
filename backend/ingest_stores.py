@@ -145,19 +145,18 @@ def _load_existing_geocodes():
 
 
 def parse_and_load(path):
-    wb = load_workbook(path)
+    import gc
+    wb = load_workbook(path, read_only=True)
 
     # --- Load Programs ---
+    programs = []
     if "Program" in wb.sheetnames:
         ws_prog = wb["Program"]
-        programs = []
-        for row in range(2, ws_prog.max_row + 1):
-            code = ws_prog.cell(row, 1).value
-            if code and code.strip():
-                programs.append(code.strip())
+        for row_cells in ws_prog.iter_rows(min_row=2, values_only=True):
+            code = row_cells[0]
+            if code and str(code).strip():
+                programs.append(str(code).strip())
         print(f"Found {len(programs)} programs")
-
-        # Store programs in database
         for prog in programs:
             supabase_admin.table("programs").upsert(
                 {"code": prog}, on_conflict="code"
@@ -173,28 +172,32 @@ def parse_and_load(path):
     seen = set()
     stores = []
 
-    for row in range(2, ws.max_row + 1):
-        retailer = ws.cell(row, 1).value
-        store_num = str(ws.cell(row, 2).value or "").strip()
+    for row_cells in ws.iter_rows(min_row=2, values_only=True):
+        retailer = row_cells[0]
+        store_num = str(row_cells[1] or "").strip()
 
         if not retailer or not store_num:
             continue
 
-        key = (retailer.strip(), store_num)
+        key = (str(retailer).strip(), store_num)
         if key in seen:
             continue
         seen.add(key)
 
         stores.append({
-            "retailer_name": retailer.strip(),
+            "retailer_name": str(retailer).strip(),
             "store_number": store_num,
-            "address": (ws.cell(row, 3).value or "").strip(),
-            "city": (ws.cell(row, 4).value or "").strip(),
-            "state": (ws.cell(row, 5).value or "").strip(),
-            "zip_code": str(ws.cell(row, 6).value or "").strip(),
+            "address": str(row_cells[2] or "").strip(),
+            "city": str(row_cells[3] or "").strip(),
+            "state": str(row_cells[4] or "").strip(),
+            "zip_code": str(row_cells[5] or "").strip(),
         })
 
-    print(f"Parsed {len(stores)} unique stores (from {ws.max_row - 1} rows)")
+    wb.close()
+    del wb
+    gc.collect()
+
+    print(f"Parsed {len(stores)} unique stores")
 
     # Pre-populate geocode cache from DB so we only call Nominatim for new
     # addresses. Dramatically speeds up re-ingests after cold starts.
