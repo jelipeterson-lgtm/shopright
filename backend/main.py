@@ -50,30 +50,19 @@ import threading
 import time
 import httpx
 
+_keep_alive_client = httpx.Client(timeout=10)
+
 def keep_alive():
     """Ping self every 14 minutes to prevent Render free tier sleep."""
     url = os.getenv("RENDER_EXTERNAL_URL", "https://shopright-api.onrender.com") + "/health"
     while True:
         time.sleep(840)  # 14 minutes
         try:
-            httpx.get(url, timeout=10)
+            _keep_alive_client.get(url)
         except Exception:
             pass
 
 threading.Thread(target=keep_alive, daemon=True).start()
-
-
-# Store directory sync: on startup, check Dropbox Last-Modified for Book1.xlsx
-# and re-ingest only if the file has changed. Runs in a background thread so
-# it never blocks the API from starting (Render cold starts already take time).
-def _sync_store_directory():
-    try:
-        from ingest_stores import check_and_ingest
-        check_and_ingest()
-    except Exception as e:
-        print(f"Store directory sync failed: {e}")
-
-threading.Thread(target=_sync_store_directory, daemon=True).start()
 
 
 _ingest_state = {"running": False, "result": None, "error": None}
@@ -86,6 +75,7 @@ def force_ingest(authorization: str = Header(...)):
         return {"success": True, "data": {"status": "already_running"}, "error": None}
     _ingest_state.update({"running": True, "result": None, "error": None})
     def _run():
+        import gc
         try:
             from ingest_stores import check_and_ingest
             _ingest_state["result"] = check_and_ingest(force=True)
@@ -93,6 +83,7 @@ def force_ingest(authorization: str = Header(...)):
             _ingest_state["error"] = str(e)
         finally:
             _ingest_state["running"] = False
+            gc.collect()
     threading.Thread(target=_run, daemon=True).start()
     return {"success": True, "data": {"status": "started"}, "error": None}
 
