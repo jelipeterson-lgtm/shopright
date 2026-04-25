@@ -76,6 +76,10 @@ def force_ingest(authorization: str = Header(...)):
     _ingest_state.update({"running": True, "result": None, "error": None})
     def _run():
         import gc
+        import resource
+        import ctypes
+        rss_before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print(f"Ingest start — RSS: {rss_before} KB")
         try:
             from ingest_stores import check_and_ingest
             _ingest_state["result"] = check_and_ingest(force=True)
@@ -83,7 +87,14 @@ def force_ingest(authorization: str = Header(...)):
             _ingest_state["error"] = str(e)
         finally:
             _ingest_state["running"] = False
+            rss_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             gc.collect()
+            try:
+                ctypes.CDLL("libc.so.6").malloc_trim(0)
+            except Exception:
+                pass
+            rss_after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print(f"Ingest done — peak RSS: {rss_peak} KB, after trim: {rss_after} KB")
     threading.Thread(target=_run, daemon=True).start()
     return {"success": True, "data": {"status": "started"}, "error": None}
 
