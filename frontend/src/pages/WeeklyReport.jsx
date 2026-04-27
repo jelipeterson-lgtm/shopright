@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api, { getLocalDate } from '../services/api'
+import api from '../services/api'
 import { supabase } from '../services/supabase'
 import PageHeader from '../components/PageHeader'
 
@@ -21,25 +21,14 @@ function WeeklyReport() {
   const [week, setWeek] = useState(defaultWeek)
   const [visits, setVisits] = useState([])
   const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
-  const [recipientEmail, setRecipientEmail] = useState('')
   const [downloading, setDownloading] = useState(false)
   const [reviewMode, setReviewMode] = useState(false)
   const [signedOff, setSignedOff] = useState(false)
 
   useEffect(() => {
     loadVisits()
-    loadProfile()
   }, [year, week])
-
-  const loadProfile = async () => {
-    try {
-      const result = await api.getProfile()
-      setRecipientEmail(result.data.report_email || '')
-    } catch (e) {}
-  }
 
   const loadVisits = async () => {
     setLoading(true)
@@ -77,27 +66,6 @@ function WeeklyReport() {
     }
   }
 
-  const handleSend = async () => {
-    if (!recipientEmail) {
-      setError('Recipient email required')
-      return
-    }
-    setSending(true)
-    setError(null)
-    try {
-      const result = await api.sendShopFile({ year, week, recipient_email: recipientEmail })
-      if (result.success) {
-        setSuccess(`Shop File sent to ${recipientEmail}`)
-      } else {
-        setError(result.error)
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSending(false)
-    }
-  }
-
   // Group visits by date
   const byDate = {}
   for (const v of visits) {
@@ -119,7 +87,6 @@ function WeeklyReport() {
       <div className="max-w-lg mx-auto px-4 py-4">
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
-        {success && <p className="text-green-600 text-sm mb-4 bg-green-50 p-3 rounded-md">{success}</p>}
 
         {/* Week selector */}
         <div className="flex gap-2 mb-4">
@@ -257,31 +224,14 @@ function WeeklyReport() {
               </button>
             ) : (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3 text-center">
-                <p className="text-green-700 text-sm font-medium">Signed off — ready to download or send</p>
+                <p className="text-green-700 text-sm font-medium">Signed off — ready to download</p>
               </div>
             )}
 
-            {/* Actions */}
-            <div className="space-y-2">
-              <button onClick={handleDownload} disabled={downloading}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                {downloading ? 'Generating...' : 'Download Shop File'}
-              </button>
-
-              <div className="bg-white rounded-lg shadow p-4 space-y-3">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Send to</label>
-                  <input type="email" value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    placeholder="recipient@email.com"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
-                </div>
-                <button onClick={handleSend} disabled={sending}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                  {sending ? 'Sending...' : 'Send Shop File'}
-                </button>
-              </div>
-            </div>
+            <button onClick={handleDownload} disabled={downloading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              {downloading ? 'Generating...' : 'Download Shop File'}
+            </button>
           </>
         )}
       </div>

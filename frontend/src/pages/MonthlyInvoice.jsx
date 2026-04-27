@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { supabase } from '../services/supabase'
 import PageHeader from '../components/PageHeader'
 
 function MonthlyInvoice() {
@@ -12,10 +13,7 @@ function MonthlyInvoice() {
   const [mileage, setMileage] = useState({})
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
-  const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
-  const [recipientEmail, setRecipientEmail] = useState('')
   const [mileageRate, setMileageRate] = useState(0.725)
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
   const [invoiceEndDay, setInvoiceEndDay] = useState(1)
@@ -29,7 +27,6 @@ function MonthlyInvoice() {
     setError(null)
     try {
       const profile = await api.getProfile()
-      setRecipientEmail(profile.data.report_email || '')
       if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
       setInvoiceStartDay(profile.data.invoice_start_day || 1)
       setInvoiceEndDay(profile.data.invoice_end_day || 1)
@@ -71,43 +68,28 @@ function MonthlyInvoice() {
     setGenerating(true)
     setError(null)
     try {
-      const result = await api.generateInvoice({
-        year, month,
-        mileage_entries: getMileageEntries(),
+      const { data: { session } } = await supabase.auth.getSession()
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const res = await fetch(`${apiBase}/reports/generate/invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ year, month, mileage_entries: getMileageEntries() }),
       })
-      // generateInvoice returns a StreamingResponse, handle as blob
-      // Actually this goes through our request() which expects JSON...
-      // Need to handle differently for file download
-      setError('Use Send Invoice to email the file. Direct download coming soon.')
+      if (!res.ok) throw new Error('Download failed')
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      const disposition = res.headers.get('content-disposition') || ''
+      const match = disposition.match(/filename="(.+)"/)
+      a.download = match ? match[1] : `Invoice ${monthNames[month]} ${year}.xlsx`
+      a.click()
     } catch (err) {
       setError(err.message)
     } finally {
       setGenerating(false)
-    }
-  }
-
-  const handleSend = async () => {
-    if (!recipientEmail) {
-      setError('Recipient email required')
-      return
-    }
-    setSending(true)
-    setError(null)
-    try {
-      const result = await api.sendInvoice({
-        year, month,
-        mileage_entries: getMileageEntries(),
-        recipient_email: recipientEmail,
-      })
-      if (result.success) {
-        setSuccess(`Invoice sent to ${recipientEmail}`)
-      } else {
-        setError(result.error)
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSending(false)
     }
   }
 
@@ -156,7 +138,6 @@ function MonthlyInvoice() {
       <div className="max-w-lg mx-auto px-4 py-4">
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
-        {success && <p className="text-green-600 text-sm mb-4 bg-green-50 p-3 rounded-md">{success}</p>}
 
         {/* Period selector */}
         <div className="flex gap-2 mb-4">
@@ -248,20 +229,10 @@ function MonthlyInvoice() {
               </div>
             </div>
 
-            {/* Send */}
-            <div className="bg-white rounded-lg shadow p-4 space-y-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Send to</label>
-                <input type="email" value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="recipient@email.com"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
-              </div>
-              <button onClick={handleSend} disabled={sending}
-                className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                {sending ? 'Sending...' : 'Generate & Send Invoice'}
-              </button>
-            </div>
+            <button onClick={handleDownload} disabled={generating}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              {generating ? 'Generating...' : 'Download Invoice'}
+            </button>
           </>
         )}
       </div>
