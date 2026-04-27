@@ -80,16 +80,24 @@ function Settings() {
 
   useEffect(() => {
     api.getProfile().then((result) => {
-      const p = result.data
-      setAiEnabled(p.ai_review_enabled || false)
-      setHasApiKey(!!p.anthropic_api_key)
-      setInvoiceStartDay(p.invoice_start_day || 1)
-      setInvoiceEndDay(p.invoice_end_day || 1)
-      setMileageRate(p.mileage_rate?.toString() || '0.725')
-      setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
-      setIsFreeAccount(p.is_free_account || false)
-    }).catch(() => setError('Failed to load settings'))
-      .finally(() => setLoading(false))
+      if (result.success && result.data) {
+        const p = result.data
+        setAiEnabled(p.ai_review_enabled || false)
+        setHasApiKey(!!p.anthropic_api_key)
+        setInvoiceStartDay(p.invoice_start_day || 1)
+        setInvoiceEndDay(p.invoice_end_day || 1)
+        setMileageRate(p.mileage_rate?.toString() || '0.725')
+        setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
+        setIsFreeAccount(p.is_free_account || false)
+      } else {
+        setError('Failed to load profile data')
+      }
+    }).catch((err) => {
+      console.error('Settings load error:', err)
+      setError('Failed to load settings')
+    }).finally(() => {
+      setLoading(false)
+    })
   }, [])
 
   const handleTestKey = async () => {
