@@ -74,6 +74,10 @@ function Settings() {
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
   const [invoiceEndDay, setInvoiceEndDay] = useState(1)
 
+  // Mileage and Invoice
+  const [mileageRate, setMileageRate] = useState('0.725')
+  const [invoiceNumberStart, setInvoiceNumberStart] = useState('1')
+
   useEffect(() => {
     api.getProfile().then((result) => {
       const p = result.data
@@ -81,6 +85,8 @@ function Settings() {
       setHasApiKey(!!p.anthropic_api_key)
       setInvoiceStartDay(p.invoice_start_day || 1)
       setInvoiceEndDay(p.invoice_end_day || 1)
+      setMileageRate(p.mileage_rate?.toString() || '0.725')
+      setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
       setIsFreeAccount(p.is_free_account || false)
     }).catch(() => setError('Failed to load settings'))
       .finally(() => setLoading(false))
@@ -163,6 +169,17 @@ function Settings() {
     try {
       await api.updateProfile({ invoice_start_day: invoiceStartDay, invoice_end_day: invoiceEndDay })
       setSuccess('Invoice period updated')
+    } catch (err) { setError(err.message) }
+    finally { setSaving(false) }
+  }
+
+  const handleSaveInvoiceSettings = async () => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      await api.updateProfile({ mileage_rate: parseFloat(mileageRate), invoice_number_start: parseInt(invoiceNumberStart) })
+      setSuccess('Invoice settings updated')
     } catch (err) { setError(err.message) }
     finally { setSaving(false) }
   }
@@ -274,6 +291,30 @@ function Settings() {
           <button onClick={handleSaveInvoicePeriod} disabled={saving}
             className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
             {saving ? 'Saving...' : 'Save Invoice Period'}
+          </button>
+        </div>
+
+        {/* Invoice Settings */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-800">Invoice Settings</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Mileage Rate ($/mile)</label>
+              <input type="number" step="0.001" value={mileageRate}
+                onChange={(e) => setMileageRate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-gray-400 mt-1">2025 IRS rate: $0.725/mile</p>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Starting Invoice Number</label>
+              <input type="number" min="1" value={invoiceNumberStart}
+                onChange={(e) => setInvoiceNumberStart(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          </div>
+          <button onClick={handleSaveInvoiceSettings} disabled={saving}
+            className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save Invoice Settings'}
           </button>
         </div>
 

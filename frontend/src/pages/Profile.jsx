@@ -16,8 +16,6 @@ function Profile() {
   const [homeAddress, setHomeAddress] = useState('')
   const [billingAddressSameAsHome, setBillingAddressSameAsHome] = useState(true)
   const [billingAddress, setBillingAddress] = useState('')
-  const [mileageRate, setMileageRate] = useState('')
-  const [invoiceNumberStart, setInvoiceNumberStart] = useState('')
 
   useEffect(() => {
     api.getProfile().then((result) => {
@@ -30,8 +28,6 @@ function Profile() {
         setBillingAddressSameAsHome(false)
         setBillingAddress(p.billing_address)
       }
-      setMileageRate(p.mileage_rate?.toString() || '0.725')
-      setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
     }).catch(() => setError('Failed to load profile'))
       .finally(() => setLoading(false))
   }, [])
@@ -48,8 +44,6 @@ function Profile() {
         phone,
         home_address: homeAddress,
         billing_address: billingAddressSameAsHome ? '' : billingAddress,
-        mileage_rate: parseFloat(mileageRate),
-        invoice_number_start: parseInt(invoiceNumberStart),
       })
       setSuccess('Profile saved')
     } catch (err) {
@@ -116,17 +110,6 @@ function Profile() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             )}
             <p className="text-xs text-gray-400 mt-1">Used on Monthly Invoice reports</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Rate ($/mile)</label>
-            <input type="number" step="0.001" value={mileageRate} onChange={(e) => setMileageRate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <p className="text-xs text-gray-400 mt-1">2025 IRS rate: $0.725/mile</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Starting Invoice Number</label>
-            <input type="number" min="1" value={invoiceNumberStart} onChange={(e) => setInvoiceNumberStart(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <button type="submit" disabled={saving}
             className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
