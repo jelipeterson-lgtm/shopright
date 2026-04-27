@@ -80,8 +80,8 @@ function Settings() {
 
   useEffect(() => {
     api.getProfile().then((result) => {
-      if (result.success && result.data) {
-        const p = result.data
+      try {
+        const p = result.data || {}
         setAiEnabled(p.ai_review_enabled || false)
         setHasApiKey(!!p.anthropic_api_key)
         setInvoiceStartDay(p.invoice_start_day || 1)
@@ -89,7 +89,8 @@ function Settings() {
         setMileageRate(p.mileage_rate?.toString() || '0.725')
         setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
         setIsFreeAccount(p.is_free_account || false)
-      } else {
+      } catch (err) {
+        console.error('Error setting profile data:', err)
         setError('Failed to load profile data')
       }
     }).catch((err) => {
