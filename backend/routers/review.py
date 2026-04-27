@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from typing import Optional
 from db import supabase_admin
 from routers.auth import get_user_id
-import anthropic
 import json
 
 router = APIRouter(prefix="/review", tags=["review"])
@@ -97,6 +96,7 @@ def review_visit(body: ReviewRequest, authorization: str = Header(...)):
     )
 
     try:
+        import anthropic
         client = anthropic.Anthropic(api_key=profile.data["anthropic_api_key"])
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",

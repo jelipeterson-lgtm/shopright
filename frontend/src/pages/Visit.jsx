@@ -64,7 +64,13 @@ function Visit() {
   const loadVisit = async () => {
     try {
       const result = await api.getVisit(id)
-      setVisit(result.data)
+      const visitData = result.data
+      if (!visitData.visit_time && visitData.status !== 'Complete') {
+        const localTime = new Date().toTimeString().slice(0, 5)
+        visitData.visit_time = localTime
+        api.updateVisit(id, { visit_time: localTime }).catch(() => {})
+      }
+      setVisit(visitData)
     } catch (err) {
       setError('Failed to load visit')
     } finally {

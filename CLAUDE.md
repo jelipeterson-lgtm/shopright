@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: April 7, 2026*
+*Last updated: April 24, 2026*
 
 ---
 
@@ -325,6 +325,8 @@ RLS: Users can read/insert/update/delete their own visits.
 | GET | /route/plan/{date} | Yes | Get saved route plan for date |
 | POST | /route/plan | Yes | Save route plan |
 | POST | /route/plan/{date}/complete-stop | Yes | Record store visit in history |
+| POST | /admin/ingest | Yes | Force re-ingest of store directory from Dropbox (free accounts only) |
+| GET | /admin/ingest/status | Yes | Poll status of in-progress ingest (running, result, error) |
 
 ---
 
@@ -362,6 +364,8 @@ RLS: Users can read/insert/update/delete their own visits.
 
 16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific.
 
+17. **Visit time**: Set from the user's local browser clock (`new Date().toTimeString()`) when the assessment form is first opened, not at route-acceptance time. Batch-created visits store null visit_time; Visit.jsx auto-initializes it on first open. This ensures the time reflects when the shopper actually did the assessment, not when they accepted the route.
+
 ---
 
 ## Terminology (User-Facing)
@@ -388,7 +392,7 @@ Never use "visit," "session," "draft," or "assessed" in user-facing text. Intern
 | ShopFile_Template.xlsx | Master Shop File format — headers, colors, widths | Eli, when Smart Circle changes format |
 | Invoice_Template.xlsx | Master Invoice format — headers, formulas | Eli, when format changes |
 
-Backend downloads these on demand and caches in memory. After updating Book1.xlsx, run `python3 ingest_stores.py` from the backend directory to reload.
+Backend downloads Book1.xlsx on startup if the Dropbox Last-Modified header has changed. To sync immediately after updating Book1.xlsx: **Settings → Sync Store Directory** (visible to free accounts only). This downloads the file, geocodes any new addresses via Nominatim (with city+state fallback if full address fails), and upserts all stores into the database. Results are shown when complete.
 
 ---
 
@@ -430,8 +434,9 @@ Push to `main` branch → Vercel auto-deploys frontend, Render auto-deploys back
 If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Deploy latest commit.
 
 ### Add a new store to the directory
-1. Update Book1.xlsx in Dropbox
-2. Run `python3 ingest_stores.py` from the backend directory (with venv activated)
+1. Update Book1.xlsx in Dropbox (Retail worksheet — retailer name, store number, address, city, state, zip)
+2. Open ShopRight → Settings → tap **Sync Store Directory**
+3. Wait ~30–60 seconds — new store will appear in search with full coordinates
 
 ### Create a free account
 1. User signs up through the app

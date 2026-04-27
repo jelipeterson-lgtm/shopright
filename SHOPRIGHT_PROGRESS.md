@@ -1,6 +1,6 @@
 # ShopRight — Build Progress Tracker
 
-**Last Updated:** April 7, 2026
+**Last Updated:** April 24, 2026
 **Current Phase:** ✅ All phases complete — awaiting real-world validation
 **Overall Status:** 🟢 Production
 
@@ -335,8 +335,8 @@
 | Email confirmation | Disabled | Supabase email confirmation is off for easy testing. Re-enable for production. |
 | Error monitoring | Not set up | Sentry or equivalent not configured. |
 | Sent reports archive | Partial | Download works, but no persistent archive of previously sent reports. |
-| Store ingestion | Manual | Run `python3 ingest_stores.py` to reload stores. Not automated on app launch. |
-| ~30 stores not geocoded | Known | ~30 of 236 stores failed Nominatim geocoding. They work with manual search but not GPS. |
+| Store ingestion | Resolved | Settings → Sync Store Directory button (free accounts). Downloads Book1.xlsx, geocodes new stores, upserts to DB. No manual steps needed. |
+| ~30 stores not geocoded | Improved | Geocoding now tries full address, then address+city+state, then city+state+zip as fallbacks. Remaining failures can be fixed via Supabase SQL with coordinates from Google Maps. |
 
 ---
 
@@ -356,6 +356,7 @@
 | April 6, 2026 | Phase 8 | Major UX overhaul: dashboard with logo, bottom nav, profile/settings split, AI help chatbot, consistent Store/Vendor terminology, Open/Completed statuses, date formatting, clean assessment header, empty store handling. | Final validation |
 | April 6, 2026 | Phase 8+ | Stripe live/test key separation, production Stripe webhooks, Getting Started tutorial, Help Guide FAQ, standardized page headers, blue bottom nav, landing page logo. | Real-world test |
 | April 7, 2026 | Production | Documentation overhaul. Created free accounts for Stacy Taggart and R Taggart. All 8 phases complete. App in production. Awaiting Kelsey's real-world validation. | Kelsey field test |
+| April 24, 2026 | Bug fixes + Store Mgmt | Fixed "Assessed" → "Completed" on all status badges. Fixed visit timestamp bug (batch route creation stored UTC server time instead of local browser time — all assessment times now set from device clock when form opens). Fixed Costco #1019 lat/lon (South Jordan UT). Added Costco #1703 (Ridgefield WA). Added Settings → Sync Store Directory button for free accounts — one-tap to sync Book1.xlsx changes to database with geocoding. Fixed Supabase 1000-row limit on store queries. Improved geocoding with address fallbacks. Updated DROPBOX_STORES_URL on Render. | Continued real-world validation |
 
 ---
 

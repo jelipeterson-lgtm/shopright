@@ -176,6 +176,7 @@ def generate_shop_file(visits, first_name):
 
     output = io.BytesIO()
     wb.save(output)
+    wb.close()
     output.seek(0)
     return output, filename
 
@@ -287,6 +288,7 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
 
     output = io.BytesIO()
     wb.save(output)
+    wb.close()
     output.seek(0)
 
     return output, invoice_id

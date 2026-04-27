@@ -50,30 +50,59 @@ import threading
 import time
 import httpx
 
+_keep_alive_client = httpx.Client(timeout=10)
+
 def keep_alive():
     """Ping self every 14 minutes to prevent Render free tier sleep."""
     url = os.getenv("RENDER_EXTERNAL_URL", "https://shopright-api.onrender.com") + "/health"
     while True:
         time.sleep(840)  # 14 minutes
         try:
-            httpx.get(url, timeout=10)
+            _keep_alive_client.get(url)
         except Exception:
             pass
 
 threading.Thread(target=keep_alive, daemon=True).start()
 
 
-# Store directory sync: on startup, check Dropbox Last-Modified for Book1.xlsx
-# and re-ingest only if the file has changed. Runs in a background thread so
-# it never blocks the API from starting (Render cold starts already take time).
-def _sync_store_directory():
-    try:
-        from ingest_stores import check_and_ingest
-        check_and_ingest()
-    except Exception as e:
-        print(f"Store directory sync failed: {e}")
+_ingest_state = {"running": False, "result": None, "error": None}
 
-threading.Thread(target=_sync_store_directory, daemon=True).start()
+@app.post("/admin/ingest")
+def force_ingest(authorization: str = Header(...)):
+    from routers.auth import get_user_id
+    get_user_id(authorization)
+    if _ingest_state["running"]:
+        return {"success": True, "data": {"status": "already_running"}, "error": None}
+    _ingest_state.update({"running": True, "result": None, "error": None})
+    def _run():
+        import gc
+        import resource
+        import ctypes
+        rss_before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print(f"Ingest start — RSS: {rss_before} KB")
+        try:
+            from ingest_stores import check_and_ingest
+            _ingest_state["result"] = check_and_ingest(force=True)
+        except Exception as e:
+            _ingest_state["error"] = str(e)
+        finally:
+            _ingest_state["running"] = False
+            rss_peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            gc.collect()
+            try:
+                ctypes.CDLL("libc.so.6").malloc_trim(0)
+            except Exception:
+                pass
+            rss_after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print(f"Ingest done — peak RSS: {rss_peak} KB, after trim: {rss_after} KB")
+    threading.Thread(target=_run, daemon=True).start()
+    return {"success": True, "data": {"status": "started"}, "error": None}
+
+@app.get("/admin/ingest/status")
+def ingest_status(authorization: str = Header(...)):
+    from routers.auth import get_user_id
+    get_user_id(authorization)
+    return {"success": True, "data": _ingest_state, "error": None}
 
 
 from pydantic import BaseModel

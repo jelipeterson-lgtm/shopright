@@ -1117,7 +1117,7 @@ function RoutePlanner() {
           </div>
         )}
 
-        {/* Assessed stops */}
+        {/* Completed stops */}
         {assessedStops.length > 0 && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">Completed ({assessedStops.length})</p>

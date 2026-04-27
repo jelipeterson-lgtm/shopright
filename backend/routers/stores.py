@@ -50,7 +50,7 @@ def haversine(lat1, lon1, lat2, lon2):
 @router.get("/nearby")
 def get_nearby_stores(lat: float = Query(...), lng: float = Query(...)):
     """Return up to 3 stores within 1 mile, sorted by distance."""
-    result = supabase_admin.table("stores").select("*").not_.is_("latitude", "null").execute()
+    result = supabase_admin.table("stores").select("*").not_.is_("latitude", "null").limit(10000).execute()
     stores = result.data or []
 
     with_distance = []
@@ -70,7 +70,7 @@ def search_stores(q: str = Query(..., min_length=1)):
     query = q.strip()
 
     # Load all stores and search across multiple fields
-    result = supabase_admin.table("stores").select("*").execute()
+    result = supabase_admin.table("stores").select("*").limit(10000).execute()
     stores = result.data or []
 
     import re
