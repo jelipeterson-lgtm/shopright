@@ -78,6 +78,12 @@ function Settings() {
   const [mileageRate, setMileageRate] = useState('0.725')
   const [invoiceNumberStart, setInvoiceNumberStart] = useState('1')
 
+  // Password change
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordSaving, setPasswordSaving] = useState(false)
+
   useEffect(() => {
     api.getProfile().then((result) => {
       try {
