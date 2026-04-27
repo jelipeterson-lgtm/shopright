@@ -7,7 +7,9 @@ function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMessage, setResetMessage] = useState(null)
+  const { signIn, resetPassword } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -24,6 +26,24 @@ function Login() {
     }
   }
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Enter your email first')
+      return
+    }
+    setError(null)
+    setResetMessage(null)
+    setResetLoading(true)
+    try {
+      await resetPassword(email)
+      setResetMessage('Password reset email sent. Check your inbox.')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
       <img src="/Logo.png" alt="ShopRight" className="w-24 h-24 rounded-2xl mb-6" />
@@ -32,6 +52,7 @@ function Login() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 w-full max-w-sm space-y-4">
         {error && <p className="text-red-500 text-sm">{error}</p>}
+        {resetMessage && <p className="text-green-600 text-sm">{resetMessage}</p>}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -53,6 +74,14 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            disabled={resetLoading}
+            className="text-xs text-blue-600 hover:underline mt-1"
+          >
+            {resetLoading ? 'Sending...' : 'Forgot password?'}
+          </button>
         </div>
 
         <button

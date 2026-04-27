@@ -41,6 +41,13 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
+  const resetPassword = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) throw error
+  }
+
   // Keep a ref to the latest session so the token getter always has it
   const sessionRef = useRef(session)
   useEffect(() => {
@@ -52,7 +59,7 @@ export function AuthProvider({ children }) {
     })
   }, [session])
 
-  const value = { user, session, loading, signUp, signIn, signOut }
+  const value = { user, session, loading, signUp, signIn, signOut, resetPassword }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
