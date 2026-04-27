@@ -48,6 +48,8 @@ function RoutePlanner() {
   const [startCoords, setStartCoords] = useState(null)
   const [todayVisits, setTodayVisits] = useState([])
   const [showAddStore, setShowAddStore] = useState(false)
+  const [accepted, setAccepted] = useState(false)
+  const [accepting, setAccepting] = useState(false)
   const [storeSearchQuery, setStoreSearchQuery] = useState('')
   const [storeSearchResults, setStoreSearchResults] = useState([])
   const [addingVendorStore, setAddingVendorStore] = useState(null)
