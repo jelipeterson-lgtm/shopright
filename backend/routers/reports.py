@@ -11,6 +11,9 @@ import os
 import base64
 
 resend.api_key = os.getenv("RESEND_API_KEY")
+RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "ShopRight")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_FROM_ADDRESS = f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -119,7 +122,7 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
 
     try:
         result = resend.Emails.send({
-            "from": "ShopRight <onboarding@resend.dev>",
+            "from": RESEND_FROM_ADDRESS,
             "to": [body.recipient_email],
             "subject": filename.replace(".xlsx", ""),
             "html": f"<p>Weekly Shop File attached: {filename}</p>",
@@ -234,7 +237,7 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
 
     try:
         result = resend.Emails.send({
-            "from": "ShopRight <onboarding@resend.dev>",
+            "from": RESEND_FROM_ADDRESS,
             "to": [body.recipient_email],
             "subject": filename.replace(".xlsx", ""),
             "html": f"<p>Monthly Invoice attached: {filename}</p>",

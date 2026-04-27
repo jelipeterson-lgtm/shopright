@@ -109,6 +109,9 @@ from pydantic import BaseModel
 import resend
 
 resend.api_key = os.getenv("RESEND_API_KEY")
+RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "ShopRight")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_FROM_ADDRESS = f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
 
 
 class ContactForm(BaseModel):
@@ -272,7 +275,7 @@ Keep answers SHORT, SIMPLE, and FRIENDLY. One step at a time. Never assume techn
 def send_contact(body: ContactForm):
     try:
         resend.Emails.send({
-            "from": "Contact Form <onboarding@resend.dev>",
+            "from": RESEND_FROM_ADDRESS,
             "to": ["j.eli.peterson@gmail.com"],
             "subject": f"Contact from {body.name} — Eli Peterson Consulting",
             "html": f"<p><strong>From:</strong> {body.name} ({body.email})</p><p>{body.message}</p>",
