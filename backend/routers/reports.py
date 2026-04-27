@@ -146,11 +146,16 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
     """Generate and return Invoice .xlsx."""
     user_id = get_user_id(authorization)
 
-    start_date = f"{body.year}-{body.month:02d}-01"
+    profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
+    start_day = profile.data.get("invoice_start_day", 1)
+    end_day = profile.data.get("invoice_end_day", 1)
+
+    from datetime import date
+    start_date = date(body.year, body.month, start_day).strftime("%Y-%m-%d")
     if body.month == 12:
-        end_date = f"{body.year + 1}-01-01"
+        end_date = date(body.year + 1, 1, end_day).strftime("%Y-%m-%d")
     else:
-        end_date = f"{body.year}-{body.month + 1:02d}-01"
+        end_date = date(body.year, body.month + 1, end_day).strftime("%Y-%m-%d")
 
     visits = (
         supabase_admin.table("vendor_visits")
@@ -165,12 +170,9 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
     )
 
     if not visits.data:
-        return {"success": False, "data": None, "error": "No complete visits for this month"}
+        return {"success": False, "data": None, "error": "No complete visits for this period"}
 
-    profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
-    mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
-
-    output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
+    output, invoice_id = generate_invoice(visits.data, body.mileage_entries, profile.data, body.year, body.month)
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
@@ -195,11 +197,16 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
     """Generate and email Invoice."""
     user_id = get_user_id(authorization)
 
-    start_date = f"{body.year}-{body.month:02d}-01"
+    profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
+    start_day = profile.data.get("invoice_start_day", 1)
+    end_day = profile.data.get("invoice_end_day", 1)
+
+    from datetime import date
+    start_date = date(body.year, body.month, start_day).strftime("%Y-%m-%d")
     if body.month == 12:
-        end_date = f"{body.year + 1}-01-01"
+        end_date = date(body.year + 1, 1, end_day).strftime("%Y-%m-%d")
     else:
-        end_date = f"{body.year}-{body.month + 1:02d}-01"
+        end_date = date(body.year, body.month + 1, end_day).strftime("%Y-%m-%d")
 
     visits = (
         supabase_admin.table("vendor_visits")
@@ -214,9 +221,8 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
     )
 
     if not visits.data:
-        return {"success": False, "data": None, "error": "No complete visits for this month"}
+        return {"success": False, "data": None, "error": "No complete visits for this period"}
 
-    profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
     mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
 
     output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)

@@ -43,6 +43,8 @@ class ProfileUpdate(BaseModel):
     billing_address: Optional[str] = None
     default_start_address: Optional[str] = None
     default_end_address: Optional[str] = None
+    invoice_start_day: Optional[int] = None
+    invoice_end_day: Optional[int] = None
 
 
 @router.get("/profile")

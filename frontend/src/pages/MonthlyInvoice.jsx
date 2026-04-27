@@ -17,6 +17,8 @@ function MonthlyInvoice() {
   const [success, setSuccess] = useState(null)
   const [recipientEmail, setRecipientEmail] = useState('')
   const [mileageRate, setMileageRate] = useState(0.725)
+  const [invoiceStartDay, setInvoiceStartDay] = useState(1)
+  const [invoiceEndDay, setInvoiceEndDay] = useState(1)
 
   useEffect(() => {
     loadData()
@@ -26,21 +28,28 @@ function MonthlyInvoice() {
     setLoading(true)
     setError(null)
     try {
-      // Get all complete visits for the month
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endMonth = month === 12 ? 1 : month + 1
-      const endYear = month === 12 ? year + 1 : year
-      const endDate = `${endYear}-${String(endMonth).padStart(2, '0')}-01`
-
-      const result = await api.getVisits({ status: 'Complete' })
-      const monthVisits = result.data.filter(
-        (v) => v.visit_date >= startDate && v.visit_date < endDate
-      )
-      setVisits(monthVisits)
-
       const profile = await api.getProfile()
       setRecipientEmail(profile.data.report_email || '')
       if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
+      setInvoiceStartDay(profile.data.invoice_start_day || 1)
+      setInvoiceEndDay(profile.data.invoice_end_day || 1)
+
+      // Calculate period dates
+      const startDate = new Date(year, month - 1, invoiceStartDay)
+      const endDate = new Date(year, month, invoiceEndDay)
+      if (month === 12) {
+        endDate.setFullYear(year + 1)
+        endDate.setMonth(0)
+      }
+
+      const startStr = startDate.toISOString().split('T')[0]
+      const endStr = endDate.toISOString().split('T')[0]
+
+      const result = await api.getVisits({ status: 'Complete' })
+      const periodVisits = result.data.filter(
+        (v) => v.visit_date >= startStr && v.visit_date < endStr
+      )
+      setVisits(periodVisits)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -149,7 +158,7 @@ function MonthlyInvoice() {
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
         {success && <p className="text-green-600 text-sm mb-4 bg-green-50 p-3 rounded-md">{success}</p>}
 
-        {/* Month selector */}
+        {/* Period selector */}
         <div className="flex gap-2 mb-4">
           <div className="flex-1">
             <label className="block text-xs text-gray-500 mb-1">Year</label>
@@ -157,7 +166,7 @@ function MonthlyInvoice() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
           </div>
           <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">Month</label>
+            <label className="block text-xs text-gray-500 mb-1">Period</label>
             <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
               {monthNames.slice(1).map((name, i) => (
@@ -167,11 +176,18 @@ function MonthlyInvoice() {
           </div>
         </div>
 
+        {/* Period dates */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <p className="text-sm text-blue-700">
+            Invoice period: {new Date(year, month - 1, invoiceStartDay).toLocaleDateString()} to {new Date(month === 12 ? year + 1 : year, month === 12 ? 0 : month, invoiceEndDay).toLocaleDateString()}
+          </p>
+        </div>
+
         {loading ? (
           <p className="text-gray-400 text-sm text-center py-8">Loading...</p>
         ) : visits.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-gray-400 text-sm">No completed vendors for {monthNames[month]} {year}</p>
+            <p className="text-gray-400 text-sm">No completed vendors for this period</p>
           </div>
         ) : (
           <>

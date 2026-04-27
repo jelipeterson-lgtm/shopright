@@ -41,8 +41,7 @@ function RoutePlanner() {
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [showCheckinInput, setShowCheckinInput] = useState(false)
   const [profileCity, setProfileCity] = useState('')
-  const [accepted, setAccepted] = useState(false)
-  const [accepting, setAccepting] = useState(false)
+  const [showVerification, setShowVerification] = useState(false)
   const [maxDistance, setMaxDistance] = useState('')
   const [selectedCities, setSelectedCities] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -264,8 +263,8 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowEmailInput(false)
       setEmailText('')
-      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new). Use filters below to narrow down, then optimize.`)
-      setShowFilters(true)
+      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new). Verify the list below, then continue to filters.`)
+      setShowVerification(true)
       setSelectedCities(null)
       setMaxDistance('')
     } catch (err) {
@@ -315,9 +314,9 @@ function RoutePlanner() {
       setShowCheckinInput(false)
       setCheckinText('')
       const hasExistingRoute = route.length > 0
-      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Use filters below to narrow down, then optimize.'}`)
+      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Verify the list below, then continue to filters.'}`)
       if (!hasExistingRoute) {
-        setShowFilters(true)
+        setShowVerification(true)
         setSelectedCities(null)
         setMaxDistance('')
       }
@@ -575,19 +574,13 @@ function RoutePlanner() {
     }
   }
 
-  const handleAssessVendors = (store) => {
-    // Navigate to first unfinished vendor assessment at this store
-    const unfinished = todayVisits.find(v =>
-      v.retailer_name === store.retailer_name &&
-      v.store_number === store.store_number &&
-      v.status === 'Draft'
-    )
-    if (unfinished) {
-      navigate(`/visit/${unfinished.id}`)
-    } else {
-      // All done or no visits — go to session page
-      navigate('/session')
-    }
+  const handleRemoveParsedStore = (index) => {
+    setParsedStores(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleContinueToFilters = () => {
+    setShowVerification(false)
+    setShowFilters(true)
   }
 
   const handleSkipOrRemove = async (store, status) => {
@@ -929,6 +922,30 @@ function RoutePlanner() {
             <button onClick={handleParseCheckin} disabled={parsing || !checkinText.trim()}
               className="w-full bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
               {parsing ? 'Parsing check-ins...' : 'Add Check-ins & Re-optimize'}
+            </button>
+          </div>
+        )}
+
+        {/* Verify parsed stores */}
+        {showVerification && parsedStores.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+            <p className="text-sm font-semibold text-gray-800 mb-3">Verify Parsed Stores ({parsedStores.length} entries)</p>
+            <p className="text-xs text-gray-500 mb-3">Review the list below. Remove any incorrect entries before continuing.</p>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {parsedStores.map((store, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{store.retailer_name} #{store.store_number}</p>
+                    <p className="text-xs text-gray-500">{store.program} — {store.city}, {store.state}</p>
+                  </div>
+                  <button onClick={() => handleRemoveParsedStore(index)}
+                    className="text-red-500 hover:text-red-700 text-sm font-medium">Remove</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={handleContinueToFilters}
+              className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 mt-3">
+              Continue to Filters
             </button>
           </div>
         )}

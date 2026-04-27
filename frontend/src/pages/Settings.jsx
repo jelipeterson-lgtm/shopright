@@ -64,17 +64,17 @@ function Settings() {
   const [keyValid, setKeyValid] = useState(false)
   const [testingKey, setTestingKey] = useState(false)
 
-  // Password
-  const [showPasswordChange, setShowPasswordChange] = useState(false)
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordSaving, setPasswordSaving] = useState(false)
+  // Invoice Period
+  const [invoiceStartDay, setInvoiceStartDay] = useState(1)
+  const [invoiceEndDay, setInvoiceEndDay] = useState(1)
 
   useEffect(() => {
     api.getProfile().then((result) => {
       const p = result.data
       setAiEnabled(p.ai_review_enabled || false)
       setHasApiKey(!!p.anthropic_api_key)
+      setInvoiceStartDay(p.invoice_start_day || 1)
+      setInvoiceEndDay(p.invoice_end_day || 1)
     }).catch(() => setError('Failed to load settings'))
       .finally(() => setLoading(false))
   }, [])
@@ -147,6 +147,17 @@ function Settings() {
       setConfirmPassword('')
     } catch (err) { setError(err.message) }
     finally { setPasswordSaving(false) }
+  }
+
+  const handleSaveInvoicePeriod = async () => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      await api.updateProfile({ invoice_start_day: invoiceStartDay, invoice_end_day: invoiceEndDay })
+      setSuccess('Invoice period updated')
+    } catch (err) { setError(err.message) }
+    finally { setSaving(false) }
   }
 
   const handleSignOut = async () => {
@@ -233,6 +244,30 @@ function Settings() {
             <button onClick={() => setShowKeyInput(true)}
               className="text-xs text-gray-500 hover:underline">Update API key</button>
           )}
+        </div>
+
+        {/* Invoice Period */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-800">Invoice Period</h2>
+          <p className="text-xs text-gray-500">Set your billing cycle (e.g., 10th to 10th). Default is calendar month (1st to 1st).</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Start Day</label>
+              <input type="number" min="1" max="31" value={invoiceStartDay}
+                onChange={(e) => setInvoiceStartDay(parseInt(e.target.value) || 1)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">End Day</label>
+              <input type="number" min="1" max="31" value={invoiceEndDay}
+                onChange={(e) => setInvoiceEndDay(parseInt(e.target.value) || 1)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          </div>
+          <button onClick={handleSaveInvoicePeriod} disabled={saving}
+            className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save Invoice Period'}
+          </button>
         </div>
 
         {/* Password */}
