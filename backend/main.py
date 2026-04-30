@@ -84,6 +84,25 @@ def _weekly_restart():
 threading.Thread(target=_weekly_restart, daemon=True).start()
 
 
+def _seed_programs():
+    """Ensure vendor programs exist in DB. Runs at startup — upserts are idempotent."""
+    try:
+        from db import supabase_admin
+        seed = [
+            "RTL-ATT-EDM", "RS-CKE", "RTL-Jacuzzi-Roadshow",
+            "RS-DS WATER-Primo and RSW", "RTL-IME", "RTL-SCI-HI Exit Fence",
+            "RTL-LEAF FILTER", "RTL-Reborn-Roadshow",
+            "RTL-GDI-LeafGuard", "RTL-GDI-LG Exit Fence",
+        ]
+        for code in seed:
+            supabase_admin.table("programs").upsert({"code": code}, on_conflict="code").execute()
+        print(f"Programs seeded: {len(seed)} codes")
+    except Exception as e:
+        print(f"Program seed failed: {e}")
+
+threading.Thread(target=_seed_programs, daemon=True).start()
+
+
 _ingest_state = {"running": False, "result": None, "error": None}
 
 @app.post("/admin/ingest")
@@ -179,7 +198,7 @@ COMPLETE WORKFLOW:
 
 VENDOR PROGRAM SELECTION:
 When adding a vendor, you'll see a dropdown with these available programs:
-RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, RS-DS WATER-Primo and RSW, RTL-IME, RTL-SCI-HI Exit Fence, RTL-LEAF FILTER, RTL-Reborn-Roadshow
+RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, RS-DS WATER-Primo and RSW, RTL-IME, RTL-SCI-HI Exit Fence, RTL-LEAF FILTER, RTL-Reborn-Roadshow, RTL-GDI-LeafGuard, RTL-GDI-LG Exit Fence
 If the program you need isn't in the list, select "Other (enter manually)" and type it in.
 
 ASSESSMENT FORM:

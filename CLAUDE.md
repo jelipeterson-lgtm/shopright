@@ -239,7 +239,7 @@ Unique constraint on (retailer_name, store_number). RLS: authenticated users can
 | code | text (PK) | e.g., RTL-ATT-EDM, RS-CKE |
 | created_at | timestamptz | |
 
-RLS: authenticated users can read. 8 programs loaded from Book1.xlsx Program worksheet. Users can also enter custom program codes not in this list.
+RLS: authenticated users can read. 10 programs: RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, RS-DS WATER-Primo and RSW, RTL-IME, RTL-SCI-HI Exit Fence, RTL-LEAF FILTER, RTL-Reborn-Roadshow, RTL-GDI-LeafGuard, RTL-GDI-LG Exit Fence. Users can also enter custom program codes not in this list.
 
 ### vendor_visits (50 columns)
 | Column | Type | Notes |
