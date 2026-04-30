@@ -5,8 +5,6 @@ Downloads master templates from Dropbox, copies them, writes visit data.
 import os
 import io
 import httpx
-from openpyxl import load_workbook
-from openpyxl.styles import Alignment
 from datetime import datetime, date
 from collections import defaultdict
 
@@ -60,6 +58,8 @@ def _format_time(time_str):
 
 def generate_shop_file(visits, first_name):
     """Generate Shop File .xlsx from a list of Complete visits for one ISO week."""
+    from openpyxl import load_workbook
+    from openpyxl.styles import Alignment
     template = _download_template(DROPBOX_SHOPFILE_URL, "shopfile")
     wb = load_workbook(template)
     ws = wb.active
@@ -200,6 +200,7 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
     mileage_entries: list of {date: str, miles: number}
     profile: user profile dict
     """
+    from openpyxl import load_workbook
     from openpyxl.styles import Font, Border, Side
 
     template = _download_template(DROPBOX_INVOICE_URL, "invoice")

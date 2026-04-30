@@ -65,6 +65,25 @@ def keep_alive():
 threading.Thread(target=keep_alive, daemon=True).start()
 
 
+def _weekly_restart():
+    """Exit cleanly every Tuesday at 14:00 UTC (6-7 AM Pacific).
+    Render auto-restarts the process with a clean memory slate.
+    No one shops Tuesday — restart is invisible to users."""
+    import os
+    from datetime import datetime, timedelta
+    while True:
+        now = datetime.utcnow()
+        days_until_tuesday = (1 - now.weekday()) % 7  # 1 = Tuesday
+        if days_until_tuesday == 0 and now.hour >= 14:
+            days_until_tuesday = 7
+        next_restart = now.replace(hour=14, minute=0, second=0, microsecond=0) + timedelta(days=days_until_tuesday)
+        time.sleep((next_restart - now).total_seconds())
+        print("Weekly scheduled restart — clearing accumulated memory")
+        os._exit(0)
+
+threading.Thread(target=_weekly_restart, daemon=True).start()
+
+
 _ingest_state = {"running": False, "result": None, "error": None}
 
 @app.post("/admin/ingest")
@@ -258,8 +277,8 @@ Keep answers SHORT, SIMPLE, and FRIENDLY. One step at a time. Never assume techn
             return {"success": True, "data": "To add a store:\n\n1. Tap 'Add Store' on the Stores page\n2. Allow GPS to find nearby stores, or tap 'Search instead'\n3. Search by store number (e.g., '63') or retailer name (e.g., 'Costco')\n4. Select the store and verify the address\n5. Pick a vendor program from the dropdown\n6. Tap 'Confirm Store & Add Vendor'", "error": None}
         return {"success": True, "data": "I can help with:\n\n- Adding stores and vendors\n- Filling out assessment forms\n- Selecting vendor programs\n- Setting up AI Review (API key)\n- Sending weekly reports\n- Sending monthly invoices\n- GPS and store search issues\n\nWhat would you like help with?", "error": None}
 
+    client = anthropic.Anthropic(api_key=api_key)
     try:
-        client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=400,
@@ -269,6 +288,8 @@ Keep answers SHORT, SIMPLE, and FRIENDLY. One step at a time. Never assume techn
         return {"success": True, "data": response.content[0].text, "error": None}
     except Exception as e:
         return {"success": True, "data": "Sorry, I couldn't process that right now. Try again in a moment.", "error": None}
+    finally:
+        client.close()
 
 
 @app.post("/contact")

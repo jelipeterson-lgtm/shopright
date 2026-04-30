@@ -187,11 +187,14 @@ Text message content:
 
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=4000,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        try:
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=4000,
+                messages=[{"role": "user", "content": prompt}],
+            )
+        finally:
+            client.close()
 
         text = response.content[0].text.strip()
         # Extract JSON from response

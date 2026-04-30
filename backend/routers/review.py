@@ -98,11 +98,14 @@ def review_visit(body: ReviewRequest, authorization: str = Header(...)):
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=profile.data["anthropic_api_key"])
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        try:
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=1000,
+                messages=[{"role": "user", "content": prompt}],
+            )
+        finally:
+            client.close()
 
         # Parse the response
         response_text = response.content[0].text.strip()
