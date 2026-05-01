@@ -6,12 +6,14 @@ import httpx
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+_auth_client = httpx.Client(timeout=10)
+
 
 def get_user_id(authorization: str = Header(...)) -> str:
     """Extract and verify user from Supabase JWT via direct API call."""
     token = authorization.replace("Bearer ", "")
     try:
-        r = httpx.get(
+        r = _auth_client.get(
             f"{SUPABASE_URL}/auth/v1/user",
             headers={
                 "Authorization": f"Bearer {token}",

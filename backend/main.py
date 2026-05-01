@@ -65,23 +65,22 @@ def keep_alive():
 threading.Thread(target=keep_alive, daemon=True).start()
 
 
-def _weekly_restart():
-    """Exit cleanly every Tuesday at 14:00 UTC (6-7 AM Pacific).
+def _nightly_restart():
+    """Exit cleanly every day at 10:00 UTC (2-3 AM Pacific).
     Render auto-restarts the process with a clean memory slate.
-    No one shops Tuesday — restart is invisible to users."""
+    2-3 AM Pacific is safe every day — no shopping, no report runs."""
     import os
     from datetime import datetime, timedelta
     while True:
         now = datetime.utcnow()
-        days_until_tuesday = (1 - now.weekday()) % 7  # 1 = Tuesday
-        if days_until_tuesday == 0 and now.hour >= 14:
-            days_until_tuesday = 7
-        next_restart = now.replace(hour=14, minute=0, second=0, microsecond=0) + timedelta(days=days_until_tuesday)
+        next_restart = now.replace(hour=10, minute=0, second=0, microsecond=0)
+        if now.hour >= 10:
+            next_restart += timedelta(days=1)
         time.sleep((next_restart - now).total_seconds())
-        print("Weekly scheduled restart — clearing accumulated memory")
+        print("Nightly scheduled restart — clearing accumulated memory")
         os._exit(0)
 
-threading.Thread(target=_weekly_restart, daemon=True).start()
+threading.Thread(target=_nightly_restart, daemon=True).start()
 
 
 def _seed_programs():
