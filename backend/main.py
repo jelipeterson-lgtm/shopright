@@ -65,23 +65,6 @@ def keep_alive():
 threading.Thread(target=keep_alive, daemon=True).start()
 
 
-def _nightly_restart():
-    """Exit cleanly every day at 10:00 UTC (2-3 AM Pacific).
-    Render auto-restarts the process with a clean memory slate.
-    2-3 AM Pacific is safe every day — no shopping, no report runs."""
-    import os
-    from datetime import datetime, timedelta
-    while True:
-        now = datetime.utcnow()
-        next_restart = now.replace(hour=10, minute=0, second=0, microsecond=0)
-        if now.hour >= 10:
-            next_restart += timedelta(days=1)
-        time.sleep((next_restart - now).total_seconds())
-        print("Nightly scheduled restart — clearing accumulated memory")
-        os._exit(0)
-
-threading.Thread(target=_nightly_restart, daemon=True).start()
-
 
 def _seed_programs():
     """Ensure vendor programs exist in DB. Runs at startup — upserts are idempotent."""
