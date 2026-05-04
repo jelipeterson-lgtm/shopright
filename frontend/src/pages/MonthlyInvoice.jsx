@@ -28,19 +28,16 @@ function MonthlyInvoice() {
     try {
       const profile = await api.getProfile()
       if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
-      setInvoiceStartDay(profile.data.invoice_start_day || 1)
-      setInvoiceEndDay(profile.data.invoice_end_day || 1)
+      const startDay = profile.data.invoice_start_day || 1
+      const endDay = profile.data.invoice_end_day || 1
+      setInvoiceStartDay(startDay)
+      setInvoiceEndDay(endDay)
 
-      // Calculate period dates
-      const startDate = new Date(year, month - 1, invoiceStartDay)
-      const endDate = new Date(year, month, invoiceEndDay)
-      if (month === 12) {
-        endDate.setFullYear(year + 1)
-        endDate.setMonth(0)
-      }
-
-      const startStr = startDate.toISOString().split('T')[0]
-      const endStr = endDate.toISOString().split('T')[0]
+      // Use local vars — state updates above are async and not yet reflected here
+      // Use local date to avoid UTC shift flipping the date after 5 PM
+      const toLocalStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const startStr = toLocalStr(new Date(year, month - 1, startDay))
+      const endStr = toLocalStr(new Date(year, month, endDay))  // JS wraps month 12 → Jan next year
 
       const result = await api.getVisits({ status: 'Complete' })
       const periodVisits = result.data.filter(
@@ -79,6 +76,11 @@ function MonthlyInvoice() {
         body: JSON.stringify({ year, month, mileage_entries: getMileageEntries() }),
       })
       if (!res.ok) throw new Error('Download failed')
+      const contentType = res.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const json = await res.json()
+        throw new Error(json.error || 'Invoice generation failed')
+      }
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
