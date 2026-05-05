@@ -288,7 +288,8 @@ function Settings() {
         {/* Invoice Period */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-800">Invoice Period</h2>
-          <p className="text-xs text-gray-500">Set your billing cycle (e.g., 10th to 10th). Default is calendar month (1st to 1st).</p>
+          <p className="text-xs text-gray-500">Set your billing cycle. Default is calendar month (1st to 1st).</p>
+          <p className="text-xs text-gray-400">Example: Start Day 10, End Day 10 covers the 10th of the selected month through the 9th of the following month.</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Start Day</label>
@@ -318,7 +319,7 @@ function Settings() {
               <input type="number" step="0.001" value={mileageRate}
                 onChange={(e) => setMileageRate(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-gray-400 mt-1">2025 IRS rate: $0.725/mile</p>
+              <p className="text-xs text-gray-400 mt-1">2026 IRS rate: $0.725/mile</p>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Starting Invoice Number</label>
