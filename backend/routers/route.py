@@ -472,6 +472,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
                 "sources": sources,
                 "destinations": destinations,
                 "metrics": ["duration", "distance"],
+                "departure_time": "any",
             },
             timeout=30,
         )
