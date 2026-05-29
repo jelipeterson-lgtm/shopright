@@ -443,7 +443,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         return {"success": False, "data": None, "error": "Could not geocode start address. Try a more specific address."}
 
     # Cap to 20 closest stores to prevent memory spikes on large lists
-    MAX_STORES = 20
+    MAX_STORES = 40
     if len(stores) > MAX_STORES:
         start_lat, start_lon = start_ll[1], start_ll[0]  # ORS uses [lon, lat]
         stores.sort(key=lambda s: haversine(start_lat, start_lon, s["latitude"], s["longitude"]))
