@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from db import supabase_admin
 from routers.auth import get_user_id
-from routers.stores import ensure_coordinates
+from routers.stores import ensure_coordinates, haversine
 from datetime import datetime, date
 import re
 
@@ -341,16 +341,17 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     end_address = body.end_address or body.start_address
 
     # Check for same-week and same-month visits to flag duplicates at vendor level
-    all_visits = supabase_admin.table("vendor_visits").select(
-        "retailer_name, store_number, program, visit_date"
-    ).eq("user_id", user_id).execute()
-
     from datetime import timedelta
 
     today_dt = date.today()
     week_start = today_dt - timedelta(days=today_dt.weekday())
     week_end = week_start + timedelta(days=6)
     current_month = today_dt.strftime("%Y-%m")
+    cutoff_date = (today_dt - timedelta(days=30)).isoformat()
+
+    all_visits = supabase_admin.table("vendor_visits").select(
+        "retailer_name, store_number, program, visit_date"
+    ).eq("user_id", user_id).gte("visit_date", cutoff_date).execute()
 
     # Build per-vendor history: key = (retailer, store_number, program)
     vendor_history = {}
@@ -440,6 +441,14 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     start_ll = _geocode(body.start_address)
     if not start_ll:
         return {"success": False, "data": None, "error": "Could not geocode start address. Try a more specific address."}
+
+    # Cap to 20 closest stores to prevent memory spikes on large lists
+    MAX_STORES = 20
+    if len(stores) > MAX_STORES:
+        start_lat, start_lon = start_ll[1], start_ll[0]  # ORS uses [lon, lat]
+        stores.sort(key=lambda s: haversine(start_lat, start_lon, s["latitude"], s["longitude"]))
+        stores = stores[:MAX_STORES]
+        num_stores = len(stores)
 
     if end_address != body.start_address:
         time.sleep(1)  # Nominatim rate limit: 1 req/sec
