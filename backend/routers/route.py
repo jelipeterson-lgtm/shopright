@@ -460,6 +460,8 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     drive_times = {}
     drive_distances = {}
 
+    print(f"[route/optimize] key_present={bool(api_key)} key_prefix={api_key[:8] + '...' if api_key else 'NONE'} num_locations={len(locations)}")
+
     try:
         r = httpx.post(
             "https://api.openrouteservice.org/v2/matrix/driving-car",
@@ -476,6 +478,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             },
             timeout=30,
         )
+        print(f"[route/optimize] ORS status={r.status_code} response_preview={r.text[:300]}")
         if r.status_code != 200:
             return {"success": False, "data": None, "error": f"Route service error: {r.status_code} — {r.text[:200]}"}
 
@@ -487,6 +490,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             for j, val in enumerate(row):
                 drive_distances[(i, j)] = (val / 1609.34) if val is not None else 0  # meters → miles
     except Exception as e:
+        print(f"[route/optimize] ORS exception: {type(e).__name__}: {e}")
         return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
 
     # Parse start time for schedule building
@@ -602,6 +606,40 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     }
 
     return {"success": True, "data": {"route": route, "overflow": overflow, "summary": summary}, "error": None}
+
+
+@router.get("/test-ors")
+def test_ors(authorization: str = Header(...)):
+    """Diagnostic: test ORS API key presence and a minimal 2-point matrix request."""
+    get_user_id(authorization)
+    import os
+    import httpx
+    api_key = os.environ.get("OPENROUTESERVICE_API_KEY")
+    if not api_key:
+        return {"key_present": False, "error": "OPENROUTESERVICE_API_KEY not set"}
+    result = {
+        "key_present": True,
+        "key_prefix": api_key[:8] + "...",
+    }
+    try:
+        r = httpx.post(
+            "https://api.openrouteservice.org/v2/matrix/driving-car",
+            headers={"Authorization": api_key, "Content-Type": "application/json"},
+            json={
+                "locations": [[-122.675, 45.5051], [-122.332, 47.606]],
+                "sources": [0],
+                "destinations": [1],
+                "metrics": ["duration", "distance"],
+            },
+            timeout=15,
+        )
+        result["status_code"] = r.status_code
+        result["success"] = r.status_code == 200
+        result["response"] = r.json() if r.status_code == 200 else r.text[:500]
+    except Exception as e:
+        result["success"] = False
+        result["error"] = f"{type(e).__name__}: {e}"
+    return result
 
 
 @router.get("/geocode")
