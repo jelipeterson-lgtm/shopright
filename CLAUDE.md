@@ -2,7 +2,17 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: April 24, 2026*
+*Last updated: May 29, 2026*
+
+---
+
+## Git Rules
+
+1. **Claude Code owns ALL git operations** — never ask Eli to open a second Terminal or run git manually.
+2. **Always run `rm -f .git/index.lock`** before any git operation.
+3. **Always `git pull --rebase origin main`** before `git push`.
+4. **Never run git commands in the background** — run them synchronously and wait for completion.
+5. **If push fails, fix it inside Claude Code only** — do not ask Eli to intervene.
 
 ---
 
