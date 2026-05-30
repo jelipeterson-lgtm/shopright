@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { supabase } from '../services/supabase'
 import PageHeader from '../components/PageHeader'
 
 function MonthlyInvoice() {
@@ -18,7 +19,10 @@ function MonthlyInvoice() {
   const [recipientEmail, setRecipientEmail] = useState('')
   const [mileageRate, setMileageRate] = useState(0.725)
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
-  const [invoiceEndDay, setInvoiceEndDay] = useState(1)
+  const [invoiceEndDay, setInvoiceEndDay] = useState(31)
+
+  const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December']
 
   useEffect(() => {
     loadData()
@@ -31,19 +35,22 @@ function MonthlyInvoice() {
       const profile = await api.getProfile()
       setRecipientEmail(profile.data.report_email || '')
       if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
-      setInvoiceStartDay(profile.data.invoice_start_day || 1)
-      setInvoiceEndDay(profile.data.invoice_end_day || 1)
+      const startDay = profile.data.invoice_start_day || 1
+      const endDay = profile.data.invoice_end_day || 31
+      setInvoiceStartDay(startDay)
+      setInvoiceEndDay(endDay)
 
-      // Calculate period dates
-      const startDate = new Date(year, month - 1, invoiceStartDay)
-      const endDate = new Date(year, month, invoiceEndDay)
-      if (month === 12) {
-        endDate.setFullYear(year + 1)
-        endDate.setMonth(0)
+      // Use local vars — state updates above are async and not yet reflected here
+      // Use local date to avoid UTC shift flipping the date after 5 PM
+      const toLocalStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const startStr = toLocalStr(new Date(year, month - 1, startDay))
+      let endStr
+      if (endDay > startDay) {
+        const lastDay = new Date(year, month, 0).getDate()
+        endStr = toLocalStr(new Date(year, month - 1, Math.min(endDay, lastDay) + 1))
+      } else {
+        endStr = toLocalStr(new Date(year, month, endDay))
       }
-
-      const startStr = startDate.toISOString().split('T')[0]
-      const endStr = endDate.toISOString().split('T')[0]
 
       const result = await api.getVisits({ status: 'Complete' })
       const periodVisits = result.data.filter(
@@ -71,14 +78,29 @@ function MonthlyInvoice() {
     setGenerating(true)
     setError(null)
     try {
-      const result = await api.generateInvoice({
-        year, month,
-        mileage_entries: getMileageEntries(),
+      const { data: { session } } = await supabase.auth.getSession()
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const res = await fetch(`${apiBase}/reports/generate/invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ year, month, mileage_entries: getMileageEntries() }),
       })
-      // generateInvoice returns a StreamingResponse, handle as blob
-      // Actually this goes through our request() which expects JSON...
-      // Need to handle differently for file download
-      setError('Use Send Invoice to email the file. Direct download coming soon.')
+      if (!res.ok) throw new Error('Download failed')
+      const contentType = res.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const json = await res.json()
+        throw new Error(json.error || 'Invoice generation failed')
+      }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      const disposition = res.headers.get('content-disposition') || ''
+      const match = disposition.match(/filename="(.+)"/)
+      a.download = match ? match[1] : `Invoice ${monthNames[month]} ${year}.xlsx`
+      a.click()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -140,14 +162,21 @@ function MonthlyInvoice() {
 
   const totals = calculateTotal()
 
-  const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December']
-
   const formatDate = (d) => {
     if (!d) return ''
     const parts = d.split('-')
     if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`
     return d
+  }
+
+  const displayEndDate = () => {
+    if (invoiceEndDay > invoiceStartDay) {
+      const lastDay = new Date(year, month, 0).getDate()
+      return new Date(year, month - 1, Math.min(invoiceEndDay, lastDay)).toLocaleDateString()
+    }
+    const y = month === 12 ? year + 1 : year
+    const m = month === 12 ? 0 : month
+    return new Date(y, m, invoiceEndDay - 1).toLocaleDateString()
   }
 
   return (
@@ -179,7 +208,7 @@ function MonthlyInvoice() {
         {/* Period dates */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <p className="text-sm text-blue-700">
-            Invoice period: {new Date(year, month - 1, invoiceStartDay).toLocaleDateString()} to {new Date(month === 12 ? year + 1 : year, month === 12 ? 0 : month, invoiceEndDay).toLocaleDateString()}
+            Invoice period: {new Date(year, month - 1, invoiceStartDay).toLocaleDateString()} to {displayEndDate()}
           </p>
         </div>
 
@@ -247,6 +276,12 @@ function MonthlyInvoice() {
                 </div>
               </div>
             </div>
+
+            {/* Download */}
+            <button onClick={handleDownload} disabled={generating}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-3">
+              {generating ? 'Generating...' : 'Download Invoice'}
+            </button>
 
             {/* Send */}
             <div className="bg-white rounded-lg shadow p-4 space-y-3">
