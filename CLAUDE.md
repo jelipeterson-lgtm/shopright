@@ -211,9 +211,11 @@ shopright/
 | report_email | text | Email for sending reports |
 | phone | text | |
 | home_address | text | |
-| mileage_rate | numeric(4,3) | Default 0.725 (2025 IRS rate) |
+| mileage_rate | numeric(4,3) | Default 0.725 (2026 IRS rate) |
 | invoice_number_start | integer | Default 1 |
 | next_invoice_number | integer | Default 1 |
+| invoice_start_day | integer | Default 1 — day of month invoice period starts |
+| invoice_end_day | integer | Default 31 — day of month invoice period ends (inclusive, within selected month) |
 | anthropic_api_key | text | User's own key for AI review |
 | default_start_address | text | Default start address for Route Planner |
 | default_end_address | text | Default end address for Route Planner |
@@ -370,9 +372,9 @@ RLS: Users can read/insert/update/delete their own visits.
 
 14. **Phone numbers**: Always formatted as (555) 555-5555 in invoice output regardless of input format.
 
-15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using OpenRouteService Distance Matrix API with time window constraint. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize uses current time and traffic. Stores tab removed from nav — all workflow through Route page. Close-store gate removed.
+15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using HERE Maps Matrix Routing v8 (traffic-aware, uses departure time for historical patterns) with ORS as automatic fallback. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize mid-route uses current GPS location as start (falls back to saved start address if GPS unavailable); end address always preserved. Drag reorder auto-scrolls page near viewport edges. Stores tab removed from nav — all workflow through Route page. Close-store gate removed.
 
-16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific.
+16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific. Fix: use local date construction instead of toISOString().
 
 17. **Visit time**: Set from the user's local browser clock (`new Date().toTimeString()`) when the assessment form is first opened, not at route-acceptance time. Batch-created visits store null visit_time; Visit.jsx auto-initializes it on first open. This ensures the time reflects when the shopper actually did the assessment, not when they accepted the route.
 

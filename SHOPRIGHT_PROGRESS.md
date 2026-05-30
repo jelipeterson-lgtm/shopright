@@ -34,6 +34,12 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | ORS URL changed to api.heigit.org | May 29, 2026 | Updated ORS API base URL to current endpoint |
 | departure_time parameter removed | May 29, 2026 | Removed unsupported parameter from ORS API calls |
 | git index corruption resolved | May 29, 2026 | Stray `index 2` file caused git failures; fixed by fresh clone |
+| Invoice download button restored | May 30, 2026 | Download was broken (placeholder error); fixed with fetch+blob pattern |
+| Invoice date filter bugs fixed | May 30, 2026 | Stale closure and toISOString() UTC flip reintroduced by May rewrite; corrected |
+| Invoice period dropdowns | May 30, 2026 | Number inputs replaced with 1–31 select dropdowns; end day defaults to 31 |
+| Route GPS mid-route re-optimize | May 30, 2026 | Re-optimize now uses current GPS location as start when stops are completed |
+| Route drag auto-scroll | May 30, 2026 | Page auto-scrolls when dragging stops near viewport edges |
+| HERE Maps routing | May 30, 2026 | Route optimizer uses HERE Maps Matrix Routing v8 (traffic-aware); ORS is automatic fallback |
 
 ---
 
@@ -90,6 +96,7 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | April 7, 2026 | Production | Documentation overhaul. Created free accounts for Stacy Taggart and R Taggart. All 8 phases complete. App in production. Awaiting Kelsey's real-world validation. | Kelsey field test |
 | April 24, 2026 | Bug fixes + Store Mgmt | Fixed "Assessed" → "Completed" on all status badges. Fixed visit timestamp bug. Fixed Costco #1019 lat/lon (South Jordan UT). Added Costco #1703 (Ridgefield WA). Added Settings → Sync Store Directory button. Fixed Supabase 1000-row limit on store queries. Improved geocoding with address fallbacks. | Continued real-world validation |
 | May 29, 2026 | Maintenance | Diagnosed and fixed git repository corruption caused by stray `index 2` file. Fresh cloned repo. ORS API URL fixed (api.heigit.org). departure_time parameter removed from ORS calls. MD files updated. | Continued real-world validation |
+| May 30, 2026 | Bug fixes + Feature | Invoice download button restored. Invoice date stale closure and UTC flip fixed. Invoice period dropdowns (1–31 selects, end defaults to 31). Route re-optimize uses current GPS location mid-route. Drag auto-scroll added. HERE Maps Matrix Routing v8 integrated (traffic-aware ETAs, ORS fallback). ORS diagnostic logging deployed. | ORS timeout root cause pending — check Render logs on next failure |
 
 ---
 
