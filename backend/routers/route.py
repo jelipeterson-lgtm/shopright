@@ -441,14 +441,23 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     num_stores = len(stores)
 
     # Geocode start and end addresses via Nominatim
+    # Accepts "lat,lon" GPS strings directly — skips Nominatim for those
     def _geocode(address):
+        parts = address.split(',')
+        if len(parts) == 2:
+            try:
+                lat, lon = float(parts[0].strip()), float(parts[1].strip())
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    return [lon, lat]
+            except ValueError:
+                pass
         try:
             r = httpx.get("https://nominatim.openstreetmap.org/search", params={
                 "q": address, "format": "json", "limit": 1,
             }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
             results = r.json()
             if results:
-                return [float(results[0]["lon"]), float(results[0]["lat"])]  # ORS: [lon, lat]
+                return [float(results[0]["lon"]), float(results[0]["lat"])]
         except Exception:
             pass
         return None
@@ -481,49 +490,96 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     sources = list(range(num_stores + 1))
     destinations = list(range(1, num_stores + 2))
 
+    # Parse start time before matrix call — needed for HERE departure_time
+    start_hour, start_minute = 10, 0
+    if body.start_time:
+        try:
+            t_parts = body.start_time.split(":")
+            start_hour, start_minute = int(t_parts[0]), int(t_parts[1])
+        except (ValueError, IndexError):
+            pass
+
     drive_times = {}
     drive_distances = {}
 
-    print(f"[route/optimize] key_present={bool(api_key)} key_prefix={api_key[:8] + '...' if api_key else 'NONE'} num_locations={len(locations)}")
+    import os as _os
+    here_key = _os.environ.get("HERE_API_KEY")
+    ors_key = api_key  # already loaded above
 
-    try:
-        r = httpx.post(
-            "https://api.openrouteservice.org/v2/matrix/driving-car",
-            headers={
-                "Authorization": api_key,
-                "Content-Type": "application/json",
-            },
-            json={
-                "locations": locations,
-                "sources": sources,
-                "destinations": destinations,
-                "metrics": ["duration", "distance"],
-            },
-            timeout=30,
-        )
-        print(f"[route/optimize] ORS status={r.status_code} response_preview={r.text[:300]}")
-        if r.status_code != 200:
-            return {"success": False, "data": None, "error": f"Route service error: {r.status_code} — {r.text[:200]}"}
+    print(f"[route/optimize] here_key={'yes' if here_key else 'no'} ors_key={'yes' if ors_key else 'no'} num_locations={len(locations)}")
 
-        matrix = r.json()
-        for i, row in enumerate(matrix.get("durations", [])):
-            for j, val in enumerate(row):
-                drive_times[(i, j)] = (val / 60) if val is not None else 9999  # seconds → minutes
-        for i, row in enumerate(matrix.get("distances", [])):
-            for j, val in enumerate(row):
-                drive_distances[(i, j)] = (val / 1609.34) if val is not None else 0  # meters → miles
-    except Exception as e:
-        print(f"[route/optimize] ORS exception: {type(e).__name__}: {e}")
-        return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
-
-    # Parse start time for schedule building
-    start_hour, start_minute = 10, 0  # default 10:00 AM
-    if body.start_time:
+    if here_key:
+        # HERE Maps Matrix Routing v8 — historical traffic patterns by time of day
+        # origins: [start] + stores  |  destinations: stores + [end]
+        here_origins = [{"lat": start_ll[1], "lng": start_ll[0]}] + \
+                       [{"lat": s["latitude"], "lng": s["longitude"]} for s in stores]
+        here_dests = [{"lat": s["latitude"], "lng": s["longitude"]} for s in stores] + \
+                     [{"lat": end_ll[1], "lng": end_ll[0]}]
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        departure_iso = f"{today_str}T{start_hour:02d}:{start_minute:02d}:00"
         try:
-            parts = body.start_time.split(":")
-            start_hour, start_minute = int(parts[0]), int(parts[1])
-        except (ValueError, IndexError):
-            pass
+            r = httpx.post(
+                "https://matrix.router.hereapi.com/v8/matrix",
+                params={"apikey": here_key, "async": "false"},
+                json={
+                    "origins": here_origins,
+                    "destinations": here_dests,
+                    "departureTime": departure_iso,
+                    "routingMode": "fast",
+                    "transportMode": "car",
+                    "matrixAttributes": ["travelTimes", "distances"],
+                },
+                timeout=30,
+            )
+            print(f"[route/optimize] HERE status={r.status_code}")
+            if r.status_code != 200:
+                return {"success": False, "data": None, "error": f"Route service error: {r.status_code} — {r.text[:200]}"}
+            matrix = r.json().get("matrix", {})
+            travel_times_flat = matrix.get("travelTimes", [])
+            distances_flat = matrix.get("distances", [])
+            error_codes = matrix.get("errorCodes", [])
+            num_dests = len(here_dests)
+            for i in range(len(here_origins)):
+                for j in range(num_dests):
+                    flat_idx = i * num_dests + j
+                    ec = error_codes[flat_idx] if flat_idx < len(error_codes) else 0
+                    if ec == 0 and flat_idx < len(travel_times_flat) and travel_times_flat[flat_idx] is not None:
+                        drive_times[(i, j)] = travel_times_flat[flat_idx] / 60
+                        drive_distances[(i, j)] = (distances_flat[flat_idx] / 1609.34) if flat_idx < len(distances_flat) and distances_flat[flat_idx] is not None else 0
+                    else:
+                        drive_times[(i, j)] = 9999
+                        drive_distances[(i, j)] = 0
+        except Exception as e:
+            print(f"[route/optimize] HERE exception: {type(e).__name__}: {e}")
+            return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
+    elif ors_key:
+        try:
+            r = httpx.post(
+                "https://api.openrouteservice.org/v2/matrix/driving-car",
+                headers={"Authorization": ors_key, "Content-Type": "application/json"},
+                json={
+                    "locations": locations,
+                    "sources": sources,
+                    "destinations": destinations,
+                    "metrics": ["duration", "distance"],
+                },
+                timeout=30,
+            )
+            print(f"[route/optimize] ORS status={r.status_code} response_preview={r.text[:300]}")
+            if r.status_code != 200:
+                return {"success": False, "data": None, "error": f"Route service error: {r.status_code} — {r.text[:200]}"}
+            matrix = r.json()
+            for i, row in enumerate(matrix.get("durations", [])):
+                for j, val in enumerate(row):
+                    drive_times[(i, j)] = (val / 60) if val is not None else 9999
+            for i, row in enumerate(matrix.get("distances", [])):
+                for j, val in enumerate(row):
+                    drive_distances[(i, j)] = (val / 1609.34) if val is not None else 0
+        except Exception as e:
+            print(f"[route/optimize] ORS exception: {type(e).__name__}: {e}")
+            return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
+    else:
+        return {"success": False, "data": None, "error": "Route optimization unavailable. Contact support."}
 
     def minutes_to_time(total_min):
         """Convert elapsed minutes from midnight to HH:MM AM/PM format."""

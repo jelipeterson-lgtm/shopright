@@ -422,6 +422,15 @@ function RoutePlanner() {
     })
   }
 
+  const getGPSStart = () => new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve(`${pos.coords.latitude},${pos.coords.longitude}`),
+      () => resolve(null),
+      { timeout: 5000, maximumAge: 30000 }
+    )
+  })
+
   const handleOptimizeFiltered = async () => {
     const filtered = getFilteredStores()
     if (!filtered.length) {
@@ -458,7 +467,10 @@ function RoutePlanner() {
         if (timeWindowMinutes <= 0) timeWindowMinutes = null
       }
 
-      const result = await api.optimizeRoute(unvisited, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      const isMidRoute = route.some(s => s.status === 'completed')
+      const gpsStart = isMidRoute ? await getGPSStart() : null
+      const effectiveStartAddr = gpsStart || startAddress
+      const result = await api.optimizeRoute(unvisited, effectiveStartAddr, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
       if (result.success) {
         // Preserve completed stops at the top, append optimized + overflow
         const kept = route.filter(s => s.status === 'completed')
@@ -515,7 +527,9 @@ function RoutePlanner() {
       }
 
       setAccepted(false)
-      const result = await api.optimizeRoute(candidates, startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      const isMidRouteR = route.some(s => s.status === 'completed')
+      const gpsStartR = isMidRouteR ? await getGPSStart() : null
+      const result = await api.optimizeRoute(candidates, gpsStartR || startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
       if (result.success) {
         const kept = route.filter(s => s.status === 'completed')
         const overflow = result.data.overflow || []
@@ -770,6 +784,8 @@ function RoutePlanner() {
     e.preventDefault()
     const touch = e.touches[0]
     setDragPos({ x: touch.clientX, y: touch.clientY })
+    if (touch.clientY < 80) window.scrollBy(0, -6)
+    else if (touch.clientY > window.innerHeight - 80) window.scrollBy(0, 6)
     const el = document.elementFromPoint(touch.clientX, touch.clientY)
     const card = el?.closest('[data-upcoming-index]')
     if (card) {
@@ -807,8 +823,10 @@ function RoutePlanner() {
       const now = new Date()
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
       const effectiveStart = route.some(s => s.status === 'completed') ? currentTime : startTime
+      const isMidRouteNL = route.some(s => s.status === 'completed')
+      const gpsStartNL = isMidRouteNL ? await getGPSStart() : null
       setAccepted(false)
-      const result = await api.optimizeRoute(candidates, startAddress, endAddress || startAddress, null, effectiveStart)
+      const result = await api.optimizeRoute(candidates, gpsStartNL || startAddress, endAddress || startAddress, null, effectiveStart)
       if (result.success) {
         const kept = route.filter(s => s.status === 'completed')
         const newRoute = [...kept, ...result.data.route]

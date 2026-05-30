@@ -72,7 +72,7 @@ function Settings() {
 
   // Invoice Period
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
-  const [invoiceEndDay, setInvoiceEndDay] = useState(1)
+  const [invoiceEndDay, setInvoiceEndDay] = useState(31)
 
   // Mileage and Invoice
   const [mileageRate, setMileageRate] = useState('0.725')
@@ -91,7 +91,7 @@ function Settings() {
         setAiEnabled(p.ai_review_enabled || false)
         setHasApiKey(!!p.anthropic_api_key)
         setInvoiceStartDay(p.invoice_start_day || 1)
-        setInvoiceEndDay(p.invoice_end_day || 1)
+        setInvoiceEndDay(p.invoice_end_day || 31)
         setMileageRate(p.mileage_rate?.toString() || '0.725')
         setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
         setIsFreeAccount(p.is_free_account || false)
@@ -288,19 +288,28 @@ function Settings() {
         {/* Invoice Period */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-800">Invoice Period</h2>
-          <p className="text-xs text-gray-500">Set your billing cycle (e.g., 10th to 10th). Default is calendar month (1st to 1st).</p>
+          <p className="text-xs text-gray-500">Set your billing cycle. Default (1st to 31st) covers the full calendar month.</p>
+          <p className="text-xs text-gray-400">Custom example: Start Day 10, End Day 9 covers the 10th of the selected month through the 9th of the following month.</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Start Day</label>
-              <input type="number" min="1" max="31" value={invoiceStartDay}
-                onChange={(e) => setInvoiceStartDay(parseInt(e.target.value) || 1)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <select value={invoiceStartDay}
+                onChange={(e) => setInvoiceStartDay(parseInt(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">End Day</label>
-              <input type="number" min="1" max="31" value={invoiceEndDay}
-                onChange={(e) => setInvoiceEndDay(parseInt(e.target.value) || 1)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <select value={invoiceEndDay}
+                onChange={(e) => setInvoiceEndDay(parseInt(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
           </div>
           <button onClick={handleSaveInvoicePeriod} disabled={saving}
