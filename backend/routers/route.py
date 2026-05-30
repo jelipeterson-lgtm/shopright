@@ -278,16 +278,31 @@ class ParseCheckinRequest(BaseModel):
 def parse_checkin(body: ParseCheckinRequest, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
 
+    # DEBUG: log raw input
+    print(f"[parse-checkin] user_id={user_id}")
+    print(f"[parse-checkin] raw_text_length={len(body.raw_text)} chars")
+    print(f"[parse-checkin] raw_text=\n---\n{body.raw_text}\n---")
+
     # Try AI parsing first
     profile = supabase_admin.table("profiles").select("anthropic_api_key").eq("id", user_id).single().execute()
     api_key = profile.data.get("anthropic_api_key") if profile.data else None
 
+    print(f"[parse-checkin] ai_key_present={bool(api_key)}")
+
     entries = None
     if api_key:
         entries = ai_parse_content(body.raw_text, "checkin", api_key)
+        print(f"[parse-checkin] ai_parse_result={entries}")
+        if entries is not None:
+            print(f"[parse-checkin] ai_parse_count={len(entries)}")
 
     if entries is None:
+        print(f"[parse-checkin] falling_back_to_pattern_parser")
         entries = parse_checkin_text(body.raw_text)
+        print(f"[parse-checkin] pattern_parse_result={entries}")
+        print(f"[parse-checkin] pattern_parse_count={len(entries)}")
+
+    print(f"[parse-checkin] final_entry_count={len(entries)}")
 
     for entry in entries:
         store = supabase_admin.table("stores").select("*").eq(
