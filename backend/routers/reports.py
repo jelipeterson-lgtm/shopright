@@ -5,7 +5,8 @@ from typing import List, Optional
 from db import supabase_admin
 from routers.auth import get_user_id
 from excel import generate_shop_file, generate_invoice
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as date_type
+import calendar
 import resend
 import os
 import base64
@@ -150,15 +151,18 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
     user_id = get_user_id(authorization)
 
     profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
-    start_day = profile.data.get("invoice_start_day", 1)
-    end_day = profile.data.get("invoice_end_day", 1)
+    start_day = profile.data.get("invoice_start_day") or 1
+    end_day = profile.data.get("invoice_end_day") or 31
 
-    from datetime import date
-    start_date = date(body.year, body.month, start_day).strftime("%Y-%m-%d")
-    if body.month == 12:
-        end_date = date(body.year + 1, 1, end_day).strftime("%Y-%m-%d")
+    start_date = date_type(body.year, body.month, start_day).strftime("%Y-%m-%d")
+    if end_day > start_day:
+        last_day = calendar.monthrange(body.year, body.month)[1]
+        effective_end = min(end_day, last_day)
+        end_date = (date_type(body.year, body.month, effective_end) + timedelta(days=1)).strftime("%Y-%m-%d")
     else:
-        end_date = date(body.year, body.month + 1, end_day).strftime("%Y-%m-%d")
+        next_year = body.year + 1 if body.month == 12 else body.year
+        next_month = 1 if body.month == 12 else body.month + 1
+        end_date = date_type(next_year, next_month, end_day).strftime("%Y-%m-%d")
 
     visits = (
         supabase_admin.table("vendor_visits")
@@ -175,7 +179,8 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
     if not visits.data:
         return {"success": False, "data": None, "error": "No complete visits for this period"}
 
-    output, invoice_id = generate_invoice(visits.data, body.mileage_entries, profile.data, body.year, body.month)
+    mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
+    output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
@@ -201,15 +206,18 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
     user_id = get_user_id(authorization)
 
     profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
-    start_day = profile.data.get("invoice_start_day", 1)
-    end_day = profile.data.get("invoice_end_day", 1)
+    start_day = profile.data.get("invoice_start_day") or 1
+    end_day = profile.data.get("invoice_end_day") or 31
 
-    from datetime import date
-    start_date = date(body.year, body.month, start_day).strftime("%Y-%m-%d")
-    if body.month == 12:
-        end_date = date(body.year + 1, 1, end_day).strftime("%Y-%m-%d")
+    start_date = date_type(body.year, body.month, start_day).strftime("%Y-%m-%d")
+    if end_day > start_day:
+        last_day = calendar.monthrange(body.year, body.month)[1]
+        effective_end = min(end_day, last_day)
+        end_date = (date_type(body.year, body.month, effective_end) + timedelta(days=1)).strftime("%Y-%m-%d")
     else:
-        end_date = date(body.year, body.month + 1, end_day).strftime("%Y-%m-%d")
+        next_year = body.year + 1 if body.month == 12 else body.year
+        next_month = 1 if body.month == 12 else body.month + 1
+        end_date = date_type(next_year, next_month, end_day).strftime("%Y-%m-%d")
 
     visits = (
         supabase_admin.table("vendor_visits")

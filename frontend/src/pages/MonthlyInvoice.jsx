@@ -84,7 +84,14 @@ function MonthlyInvoice() {
         },
         body: JSON.stringify({ year, month, mileage_entries: getMileageEntries() }),
       })
-      if (!res.ok) throw new Error('Download failed')
+      if (!res.ok) {
+        const ct = res.headers.get('content-type') || ''
+        if (ct.includes('application/json')) {
+          const json = await res.json()
+          throw new Error(json.detail || json.error || 'Download failed')
+        }
+        throw new Error(`Download failed (${res.status})`)
+      }
       const contentType = res.headers.get('content-type') || ''
       if (contentType.includes('application/json')) {
         const json = await res.json()
