@@ -488,7 +488,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     try:
         r = httpx.post(
-            "https://api.heigit.org/v2/matrix/driving-car",
+            "https://api.openrouteservice.org/v2/matrix/driving-car",
             headers={
                 "Authorization": api_key,
                 "Content-Type": "application/json",
@@ -646,7 +646,7 @@ def test_ors(authorization: str = Header(...)):
     }
     try:
         r = httpx.post(
-            "https://api.heigit.org/v2/matrix/driving-car",
+            "https://api.openrouteservice.org/v2/matrix/driving-car",
             headers={"Authorization": api_key, "Content-Type": "application/json"},
             json={
                 "locations": [[-122.675, 45.5051], [-122.332, 47.606]],
