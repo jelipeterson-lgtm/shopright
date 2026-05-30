@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: May 29, 2026*
+*Last updated: May 30, 2026*
 
 ---
 
@@ -188,7 +188,7 @@ shopright/
 │       │   ├── Settings.jsx           ← AI review, password, subscription, sign out
 │       │   ├── Reports.jsx            ← Reports hub (weekly + monthly)
 │       │   ├── WeeklyReport.jsx       ← Generate/send weekly Shop File
-│       │   ├── MonthlyInvoice.jsx     ← Generate/send monthly invoice
+│       │   ├── MonthlyInvoice.jsx     ← Generate/download monthly invoice (download only — no email)
 │       │   ├── RoutePlanner.jsx        ← Route optimization from event emails/check-ins
 │       │   ├── HelpGuide.jsx          ← Expandable FAQ sections
 │       │   └── Tutorial.jsx           ← Step-by-step Getting Started guide

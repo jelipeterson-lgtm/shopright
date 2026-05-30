@@ -13,10 +13,7 @@ function MonthlyInvoice() {
   const [mileage, setMileage] = useState({})
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
-  const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
-  const [recipientEmail, setRecipientEmail] = useState('')
   const [mileageRate, setMileageRate] = useState(0.725)
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
   const [invoiceEndDay, setInvoiceEndDay] = useState(31)
@@ -33,7 +30,6 @@ function MonthlyInvoice() {
     setError(null)
     try {
       const profile = await api.getProfile()
-      setRecipientEmail(profile.data.report_email || '')
       if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
       const startDay = profile.data.invoice_start_day || 1
       const endDay = profile.data.invoice_end_day || 31
@@ -108,31 +104,6 @@ function MonthlyInvoice() {
     }
   }
 
-  const handleSend = async () => {
-    if (!recipientEmail) {
-      setError('Recipient email required')
-      return
-    }
-    setSending(true)
-    setError(null)
-    try {
-      const result = await api.sendInvoice({
-        year, month,
-        mileage_entries: getMileageEntries(),
-        recipient_email: recipientEmail,
-      })
-      if (result.success) {
-        setSuccess(`Invoice sent to ${recipientEmail}`)
-      } else {
-        setError(result.error)
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSending(false)
-    }
-  }
-
   // Group visits by date
   const byDate = {}
   for (const v of visits) {
@@ -185,7 +156,6 @@ function MonthlyInvoice() {
       <div className="max-w-lg mx-auto px-4 py-4">
 
         {error && <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-md">{error}</p>}
-        {success && <p className="text-green-600 text-sm mb-4 bg-green-50 p-3 rounded-md">{success}</p>}
 
         {/* Period selector */}
         <div className="flex gap-2 mb-4">
@@ -279,24 +249,9 @@ function MonthlyInvoice() {
 
             {/* Download */}
             <button onClick={handleDownload} disabled={generating}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 mb-3">
+              className="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
               {generating ? 'Generating...' : 'Download Invoice'}
             </button>
-
-            {/* Send */}
-            <div className="bg-white rounded-lg shadow p-4 space-y-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Send to</label>
-                <input type="email" value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="recipient@email.com"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
-              </div>
-              <button onClick={handleSend} disabled={sending}
-                className="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-                {sending ? 'Sending...' : 'Generate & Send Invoice'}
-              </button>
-            </div>
           </>
         )}
       </div>
