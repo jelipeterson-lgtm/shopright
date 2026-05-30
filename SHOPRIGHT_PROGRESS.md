@@ -31,7 +31,6 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 |--------|------|-------|
 | Utah store deduplication | April 2026 | Fixed duplicate store entries for Utah Costco locations |
 | Google Maps replaced with OpenRouteService | May 2026 | Route optimization now uses ORS Distance Matrix API (central key) |
-| ORS URL changed to api.heigit.org | May 29, 2026 | Updated ORS API base URL to current endpoint |
 | departure_time parameter removed | May 29, 2026 | Removed unsupported parameter from ORS API calls |
 | git index corruption resolved | May 29, 2026 | Stray `index 2` file caused git failures; fixed by fresh clone |
 | Invoice download button restored | May 30, 2026 | Download was broken (placeholder error); fixed with fetch+blob pattern |
@@ -41,6 +40,9 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | Route drag auto-scroll | May 30, 2026 | Page auto-scrolls when dragging stops near viewport edges |
 | HERE Maps routing | May 30, 2026 | Route optimizer uses HERE Maps Matrix Routing v8 (traffic-aware); ORS is automatic fallback |
 | Invoice email removed | May 30, 2026 | Monthly Invoice is download-only; send/email functionality removed (Resend sandbox can't send to non-owner addresses) |
+| Render memory fixes | May 29, 2026 | vendor_visits query filtered to past 30 days; stores queries capped at 500; MAX_STORES raised to 40 for large territories (Stacy UT: 34 stores) |
+| ORS URL corrected | May 29, 2026 | Reverted to api.openrouteservice.org — api.heigit.org returned 404 in production |
+| parse-checkin debug logging | May 29, 2026 | Added Render log output for raw text, AI result, pattern fallback result — diagnosing format parse failures |
 
 ---
 
@@ -96,7 +98,8 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | April 6, 2026 | Phase 8+ | Stripe live/test key separation, production Stripe webhooks, Getting Started tutorial, Help Guide FAQ, standardized page headers, blue bottom nav, landing page logo. | Real-world test |
 | April 7, 2026 | Production | Documentation overhaul. Created free accounts for Stacy Taggart and R Taggart. All 8 phases complete. App in production. Awaiting Kelsey's real-world validation. | Kelsey field test |
 | April 24, 2026 | Bug fixes + Store Mgmt | Fixed "Assessed" → "Completed" on all status badges. Fixed visit timestamp bug. Fixed Costco #1019 lat/lon (South Jordan UT). Added Costco #1703 (Ridgefield WA). Added Settings → Sync Store Directory button. Fixed Supabase 1000-row limit on store queries. Improved geocoding with address fallbacks. | Continued real-world validation |
-| May 29, 2026 | Maintenance | Diagnosed and fixed git repository corruption caused by stray `index 2` file. Fresh cloned repo. ORS API URL fixed (api.heigit.org). departure_time parameter removed from ORS calls. MD files updated. | Continued real-world validation |
+| May 29, 2026 | Maintenance | Diagnosed and fixed git repository corruption caused by stray `index 2` file. Fresh cloned repo. departure_time parameter removed from ORS calls. MD files updated. | Continued real-world validation |
+| May 29, 2026 | Production fixes | Render memory fixes: vendor_visits date filter (30 days), stores query cap (500), MAX_STORES raised to 40. ORS URL corrected back to api.openrouteservice.org (heigit.org returned 404). Added parse-checkin debug logging to Render logs. | Monitor parse-checkin logs for format issues |
 | May 30, 2026 | Bug fixes + Feature | Invoice download button restored. Invoice date stale closure and UTC flip fixed. Invoice period dropdowns (1–31 selects, end defaults to 31). Route re-optimize uses current GPS location mid-route. Drag auto-scroll added. HERE Maps Matrix Routing v8 integrated (traffic-aware ETAs, ORS fallback). ORS diagnostic logging deployed. Invoice email/send removed — download only. | ORS timeout root cause pending — check Render logs on next failure |
 
 ---
