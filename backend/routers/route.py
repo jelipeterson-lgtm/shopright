@@ -508,6 +508,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     print(f"[route/optimize] here_key={'yes' if here_key else 'no'} ors_key={'yes' if ors_key else 'no'} num_locations={len(locations)}")
 
+    here_succeeded = False
     if here_key:
         # HERE Maps Matrix Routing v8 — historical traffic patterns by time of day
         # origins: [start] + stores  |  destinations: stores + [end]
@@ -532,27 +533,29 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
                 timeout=30,
             )
             print(f"[route/optimize] HERE status={r.status_code}")
-            if r.status_code != 200:
-                return {"success": False, "data": None, "error": f"Route service error: {r.status_code} — {r.text[:200]}"}
-            matrix = r.json().get("matrix", {})
-            travel_times_flat = matrix.get("travelTimes", [])
-            distances_flat = matrix.get("distances", [])
-            error_codes = matrix.get("errorCodes", [])
-            num_dests = len(here_dests)
-            for i in range(len(here_origins)):
-                for j in range(num_dests):
-                    flat_idx = i * num_dests + j
-                    ec = error_codes[flat_idx] if flat_idx < len(error_codes) else 0
-                    if ec == 0 and flat_idx < len(travel_times_flat) and travel_times_flat[flat_idx] is not None:
-                        drive_times[(i, j)] = travel_times_flat[flat_idx] / 60
-                        drive_distances[(i, j)] = (distances_flat[flat_idx] / 1609.34) if flat_idx < len(distances_flat) and distances_flat[flat_idx] is not None else 0
-                    else:
-                        drive_times[(i, j)] = 9999
-                        drive_distances[(i, j)] = 0
+            if r.status_code == 200:
+                matrix = r.json().get("matrix", {})
+                travel_times_flat = matrix.get("travelTimes", [])
+                distances_flat = matrix.get("distances", [])
+                error_codes = matrix.get("errorCodes", [])
+                num_dests = len(here_dests)
+                for i in range(len(here_origins)):
+                    for j in range(num_dests):
+                        flat_idx = i * num_dests + j
+                        ec = error_codes[flat_idx] if flat_idx < len(error_codes) else 0
+                        if ec == 0 and flat_idx < len(travel_times_flat) and travel_times_flat[flat_idx] is not None:
+                            drive_times[(i, j)] = travel_times_flat[flat_idx] / 60
+                            drive_distances[(i, j)] = (distances_flat[flat_idx] / 1609.34) if flat_idx < len(distances_flat) and distances_flat[flat_idx] is not None else 0
+                        else:
+                            drive_times[(i, j)] = 9999
+                            drive_distances[(i, j)] = 0
+                here_succeeded = True
+            else:
+                print(f"[route/optimize] HERE failed ({r.status_code}), falling back to ORS. Response: {r.text[:200]}")
         except Exception as e:
-            print(f"[route/optimize] HERE exception: {type(e).__name__}: {e}")
-            return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
-    elif ors_key:
+            print(f"[route/optimize] HERE exception: {type(e).__name__}: {e}, falling back to ORS")
+
+    if not here_succeeded and ors_key:
         try:
             r = httpx.post(
                 "https://api.openrouteservice.org/v2/matrix/driving-car",
@@ -578,7 +581,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         except Exception as e:
             print(f"[route/optimize] ORS exception: {type(e).__name__}: {e}")
             return {"success": False, "data": None, "error": f"Failed to get distances: {str(e)}"}
-    else:
+    elif not here_succeeded:
         return {"success": False, "data": None, "error": "Route optimization unavailable. Contact support."}
 
     def minutes_to_time(total_min):
