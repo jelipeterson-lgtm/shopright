@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: May 30, 2026*
+*Last updated: June 5, 2026*
 
 ---
 
@@ -48,11 +48,12 @@ Read this file at the start of every session. This is the comprehensive referenc
 | **Supabase** | supabase.com/dashboard | Project: shopright | PostgreSQL database + Auth |
 | **Stripe** | dashboard.stripe.com | Eli Peterson Consulting LLC | Payments, subscriptions |
 | **Stripe Test Mode** | dashboard.stripe.com/test | Same account | Test payments (use `4242 4242 4242 4242`) |
-| **Resend** | resend.com/emails | Eli's account | Email delivery (Shop Files, Invoices) |
+| **Resend** | resend.com/emails | Eli's account | Email delivery (weekly Shop Files only — invoice email removed) |
 | **Dropbox** | dropbox.com | ShopRight-Config folder | Store directory + Excel templates |
 | **GitHub** | github.com/jelipeterson-lgtm | jelipeterson-lgtm | Version control |
 | **Anthropic** | console.anthropic.com | Per-user | AI review API keys (user's own account) |
-| **OpenRouteService** | openrouteservice.org | Eli's account | Route optimization Distance Matrix API (central key) |
+| **HERE Maps** | developer.here.com | Eli's account | Route optimization Matrix Routing v8 — primary (traffic-aware) |
+| **OpenRouteService** | openrouteservice.org | Eli's account | Route optimization Distance Matrix API — fallback if HERE fails |
 
 ---
 
@@ -69,7 +70,7 @@ Read this file at the start of every session. This is the comprehensive referenc
 | Voice input | Web Speech API | Chrome browser | $0 |
 | AI review | Anthropic Claude API (Haiku) | Render backend | User's own key |
 | AI help chat | Anthropic Claude API (Haiku) | Render backend | User's own key |
-| Route optimization | OpenRouteService Distance Matrix API | Render backend | Central key (OPENROUTESERVICE_API_KEY) |
+| Route optimization | HERE Maps Matrix Routing v8 (primary) + OpenRouteService (fallback) | Render backend | Central keys (HERE_API_KEY, OPENROUTESERVICE_API_KEY) |
 | Payments | Stripe (hosted checkout) | External | 2.9% + 30¢/txn |
 | GPS | Browser Geolocation API + Haversine | Chrome browser | $0 |
 | Store directory | Book1.xlsx on Dropbox | Dropbox | $0 |
@@ -107,6 +108,8 @@ STRIPE_WEBHOOK_SECRET=<stripe live webhook signing secret>
 STRIPE_MONTHLY_PRICE_ID=<stripe live monthly price id>
 STRIPE_ANNUAL_PRICE_ID=<stripe live annual price id>
 PROMO_CODES=<comma-separated promo codes for free access>
+HERE_API_KEY=<here maps api key — primary route optimizer>
+OPENROUTESERVICE_API_KEY=<openrouteservice api key — fallback route optimizer>
 ```
 
 ### Frontend (.env.production)
@@ -251,7 +254,7 @@ Unique constraint on (retailer_name, store_number). RLS: authenticated users can
 | code | text (PK) | e.g., RTL-ATT-EDM, RS-CKE |
 | created_at | timestamptz | |
 
-RLS: authenticated users can read. 8 programs loaded from Book1.xlsx Program worksheet. Users can also enter custom program codes not in this list.
+RLS: authenticated users can read. 11 programs currently in table. Users can also enter custom program codes not in this list. To add programs: insert into the `programs` table directly in Supabase (no deployment needed — dropdown updates immediately).
 
 ### vendor_visits (50 columns)
 | Column | Type | Notes |
@@ -321,8 +324,7 @@ RLS: Users can read/insert/update/delete their own visits.
 | GET | /reports/weekly | Yes | Get visits for ISO week |
 | GET | /reports/generate/shopfile | Yes | Download Shop File .xlsx |
 | POST | /reports/send/shopfile | Yes | Email Shop File |
-| POST | /reports/generate/invoice | Yes | Generate Invoice .xlsx |
-| POST | /reports/send/invoice | Yes | Email Invoice |
+| POST | /reports/generate/invoice | Yes | Generate Invoice .xlsx (download only — email removed) |
 | GET | /payments/status | Yes | Subscription status check |
 | POST | /payments/checkout | Yes | Create Stripe checkout session |
 | POST | /payments/portal | Yes | Stripe customer portal |

@@ -1,6 +1,6 @@
 # ShopRight — Build Progress Tracker
 
-**Last Updated:** May 29, 2026
+**Last Updated:** June 5, 2026
 **Current Phase:** All phases complete — active production
 **Overall Status:** Production
 
@@ -101,6 +101,7 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | May 29, 2026 | Maintenance | Diagnosed and fixed git repository corruption caused by stray `index 2` file. Fresh cloned repo. departure_time parameter removed from ORS calls. MD files updated. | Continued real-world validation |
 | May 29, 2026 | Production fixes | Render memory fixes: vendor_visits date filter (30 days), stores query cap (500), MAX_STORES raised to 40. ORS URL corrected back to api.openrouteservice.org (heigit.org returned 404). Added parse-checkin debug logging to Render logs. | Monitor parse-checkin logs for format issues |
 | May 30, 2026 | Bug fixes + Feature | Invoice download button restored. Invoice date stale closure and UTC flip fixed. Invoice period dropdowns (1–31 selects, end defaults to 31). Route re-optimize uses current GPS location mid-route. Drag auto-scroll added. HERE Maps Matrix Routing v8 integrated (traffic-aware ETAs, ORS fallback). ORS diagnostic logging deployed. Invoice email/send removed — download only. | ORS timeout root cause pending — check Render logs on next failure |
+| June 5, 2026 | Maintenance + Docs | Pushed 3 pending backend commits (ORS URL fix, parse-checkin debug logging). Restored corrupted git HEAD file. Added RTL-SCI-Multi Serv-Exit Fence to programs table in Supabase. Updated CLAUDE.md: HERE Maps documented as primary optimizer, HERE_API_KEY and ORS_API_KEY added to env vars, invoice email removed from API table, programs count updated to 11, Resend scope updated, last-updated date corrected. | Second new program code pending (Eli to provide) |
 
 ---
 
