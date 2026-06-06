@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY
-import anthropic
+from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY, claude
 import httpx
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -73,14 +72,11 @@ def test_api_key(body: TestKeyRequest, authorization: str = Header(...)):
     """Test an Anthropic API key by making a minimal API call."""
     get_user_id(authorization)  # verify auth
     try:
-        client = anthropic.Anthropic(api_key=body.api_key)
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=10,
-            messages=[{"role": "user", "content": "Say OK"}],
-        )
+        claude(api_key=body.api_key, messages=[{"role": "user", "content": "Say OK"}], max_tokens=10)
         return {"success": True, "data": "API key is valid", "error": None}
-    except anthropic.AuthenticationError:
-        return {"success": False, "data": None, "error": "Invalid API key"}
+    except ValueError as e:
+        if "invalid_key" in str(e):
+            return {"success": False, "data": None, "error": "Invalid API key"}
+        return {"success": False, "data": None, "error": f"Connection test failed: {str(e)}"}
     except Exception as e:
         return {"success": False, "data": None, "error": f"Connection test failed: {str(e)}"}

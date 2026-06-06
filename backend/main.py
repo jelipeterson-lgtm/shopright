@@ -40,16 +40,28 @@ app.include_router(payments_router)
 app.include_router(route_router)
 
 
+import resource
+import threading
+import time
+import httpx
+
+
+def _rss_mb():
+    """Current process RSS in MB. On Linux ru_maxrss is KB; on macOS it's bytes."""
+    import platform
+    kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return kb / 1024 if platform.system() == "Linux" else kb / (1024 * 1024)
+
+
+print(f"[startup] RSS after import: {_rss_mb():.1f} MB")
+
+
 @app.get("/health")
 def health_check():
     return {"success": True, "data": "ShopRight API is running", "error": None}
 
 
 # Keep-alive: prevent Render free tier from sleeping
-import threading
-import time
-import httpx
-
 _keep_alive_client = httpx.Client(timeout=10)
 
 def keep_alive():
@@ -59,6 +71,7 @@ def keep_alive():
         time.sleep(840)  # 14 minutes
         try:
             _keep_alive_client.get(url)
+            print(f"[keep-alive] RSS: {_rss_mb():.1f} MB")
         except Exception:
             pass
 
@@ -123,8 +136,7 @@ class HelpChatRequest(BaseModel):
 def help_chat(body: HelpChatRequest, authorization: str = Header(...)):
     """AI help chatbot using user's API key."""
     from routers.auth import get_user_id
-    from db import supabase_admin
-    import anthropic
+    from db import supabase_admin, claude
 
     system_prompt = """You are a friendly ShopRight help assistant. ShopRight is a mobile web app for mystery shoppers working with Smart Circle International. You know everything about this app and should guide users simply and clearly. Users are NOT technical — explain everything in plain language.
 
@@ -253,15 +265,14 @@ Keep answers SHORT, SIMPLE, and FRIENDLY. One step at a time. Never assume techn
         return {"success": True, "data": "I can help with:\n\n- Adding stores and vendors\n- Filling out assessment forms\n- Selecting vendor programs\n- Setting up AI Review (API key)\n- Sending weekly reports\n- Sending monthly invoices\n- GPS and store search issues\n\nWhat would you like help with?", "error": None}
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+        text = claude(
+            api_key=api_key,
+            messages=[{"role": "user", "content": body.message}],
             max_tokens=400,
             system=system_prompt + context,
-            messages=[{"role": "user", "content": body.message}],
         )
-        return {"success": True, "data": response.content[0].text, "error": None}
-    except Exception as e:
+        return {"success": True, "data": text, "error": None}
+    except Exception:
         return {"success": True, "data": "Sorry, I couldn't process that right now. Try again in a moment.", "error": None}
 
 

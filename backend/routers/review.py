@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
 from typing import Optional
-from db import supabase_admin
+from db import supabase_admin, claude
 from routers.auth import get_user_id
 import json
 
@@ -96,20 +96,14 @@ def review_visit(body: ReviewRequest, authorization: str = Header(...)):
     )
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=profile.data["anthropic_api_key"])
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=1000,
+        response_text = claude(
+            api_key=profile.data["anthropic_api_key"],
             messages=[{"role": "user", "content": prompt}],
-        )
-
-        # Parse the response
-        response_text = response.content[0].text.strip()
+            max_tokens=1000,
+        ).strip()
 
         # Try to extract JSON from the response
         try:
-            # Handle case where response might have markdown code blocks
             if "```" in response_text:
                 json_start = response_text.index("[")
                 json_end = response_text.rindex("]") + 1
@@ -122,7 +116,9 @@ def review_visit(body: ReviewRequest, authorization: str = Header(...)):
 
         return {"success": True, "data": {"flags": flags, "skipped": False}, "error": None}
 
-    except anthropic.AuthenticationError:
-        return {"success": True, "data": {"flags": [], "skipped": True, "reason": "invalid_key"}, "error": None}
-    except Exception as e:
+    except ValueError as e:
+        if "invalid_key" in str(e):
+            return {"success": True, "data": {"flags": [], "skipped": True, "reason": "invalid_key"}, "error": None}
+        return {"success": True, "data": {"flags": [], "skipped": True, "reason": "api_error"}, "error": None}
+    except Exception:
         return {"success": True, "data": {"flags": [], "skipped": True, "reason": "api_error"}, "error": None}

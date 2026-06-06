@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, Query
 from pydantic import BaseModel
 from typing import Optional, List
-from db import supabase_admin
+from db import supabase_admin, claude
 from routers.auth import get_user_id
 from routers.stores import ensure_coordinates, haversine
 from datetime import datetime, date
@@ -146,7 +146,6 @@ def parse_checkin_text(raw_text):
 
 def ai_parse_content(raw_text, content_type, api_key):
     """Use Claude AI to parse email or check-in text into structured data."""
-    import anthropic
     import json
 
     if content_type == "email":
@@ -186,14 +185,7 @@ Text message content:
 {raw_text}"""
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=4000,
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        text = response.content[0].text.strip()
+        text = claude(api_key=api_key, messages=[{"role": "user", "content": prompt}], max_tokens=4000).strip()
         # Extract JSON from response
         if "```" in text:
             text = text.split("```")[1]
@@ -211,7 +203,7 @@ Text message content:
                     seen.add(key)
                     unique.append(e)
             return unique
-    except Exception as e:
+    except Exception:
         pass
 
     return None
@@ -346,9 +338,15 @@ class OptimizeRequest(BaseModel):
 
 @router.post("/optimize")
 def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
-    user_id = get_user_id(authorization)
+    import os, resource, platform, gc
+    def _rss():
+        kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return kb / 1024 if platform.system() == "Linux" else kb / (1024 * 1024)
 
-    import os
+    rss_start = _rss()
+    print(f"[route/optimize] start RSS={rss_start:.1f} MB stores={len(body.stores)}")
+
+    user_id = get_user_id(authorization)
     api_key = os.environ.get("OPENROUTESERVICE_API_KEY")
     if not api_key:
         return {"success": False, "data": None, "error": "Route optimization unavailable. Contact support."}
@@ -686,6 +684,10 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         "time_window_minutes": max_minutes if max_minutes < 99999 else None,
         "overflow_count": len(overflow),
     }
+
+    gc.collect()
+    rss_end = _rss()
+    print(f"[route/optimize] done RSS={rss_end:.1f} MB delta={rss_end - rss_start:+.1f} MB stops={len(route)}")
 
     return {"success": True, "data": {"route": route, "overflow": overflow, "summary": summary}, "error": None}
 
