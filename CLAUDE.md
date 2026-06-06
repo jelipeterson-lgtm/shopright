@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: June 5, 2026*
+*Last updated: June 5, 2026 (reliability fixes — lazy-load memory, HERE fallback, new program)*
 
 ---
 
@@ -504,6 +504,8 @@ Backend allows requests from:
 
 - [ ] Kelsey real-world test on an actual shopping day
 - [ ] Generated Shop File submitted to and accepted by Smart Circle
+- [ ] Second new program code to add to programs table (Eli to identify)
+- [ ] Monitor Render memory after lazy-load fix — if OOM recurs, upgrade to $7/mo paid tier
 - [ ] Custom domain (optional, ~$12/year)
 - [ ] Resend verified domain for professional email sender address
 - [ ] Error monitoring (Sentry or equivalent)

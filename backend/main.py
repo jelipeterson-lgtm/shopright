@@ -153,9 +153,9 @@ COMPLETE WORKFLOW:
 12. Monthly: tap Reports > Monthly Invoice, enter mileage, send invoice
 
 VENDOR PROGRAM SELECTION:
-When adding a vendor, you'll see a dropdown with these available programs:
-RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, RS-DS WATER-Primo and RSW, RTL-IME, RTL-SCI-HI Exit Fence, RTL-LEAF FILTER, RTL-Reborn-Roadshow
-If the program you need isn't in the list, select "Other (enter manually)" and type it in.
+When adding a vendor, you'll see a dropdown with available programs including:
+RTL-ATT-EDM, RS-CKE, RTL-Jacuzzi-Roadshow, RS-DS WATER-Primo and RSW, RTL-IME, RTL-SCI-HI Exit Fence, RTL-SCI-Multi Serv-Exit Fence, RTL-GDI-LeafGuard, RTL-GDI-LG Exit Fence, RTL-LEAF FILTER, RTL-Reborn-Roadshow
+If the program you need isn't in the list, type it in the custom code field below the dropdown.
 
 ASSESSMENT FORM:
 - Reps Present: Pass or Fail. If Fail, skip to Visit Recap.
