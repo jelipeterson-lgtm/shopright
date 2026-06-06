@@ -4,15 +4,20 @@ from typing import Optional
 from db import supabase_admin
 from routers.auth import get_user_id
 from dotenv import load_dotenv
-import stripe
 import os
 
 load_dotenv()
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_TEST_SECRET_KEY")
 
 MONTHLY_PRICE_ID = os.getenv("STRIPE_MONTHLY_PRICE_ID", "price_1TJJFLRsPFnm3irYAcJCEFOO")
 ANNUAL_PRICE_ID = os.getenv("STRIPE_ANNUAL_PRICE_ID", "price_1TJJG2RsPFnm3irYWWUYfogX")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+
+def _stripe():
+    """Lazy-load stripe and set api_key on first use."""
+    import stripe as _s
+    _s.api_key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_TEST_SECRET_KEY")
+    return _s
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -41,7 +46,7 @@ def get_subscription_status(authorization: str = Header(...)):
         customer_id = p.get("stripe_customer_id")
         if customer_id:
             try:
-                subs = stripe.Subscription.list(customer=customer_id, status="active", limit=1)
+                subs = _stripe().Subscription.list(customer=customer_id, status="active", limit=1)
                 if subs.data:
                     import datetime as dt
                     renewal_ts = subs.data[0].current_period_end
@@ -95,7 +100,7 @@ def create_checkout_session(body: CreateCheckoutRequest, authorization: str = He
 
     # Create Stripe customer if needed
     if not customer_id:
-        customer = stripe.Customer.create(
+        customer = _stripe().Customer.create(
             email=profile.data.get("report_email", ""),
             metadata={"user_id": user_id},
         )
@@ -104,7 +109,7 @@ def create_checkout_session(body: CreateCheckoutRequest, authorization: str = He
             {"stripe_customer_id": customer_id}
         ).eq("id", user_id).execute()
 
-    session = stripe.checkout.Session.create(
+    session = _stripe().checkout.Session.create(
         customer=customer_id,
         payment_method_types=["card"],
         line_items=[{"price": body.price_id, "quantity": 1}],
@@ -133,7 +138,7 @@ def create_portal_session(authorization: str = Header(...)):
     if not customer_id:
         return {"success": False, "data": None, "error": "No subscription found"}
 
-    session = stripe.billing_portal.Session.create(
+    session = _stripe().billing_portal.Session.create(
         customer=customer_id,
         return_url=f"{FRONTEND_URL}/settings",
     )
@@ -171,7 +176,7 @@ async def stripe_webhook(request: Request):
 
     try:
         if webhook_secret:
-            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+            event = _stripe().Webhook.construct_event(payload, sig_header, webhook_secret)
         else:
             import json
             event = json.loads(payload)

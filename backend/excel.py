@@ -5,15 +5,24 @@ Downloads master templates from Dropbox, copies them, writes visit data.
 import os
 import io
 import httpx
-from openpyxl import load_workbook
-from openpyxl.styles import Alignment
 from datetime import datetime, date
 from collections import defaultdict
 
-from ingest_stores import normalize_dropbox_url
 
-DROPBOX_SHOPFILE_URL = normalize_dropbox_url(os.getenv("DROPBOX_SHOPFILE_TEMPLATE_URL", ""))
-DROPBOX_INVOICE_URL = normalize_dropbox_url(os.getenv("DROPBOX_INVOICE_TEMPLATE_URL", ""))
+def _normalize_dropbox_url(url):
+    """Ensure Dropbox shared URL uses dl=1 for direct download."""
+    if not url:
+        return url
+    if "dl=0" in url:
+        return url.replace("dl=0", "dl=1")
+    if "dl=1" in url:
+        return url
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}dl=1"
+
+
+DROPBOX_SHOPFILE_URL = _normalize_dropbox_url(os.getenv("DROPBOX_SHOPFILE_TEMPLATE_URL", ""))
+DROPBOX_INVOICE_URL = _normalize_dropbox_url(os.getenv("DROPBOX_INVOICE_TEMPLATE_URL", ""))
 
 # Cache templates in memory
 _template_cache = {}
@@ -60,6 +69,8 @@ def _format_time(time_str):
 
 def generate_shop_file(visits, first_name):
     """Generate Shop File .xlsx from a list of Complete visits for one ISO week."""
+    from openpyxl import load_workbook
+    from openpyxl.styles import Alignment
     template = _download_template(DROPBOX_SHOPFILE_URL, "shopfile")
     wb = load_workbook(template)
     ws = wb.active
@@ -200,7 +211,8 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
     mileage_entries: list of {date: str, miles: number}
     profile: user profile dict
     """
-    from openpyxl.styles import Font, Border, Side
+    from openpyxl import load_workbook
+    from openpyxl.styles import Font, Border, Side, Alignment
 
     template = _download_template(DROPBOX_INVOICE_URL, "invoice")
     wb = load_workbook(template)

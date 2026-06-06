@@ -4,17 +4,10 @@ from pydantic import BaseModel
 from typing import List, Optional
 from db import supabase_admin
 from routers.auth import get_user_id
-from excel import generate_shop_file, generate_invoice
 from datetime import datetime, timedelta, date as date_type
 import calendar
-import resend
 import os
 import base64
-
-resend.api_key = os.getenv("RESEND_API_KEY")
-RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "ShopRight")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
-RESEND_FROM_ADDRESS = f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -79,6 +72,7 @@ def generate_shopfile_endpoint(
     profile = supabase_admin.table("profiles").select("full_name").eq("id", user_id).single().execute()
     first_name = (profile.data.get("full_name") or "Shopper").split()[0]
 
+    from excel import generate_shop_file
     output, filename = generate_shop_file(visits.data, first_name)
 
     return StreamingResponse(
@@ -118,12 +112,16 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
     profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
     first_name = (profile.data.get("full_name") or "Shopper").split()[0]
 
+    from excel import generate_shop_file
+    import resend
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    resend_from = f"{os.getenv('RESEND_FROM_NAME', 'ShopRight')} <{os.getenv('RESEND_FROM_EMAIL', 'onboarding@resend.dev')}>"
     output, filename = generate_shop_file(visits.data, first_name)
     file_bytes = output.read()
 
     try:
         result = resend.Emails.send({
-            "from": RESEND_FROM_ADDRESS,
+            "from": resend_from,
             "to": [body.recipient_email],
             "subject": filename.replace(".xlsx", ""),
             "html": f"<p>Weekly Shop File attached: {filename}</p>",
@@ -180,6 +178,7 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
         return {"success": False, "data": None, "error": "No complete visits for this period"}
 
     mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
+    from excel import generate_invoice
     output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
