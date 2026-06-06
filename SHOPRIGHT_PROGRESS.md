@@ -46,6 +46,8 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | HERE Maps ORS fallback fixed | June 5, 2026 | HERE failing (503, timeout) now falls through to ORS instead of returning error immediately |
 | Startup memory reduced | June 5, 2026 | openpyxl, stripe, resend now lazy-loaded inside handlers instead of at startup; ingest_stores no longer imported by excel.py (openpyxl was loading twice); estimated 50–100MB saved |
 | RTL-SCI-Multi Serv-Exit Fence added | June 5, 2026 | New program code inserted directly into Supabase programs table |
+| anthropic SDK removed | June 5, 2026 | Replaced with direct httpx calls via claude() helper in db.py; eliminated tokenizers (Rust binary), hf_xet, huggingface_hub, pygments, rich — ~60–100MB RAM savings |
+| RSS memory logging added | June 5, 2026 | Render logs now show startup RSS, keep-alive RSS every 14 min, and before/after delta for /route/optimize |
 
 ---
 
@@ -106,6 +108,7 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | May 30, 2026 | Bug fixes + Feature | Invoice download button restored. Invoice date stale closure and UTC flip fixed. Invoice period dropdowns (1–31 selects, end defaults to 31). Route re-optimize uses current GPS location mid-route. Drag auto-scroll added. HERE Maps Matrix Routing v8 integrated (traffic-aware ETAs, ORS fallback). ORS diagnostic logging deployed. Invoice email/send removed — download only. | ORS timeout root cause pending — check Render logs on next failure |
 | June 5, 2026 | Maintenance + Docs | Pushed 3 pending backend commits (ORS URL fix, parse-checkin debug logging). Restored corrupted git HEAD file. Added RTL-SCI-Multi Serv-Exit Fence to programs table in Supabase. Updated CLAUDE.md: HERE Maps documented as primary optimizer, HERE_API_KEY and ORS_API_KEY added to env vars, invoice email removed from API table, programs count updated to 11, Resend scope updated, last-updated date corrected. | Second new program code pending (Eli to provide) |
 | June 5, 2026 | Reliability fixes | Diagnosed 503 as Render OOM restart triggered during route optimization. Fixed HERE→ORS fallback (was broken — ORS only tried if HERE key absent, not if HERE failed). Lazy-loaded openpyxl/stripe/resend to cut startup memory ~50–100MB. | Monitor Render memory metrics — if OOM recurs, upgrade to $7/mo paid tier |
+| June 5, 2026 | Memory overhaul | Audited all dependencies. Discovered anthropic SDK pulling in tokenizers (Rust binary 8MB), hf_xet (7MB), huggingface_hub (2.7MB), pygments (4.9MB) — ~60–100MB RAM on first AI call. Replaced entire SDK with direct httpx POST to api.anthropic.com/v1/messages via claude() helper in db.py. Removed anthropic from requirements.txt. Added RSS memory logging at startup, keep-alive, and around /route/optimize. | Check Render logs for [startup] RSS and [route/optimize] lines to validate |
 
 ---
 

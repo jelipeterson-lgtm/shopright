@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: June 5, 2026 (reliability fixes — lazy-load memory, HERE fallback, new program)*
+*Last updated: June 5, 2026*
 
 ---
 
@@ -68,8 +68,8 @@ Read this file at the start of every session. This is the comprehensive referenc
 | Excel output | openpyxl (Python) | Render backend | $0 |
 | Email | Resend | External | Free (3k/mo) |
 | Voice input | Web Speech API | Chrome browser | $0 |
-| AI review | Anthropic Claude API (Haiku) | Render backend | User's own key |
-| AI help chat | Anthropic Claude API (Haiku) | Render backend | User's own key |
+| AI review | Anthropic Claude API (Haiku) via direct httpx — no SDK | Render backend | User's own key |
+| AI help chat | Anthropic Claude API (Haiku) via direct httpx — no SDK | Render backend | User's own key |
 | Route optimization | HERE Maps Matrix Routing v8 (primary) + OpenRouteService (fallback) | Render backend | Central keys (HERE_API_KEY, OPENROUTESERVICE_API_KEY) |
 | Payments | Stripe (hosted checkout) | External | 2.9% + 30¢/txn |
 | GPS | Browser Geolocation API + Haversine | Chrome browser | $0 |
@@ -135,8 +135,8 @@ shopright/
 ├── README.md
 │
 ├── backend/
-│   ├── main.py                        ← FastAPI app, CORS, contact form, help chat
-│   ├── db.py                          ← Supabase client (anon + service role)
+│   ├── main.py                        ← FastAPI app, CORS, contact form, help chat, RSS memory logging
+│   ├── db.py                          ← Supabase client (anon + service role) + claude() API helper
 │   ├── excel.py                       ← Shop File + Invoice generation (template-copy)
 │   ├── ingest_stores.py               ← Download + geocode Book1.xlsx into database
 │   ├── requirements.txt               ← Python dependencies
@@ -475,6 +475,8 @@ If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Depl
 | Git user.email | j.eli.peterson@gmail.com |
 | Geocoding service | OpenStreetMap Nominatim (free, 1 request/sec rate limit) |
 | Backend .env | Symlinked to root .env (`ln -sf ../../.env backend/.env`) |
+| Anthropic API | Called via direct httpx (no SDK) — `claude()` helper in db.py |
+| Memory logging | Render logs show RSS at startup, every 14-min keep-alive, and before/after /route/optimize |
 
 ### CORS Configuration
 Backend allows requests from:
@@ -505,7 +507,7 @@ Backend allows requests from:
 - [ ] Kelsey real-world test on an actual shopping day
 - [ ] Generated Shop File submitted to and accepted by Smart Circle
 - [ ] Second new program code to add to programs table (Eli to identify)
-- [ ] Monitor Render memory after lazy-load fix — if OOM recurs, upgrade to $7/mo paid tier
+- [ ] Monitor Render memory logs after anthropic SDK removal — check `[startup] RSS`, `[route/optimize]` lines in Render logs to confirm headroom; upgrade to $7/mo paid tier if OOM recurs
 - [ ] Custom domain (optional, ~$12/year)
 - [ ] Resend verified domain for professional email sender address
 - [ ] Error monitoring (Sentry or equivalent)
