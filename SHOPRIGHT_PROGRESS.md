@@ -48,6 +48,9 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | RTL-SCI-Multi Serv-Exit Fence added | June 5, 2026 | New program code inserted directly into Supabase programs table |
 | anthropic SDK removed | June 5, 2026 | Replaced with direct httpx calls via claude() helper in db.py; eliminated tokenizers (Rust binary), hf_xet, huggingface_hub, pygments, rich — ~60–100MB RAM savings |
 | RSS memory logging added | June 5, 2026 | Render logs now show startup RSS, keep-alive RSS every 14 min, and before/after delta for /route/optimize |
+| Unused anon supabase client removed | June 10, 2026 | db.py was creating two supabase SDK clients at startup; anon client was never used (all auth done via direct httpx JWT verify). Removed it — saves one full SDK instantiation (~20–40MB). |
+| RSS measurement fixed to current (not peak) | June 10, 2026 | ru_maxrss reports peak-since-start on Linux; switched _rss_mb() to read VmRSS from /proc/self/status for live current RSS. keep-alive and optimize logs now reflect actual usage, not historical peak. |
+| /debug/memory endpoint added | June 10, 2026 | GET https://shopright-api.onrender.com/debug/memory returns rss_mb, peak_rss_mb, headroom_mb as JSON — check live memory without Render logs. |
 
 ---
 
@@ -109,6 +112,7 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | June 5, 2026 | Maintenance + Docs | Pushed 3 pending backend commits (ORS URL fix, parse-checkin debug logging). Restored corrupted git HEAD file. Added RTL-SCI-Multi Serv-Exit Fence to programs table in Supabase. Updated CLAUDE.md: HERE Maps documented as primary optimizer, HERE_API_KEY and ORS_API_KEY added to env vars, invoice email removed from API table, programs count updated to 11, Resend scope updated, last-updated date corrected. | Second new program code pending (Eli to provide) |
 | June 5, 2026 | Reliability fixes | Diagnosed 503 as Render OOM restart triggered during route optimization. Fixed HERE→ORS fallback (was broken — ORS only tried if HERE key absent, not if HERE failed). Lazy-loaded openpyxl/stripe/resend to cut startup memory ~50–100MB. | Monitor Render memory metrics — if OOM recurs, upgrade to $7/mo paid tier |
 | June 5, 2026 | Memory overhaul | Audited all dependencies. Discovered anthropic SDK pulling in tokenizers (Rust binary 8MB), hf_xet (7MB), huggingface_hub (2.7MB), pygments (4.9MB) — ~60–100MB RAM on first AI call. Replaced entire SDK with direct httpx POST to api.anthropic.com/v1/messages via claude() helper in db.py. Removed anthropic from requirements.txt. Added RSS memory logging at startup, keep-alive, and around /route/optimize. | Check Render logs for [startup] RSS and [route/optimize] lines to validate |
+| June 10, 2026 | Memory investigation | Third OOM email after deploy. Diagnosed: (1) anon supabase client in db.py was never used but being instantiated at startup — removed. (2) ru_maxrss reports peak not current RSS — fixed to use VmRSS from /proc/self/status on Linux. (3) Added /debug/memory endpoint for live checking. Third OOM likely from old code still running during the anthropic-SDK-removal deploy window. | Monitor /debug/memory after next deploy — expected startup RSS ~170–200MB leaving ~300MB headroom |
 
 ---
 
