@@ -47,18 +47,68 @@ import httpx
 
 
 def _rss_mb():
-    """Current process RSS in MB. On Linux ru_maxrss is KB; on macOS it's bytes."""
+    """Current process RSS in MB.
+    Linux: reads VmRSS from /proc/self/status (current, not peak).
+    macOS fallback: ru_maxrss (bytes on macOS).
+    """
     import platform
-    kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return kb / 1024 if platform.system() == "Linux" else kb / (1024 * 1024)
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/self/status") as f:
+                for line in f:
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1]) / 1024  # kB → MB
+        except Exception:
+            pass
+        # fallback: ru_maxrss is kB on Linux
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+    # macOS: ru_maxrss is bytes
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024)
 
 
-print(f"[startup] RSS after import: {_rss_mb():.1f} MB")
+def _peak_rss_mb():
+    """Peak RSS since process start (Linux: VmPeak; macOS: ru_maxrss)."""
+    import platform
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/self/status") as f:
+                for line in f:
+                    if line.startswith("VmPeak:"):
+                        return int(line.split()[1]) / 1024
+        except Exception:
+            pass
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024)
+
+
+print(f"[startup] RSS after import: {_rss_mb():.1f} MB  peak: {_peak_rss_mb():.1f} MB")
 
 
 @app.get("/health")
 def health_check():
     return {"success": True, "data": "ShopRight API is running", "error": None}
+
+
+@app.get("/debug/memory")
+def debug_memory():
+    """Live memory stats — useful for checking Render memory without pulling logs."""
+    import platform
+    info = {
+        "rss_mb": round(_rss_mb(), 1),
+        "peak_rss_mb": round(_peak_rss_mb(), 1),
+        "platform": platform.system(),
+        "limit_mb": 512,
+        "headroom_mb": round(512 - _rss_mb(), 1),
+    }
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/self/status") as f:
+                for line in f:
+                    if line.startswith("VmSize:"):
+                        info["vm_size_mb"] = round(int(line.split()[1]) / 1024, 1)
+        except Exception:
+            pass
+    return info
 
 
 # Keep-alive: prevent Render free tier from sleeping

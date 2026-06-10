@@ -340,8 +340,17 @@ class OptimizeRequest(BaseModel):
 def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     import os, resource, platform, gc
     def _rss():
-        kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        return kb / 1024 if platform.system() == "Linux" else kb / (1024 * 1024)
+        """Current RSS in MB — VmRSS on Linux, ru_maxrss on macOS."""
+        if platform.system() == "Linux":
+            try:
+                with open("/proc/self/status") as f:
+                    for line in f:
+                        if line.startswith("VmRSS:"):
+                            return int(line.split()[1]) / 1024
+            except Exception:
+                pass
+            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024)
 
     rss_start = _rss()
     print(f"[route/optimize] start RSS={rss_start:.1f} MB stores={len(body.stores)}")
