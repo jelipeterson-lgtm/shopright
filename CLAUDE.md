@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: June 5, 2026*
+*Last updated: June 11, 2026*
 
 ---
 
@@ -35,6 +35,7 @@ Read this file at the start of every session. This is the comprehensive referenc
 | **Landing Page** | https://shopright-jet.vercel.app/ | Eli Peterson Consulting LLC landing page |
 | **API (Backend)** | https://shopright-api.onrender.com | FastAPI backend |
 | **API Health Check** | https://shopright-api.onrender.com/health | Verify backend is running |
+| **API Memory Check** | https://shopright-api.onrender.com/debug/memory | Live RSS, peak, headroom — no Render login needed |
 | **GitHub Repo** | https://github.com/jelipeterson-lgtm/shopright | Source code (monorepo) |
 
 ---
@@ -135,8 +136,8 @@ shopright/
 ├── README.md
 │
 ├── backend/
-│   ├── main.py                        ← FastAPI app, CORS, contact form, help chat, RSS memory logging
-│   ├── db.py                          ← Supabase client (anon + service role) + claude() API helper
+│   ├── main.py                        ← FastAPI app, CORS, contact form, help chat, keep-alive, /debug/memory, RSS memory logging
+│   ├── db.py                          ← Supabase service-role client + claude() API helper (anon client removed — never used)
 │   ├── excel.py                       ← Shop File + Invoice generation (template-copy)
 │   ├── ingest_stores.py               ← Download + geocode Book1.xlsx into database
 │   ├── requirements.txt               ← Python dependencies
@@ -303,6 +304,7 @@ RLS: Users can read/insert/update/delete their own visits.
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | /health | No | Health check |
+| GET | /debug/memory | No | Live memory stats: rss_mb, peak_rss_mb (VmHWM), headroom_mb, vm_size_mb |
 | POST | /contact | No | Landing page contact form |
 | POST | /help/chat | Yes | AI help chatbot |
 | GET | /auth/profile | Yes | Get user profile |
@@ -476,7 +478,9 @@ If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Depl
 | Geocoding service | OpenStreetMap Nominatim (free, 1 request/sec rate limit) |
 | Backend .env | Symlinked to root .env (`ln -sf ../../.env backend/.env`) |
 | Anthropic API | Called via direct httpx (no SDK) — `claude()` helper in db.py |
-| Memory logging | Render logs show RSS at startup, every 14-min keep-alive, and before/after /route/optimize |
+| Memory logging | Render logs: `[startup] RSS`, `[keep-alive] RSS` every 14 min, `[route/optimize] start/done RSS+delta`. Uses VmRSS from /proc/self/status (current physical RAM, not peak). |
+| Memory check URL | GET https://shopright-api.onrender.com/debug/memory — returns rss_mb (current), peak_rss_mb (VmHWM = peak physical), headroom_mb, vm_size_mb. Healthy baseline: ~157 MB RSS, ~355 MB headroom. |
+| Render memory | Baseline after all fixes: ~157 MB RSS. Free tier limit: 512 MB. Headroom: ~355 MB. OOM history resolved June 5–11 2026 by removing anthropic SDK, unused anon supabase client, and lazy-loading openpyxl/stripe/resend. |
 
 ### CORS Configuration
 Backend allows requests from:
@@ -507,7 +511,7 @@ Backend allows requests from:
 - [ ] Kelsey real-world test on an actual shopping day
 - [ ] Generated Shop File submitted to and accepted by Smart Circle
 - [ ] Second new program code to add to programs table (Eli to identify)
-- [ ] Monitor Render memory logs after anthropic SDK removal — check `[startup] RSS`, `[route/optimize]` lines in Render logs to confirm headroom; upgrade to $7/mo paid tier if OOM recurs
+- [x] ~~Monitor Render memory logs~~ — resolved. Baseline confirmed at 157 MB RSS (355 MB headroom). All OOMs traced to old code during deploy transitions. Check https://shopright-api.onrender.com/debug/memory any time to confirm.
 - [ ] Custom domain (optional, ~$12/year)
 - [ ] Resend verified domain for professional email sender address
 - [ ] Error monitoring (Sentry or equivalent)

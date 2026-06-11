@@ -1,6 +1,6 @@
 # ShopRight — Build Progress Tracker
 
-**Last Updated:** June 5, 2026
+**Last Updated:** June 11, 2026
 **Current Phase:** All phases complete — active production
 **Overall Status:** Production
 
@@ -51,6 +51,8 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | Unused anon supabase client removed | June 10, 2026 | db.py was creating two supabase SDK clients at startup; anon client was never used (all auth done via direct httpx JWT verify). Removed it — saves one full SDK instantiation (~20–40MB). |
 | RSS measurement fixed to current (not peak) | June 10, 2026 | ru_maxrss reports peak-since-start on Linux; switched _rss_mb() to read VmRSS from /proc/self/status for live current RSS. keep-alive and optimize logs now reflect actual usage, not historical peak. |
 | /debug/memory endpoint added | June 10, 2026 | GET https://shopright-api.onrender.com/debug/memory returns rss_mb, peak_rss_mb, headroom_mb as JSON — check live memory without Render logs. |
+| peak_rss_mb fixed to VmHWM | June 11, 2026 | _peak_rss_mb() was reading VmPeak (peak virtual address space, always ~650MB for Python — harmless) instead of VmHWM (actual peak physical RAM = what Render counts). Fixed to VmHWM. Added vm_peak_mb field to /debug/memory for both metrics. |
+| OOM investigation closed | June 11, 2026 | Baseline confirmed via /debug/memory: rss_mb=157.1, headroom_mb=354.9. All four OOM emails traced to old code running during deploy transition windows. New code stable at 157 MB. No further action needed unless OOM recurs — in which case upgrade Render to $7/mo (1 GB RAM). |
 
 ---
 
@@ -113,6 +115,7 @@ All build phases completed and validated by Eli between April 1–7, 2026.
 | June 5, 2026 | Reliability fixes | Diagnosed 503 as Render OOM restart triggered during route optimization. Fixed HERE→ORS fallback (was broken — ORS only tried if HERE key absent, not if HERE failed). Lazy-loaded openpyxl/stripe/resend to cut startup memory ~50–100MB. | Monitor Render memory metrics — if OOM recurs, upgrade to $7/mo paid tier |
 | June 5, 2026 | Memory overhaul | Audited all dependencies. Discovered anthropic SDK pulling in tokenizers (Rust binary 8MB), hf_xet (7MB), huggingface_hub (2.7MB), pygments (4.9MB) — ~60–100MB RAM on first AI call. Replaced entire SDK with direct httpx POST to api.anthropic.com/v1/messages via claude() helper in db.py. Removed anthropic from requirements.txt. Added RSS memory logging at startup, keep-alive, and around /route/optimize. | Check Render logs for [startup] RSS and [route/optimize] lines to validate |
 | June 10, 2026 | Memory investigation | Third OOM email after deploy. Diagnosed: (1) anon supabase client in db.py was never used but being instantiated at startup — removed. (2) ru_maxrss reports peak not current RSS — fixed to use VmRSS from /proc/self/status on Linux. (3) Added /debug/memory endpoint for live checking. Third OOM likely from old code still running during the anthropic-SDK-removal deploy window. | Monitor /debug/memory after next deploy — expected startup RSS ~170–200MB leaving ~300MB headroom |
+| June 11, 2026 | OOM investigation closed | Fourth OOM email received. /debug/memory confirmed: rss_mb=157.1, headroom_mb=354.9. All OOM emails traced to old code running during deploy transition windows. Fixed peak_rss_mb metric to use VmHWM (actual peak physical RAM) instead of VmPeak (peak virtual address space — always large for Python, unrelated to OOM). Baseline stable at 157 MB with 355 MB headroom. | No further memory action expected |
 
 ---
 
