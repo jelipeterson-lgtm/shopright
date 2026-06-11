@@ -67,13 +67,13 @@ def _rss_mb():
 
 
 def _peak_rss_mb():
-    """Peak RSS since process start (Linux: VmPeak; macOS: ru_maxrss)."""
+    """Peak physical RSS since process start (Linux: VmHWM high-water-mark; macOS: ru_maxrss)."""
     import platform
     if platform.system() == "Linux":
         try:
             with open("/proc/self/status") as f:
                 for line in f:
-                    if line.startswith("VmPeak:"):
+                    if line.startswith("VmHWM:"):  # High Water Mark = peak physical RAM
                         return int(line.split()[1]) / 1024
         except Exception:
             pass
@@ -91,14 +91,20 @@ def health_check():
 
 @app.get("/debug/memory")
 def debug_memory():
-    """Live memory stats — useful for checking Render memory without pulling logs."""
+    """Live memory stats — useful for checking Render memory without pulling logs.
+    rss_mb       = current physical RAM (what Render counts toward the 512MB limit)
+    peak_rss_mb  = high-water-mark physical RAM since this process started (VmHWM)
+    headroom_mb  = 512 - current rss_mb
+    vm_size_mb   = virtual address space (can exceed 512MB without causing OOM — normal for Python)
+    """
     import platform
+    rss = _rss_mb()
     info = {
-        "rss_mb": round(_rss_mb(), 1),
+        "rss_mb": round(rss, 1),
         "peak_rss_mb": round(_peak_rss_mb(), 1),
         "platform": platform.system(),
         "limit_mb": 512,
-        "headroom_mb": round(512 - _rss_mb(), 1),
+        "headroom_mb": round(512 - rss, 1),
     }
     if platform.system() == "Linux":
         try:
@@ -106,6 +112,8 @@ def debug_memory():
                 for line in f:
                     if line.startswith("VmSize:"):
                         info["vm_size_mb"] = round(int(line.split()[1]) / 1024, 1)
+                    elif line.startswith("VmPeak:"):
+                        info["vm_peak_mb"] = round(int(line.split()[1]) / 1024, 1)
         except Exception:
             pass
     return info
