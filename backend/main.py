@@ -91,11 +91,13 @@ def health_check():
 
 @app.get("/debug/memory")
 def debug_memory():
-    """Live memory stats — useful for checking Render memory without pulling logs.
-    rss_mb       = current physical RAM (what Render counts toward the 512MB limit)
-    peak_rss_mb  = high-water-mark physical RAM since this process started (VmHWM)
-    headroom_mb  = 512 - current rss_mb
-    vm_size_mb   = virtual address space (can exceed 512MB without causing OOM — normal for Python)
+    """Live memory stats.
+    rss_mb        = VmRSS — process's own view of physical RAM
+    peak_rss_mb   = VmHWM — high-water-mark since process start
+    cgroup_limit_mb  = ACTUAL limit Render enforces (read from kernel cgroup, not hardcoded)
+    cgroup_usage_mb  = ACTUAL usage Render sees (may exceed rss_mb — includes page cache etc.)
+    headroom_mb   = cgroup_limit - cgroup_usage (true remaining headroom)
+    vm_size_mb    = virtual address space (does NOT cause OOM — normal for Python to be large)
     """
     import platform
     rss = _rss_mb()
@@ -103,10 +105,10 @@ def debug_memory():
         "rss_mb": round(rss, 1),
         "peak_rss_mb": round(_peak_rss_mb(), 1),
         "platform": platform.system(),
-        "limit_mb": 512,
-        "headroom_mb": round(512 - rss, 1),
     }
+
     if platform.system() == "Linux":
+        # Read /proc/self/status for virtual memory metrics
         try:
             with open("/proc/self/status") as f:
                 for line in f:
@@ -116,6 +118,50 @@ def debug_memory():
                         info["vm_peak_mb"] = round(int(line.split()[1]) / 1024, 1)
         except Exception:
             pass
+
+        # Read ACTUAL cgroup memory limit — this is what Render enforces, not a hardcoded guess
+        cgroup_limit = None
+        cgroup_usage = None
+
+        # cgroup v2 (newer kernels)
+        try:
+            with open("/sys/fs/cgroup/memory.max") as f:
+                content = f.read().strip()
+                if content != "max":
+                    cgroup_limit = round(int(content) / (1024 * 1024), 1)
+        except Exception:
+            pass
+        try:
+            with open("/sys/fs/cgroup/memory.current") as f:
+                cgroup_usage = round(int(f.read().strip()) / (1024 * 1024), 1)
+        except Exception:
+            pass
+
+        # cgroup v1 fallback
+        if cgroup_limit is None:
+            try:
+                with open("/sys/fs/cgroup/memory/memory.limit_in_bytes") as f:
+                    val = int(f.read().strip())
+                    if val < (2 ** 62):  # 9223372036854771712 = "unlimited"
+                        cgroup_limit = round(val / (1024 * 1024), 1)
+            except Exception:
+                pass
+        if cgroup_usage is None:
+            try:
+                with open("/sys/fs/cgroup/memory/memory.usage_in_bytes") as f:
+                    cgroup_usage = round(int(f.read().strip()) / (1024 * 1024), 1)
+            except Exception:
+                pass
+
+        info["cgroup_limit_mb"] = cgroup_limit if cgroup_limit else "unreadable"
+        info["cgroup_usage_mb"] = cgroup_usage if cgroup_usage else "unreadable"
+        if cgroup_limit and cgroup_usage:
+            info["headroom_mb"] = round(cgroup_limit - cgroup_usage, 1)
+        elif cgroup_limit:
+            info["headroom_mb"] = round(cgroup_limit - rss, 1)
+        else:
+            info["headroom_mb"] = "unknown — cgroup limit unreadable"
+
     return info
 
 
@@ -123,15 +169,25 @@ def debug_memory():
 _keep_alive_client = httpx.Client(timeout=10)
 
 def keep_alive():
-    """Ping self every 14 minutes to prevent Render free tier sleep."""
+    """Ping self every 14 minutes to prevent Render free tier sleep.
+    Also calls malloc_trim to release freed Python allocator blocks back to the OS,
+    preventing gradual RSS accumulation over long-running process lifetimes.
+    """
+    import ctypes
     url = os.getenv("RENDER_EXTERNAL_URL", "https://shopright-api.onrender.com") + "/health"
     while True:
         time.sleep(840)  # 14 minutes
         try:
             _keep_alive_client.get(url)
-            print(f"[keep-alive] RSS: {_rss_mb():.1f} MB")
         except Exception:
             pass
+        rss_before = _rss_mb()
+        try:
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
+        except Exception:
+            pass
+        rss_after = _rss_mb()
+        print(f"[keep-alive] RSS: {rss_before:.1f} → {rss_after:.1f} MB (freed {rss_before - rss_after:.1f} MB)")
 
 threading.Thread(target=keep_alive, daemon=True).start()
 

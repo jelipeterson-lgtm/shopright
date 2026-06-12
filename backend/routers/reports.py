@@ -8,6 +8,22 @@ from datetime import datetime, timedelta, date as date_type
 import calendar
 import os
 import base64
+import platform
+import resource
+
+
+def _rss():
+    """Current RSS in MB."""
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/self/status") as f:
+                for line in f:
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1]) / 1024
+        except Exception:
+            pass
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024)
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -73,7 +89,10 @@ def generate_shopfile_endpoint(
     first_name = (profile.data.get("full_name") or "Shopper").split()[0]
 
     from excel import generate_shop_file
+    rss_before = _rss()
     output, filename = generate_shop_file(visits.data, first_name)
+    rss_after = _rss()
+    print(f"[shopfile/generate] RSS {rss_before:.1f} → {rss_after:.1f} MB (delta {rss_after - rss_before:+.1f} MB, {len(visits.data)} visits)")
 
     return StreamingResponse(
         output,
@@ -116,8 +135,11 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
     import resend
     resend.api_key = os.getenv("RESEND_API_KEY")
     resend_from = f"{os.getenv('RESEND_FROM_NAME', 'ShopRight')} <{os.getenv('RESEND_FROM_EMAIL', 'onboarding@resend.dev')}>"
+    rss_before = _rss()
     output, filename = generate_shop_file(visits.data, first_name)
     file_bytes = output.read()
+    rss_after = _rss()
+    print(f"[shopfile/send] RSS {rss_before:.1f} → {rss_after:.1f} MB (delta {rss_after - rss_before:+.1f} MB, {len(visits.data)} visits)")
 
     try:
         result = resend.Emails.send({
