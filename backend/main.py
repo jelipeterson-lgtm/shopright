@@ -170,10 +170,22 @@ _keep_alive_client = httpx.Client(timeout=10)
 
 def keep_alive():
     """Ping self every 14 minutes to prevent Render free tier sleep.
-    Also calls malloc_trim to release freed Python allocator blocks back to the OS,
-    preventing gradual RSS accumulation over long-running process lifetimes.
+
+    Also manages memory autonomously:
+    1. malloc_trim(0) — releases freed Python allocator blocks back to the OS,
+       preventing gradual RSS accumulation over long-running process lifetimes.
+    2. Proactive self-restart — if RSS is still above the safety threshold after
+       trimming, sends SIGTERM to itself. Uvicorn catches SIGTERM and does a
+       graceful shutdown (in-flight requests complete first). Render then
+       restarts the process immediately. This is a controlled ~30s restart
+       rather than an abrupt OOM kill.
     """
     import ctypes
+    import os as _os
+    import signal
+    # Restart if RSS stays above this after trimming. Chosen so cgroup_usage
+    # (rss + ~35MB kernel overhead) stays well below the 512MB cgroup limit.
+    RESTART_THRESHOLD_MB = 430
     url = os.getenv("RENDER_EXTERNAL_URL", "https://shopright-api.onrender.com") + "/health"
     while True:
         time.sleep(840)  # 14 minutes
@@ -188,6 +200,9 @@ def keep_alive():
             pass
         rss_after = _rss_mb()
         print(f"[keep-alive] RSS: {rss_before:.1f} → {rss_after:.1f} MB (freed {rss_before - rss_after:.1f} MB)")
+        if rss_after > RESTART_THRESHOLD_MB:
+            print(f"[keep-alive] RSS {rss_after:.1f} MB still above {RESTART_THRESHOLD_MB} MB after trim — initiating clean restart")
+            _os.kill(_os.getpid(), signal.SIGTERM)
 
 threading.Thread(target=keep_alive, daemon=True).start()
 
