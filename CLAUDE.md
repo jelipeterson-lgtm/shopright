@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: June 11, 2026*
+*Last updated: June 12, 2026*
 
 ---
 
@@ -138,7 +138,7 @@ shopright/
 ├── backend/
 │   ├── main.py                        ← FastAPI app, CORS, contact form, help chat, keep-alive, /debug/memory, RSS memory logging
 │   ├── db.py                          ← Supabase service-role client + claude() API helper (anon client removed — never used)
-│   ├── excel.py                       ← Shop File + Invoice generation (template-copy)
+│   ├── excel.py                       ← Shop File + Invoice generation (template-copy); columns match Smart Circle 6/12/26 template (39 data cols)
 │   ├── ingest_stores.py               ← Download + geocode Book1.xlsx into database
 │   ├── requirements.txt               ← Python dependencies
 │   ├── .env → ../.env                 ← symlink to root .env
@@ -360,7 +360,7 @@ RLS: Users can read/insert/update/delete their own visits.
 
 6. **Assessment defaults**: All evaluation fields default to Pass. Fail opens a required comment. N/A always available.
 
-7. **Reps Present gate**: If Fail, all evaluation fields hidden. Only Visit Recap shown. Output cols 9–38 as blank.
+7. **Reps Present gate**: If Fail, all evaluation fields hidden. Only Visit Recap shown. Output col 9 (Reps Present) + col 39 (Visit Recap); cols 10–38 blank.
 
 8. **Store flow gates**: Cannot add a new store if current store is still open. Cannot close a store if it has unsubmitted vendors.
 
@@ -405,7 +405,7 @@ Never use "visit," "session," "draft," or "assessed" in user-facing text. Intern
 | File | Purpose | Updated By |
 |------|---------|------------|
 | Book1.xlsx | Two worksheets: **Retail** (store directory — retailer, store #, address, city, state, zip) and **Program** (list of vendor program codes) | Eli, when stores or programs change |
-| ShopFile_Template.xlsx | Master Shop File format — headers, colors, widths | Eli, when Smart Circle changes format |
+| ShopFile_Template.xlsx | Master Shop File format — headers, colors, widths. Current: Smart Circle 6/12/26 template (39 data columns; col 12=rep count, col 39=Visit Recap). Old col 12 "Less than 4 reps present?" removed by Smart Circle; all cols 13–40 shifted left by 1 in new template. | Eli, when Smart Circle changes format |
 | Invoice_Template.xlsx | Master Invoice format — headers, formulas | Eli, when format changes |
 
 Backend downloads Book1.xlsx on startup if the Dropbox Last-Modified header has changed. To sync immediately after updating Book1.xlsx: **Settings → Sync Store Directory** (visible to free accounts only). This downloads the file, geocodes any new addresses via Nominatim (with city+state fallback if full address fails), and upserts all stores into the database. Results are shown when complete.

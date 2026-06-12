@@ -114,62 +114,60 @@ def generate_shop_file(visits, first_name):
         reps = v.get("reps_present") or ""
         ws.cell(row, 9, reps)
 
-        # If Reps Present = Fail, cols 10-39 are blank, only Visit Recap
+        # If Reps Present = Fail, cols 10-38 are blank, only Visit Recap (col 39)
         if reps == "Fail":
-            ws.cell(row, 40, v.get("visit_recap") or "")
+            ws.cell(row, 39, v.get("visit_recap") or "")
             continue
 
         # If Reps Present = N/A, all eval fields output N/A, only Visit Recap has content
         if reps == "N/A":
-            for c in range(10, 40):
+            for c in range(10, 39):
                 ws.cell(row, c, "N/A")
-            ws.cell(row, 40, v.get("visit_recap") or "")
+            ws.cell(row, 39, v.get("visit_recap") or "")
             continue
 
         ws.cell(row, 10, v.get("rep_names") or "")
         ws.cell(row, 11, v.get("rep_description") or "")
 
-        # Col 12: Less than 4 reps present? — Pass if <= 4, Fail if > 4
+        # Col 12: rep count + reason if > 4
+        # NOTE: New template (6/12/26) removed the old "Less than 4 reps present?"
+        # Pass/Fail column; all columns from old col 13 onward shifted left by 1.
         rep_count = v.get("rep_count")
-        if rep_count is not None:
-            ws.cell(row, 12, "Pass" if rep_count <= 4 else "Fail")
-
-        # Col 13: rep count + reason if > 4
         if rep_count is not None:
             reason = v.get("rep_count_reason") or ""
             if rep_count > 4 and reason:
-                count_cell = ws.cell(row, 13, f"{rep_count} - {reason}")
+                count_cell = ws.cell(row, 12, f"{rep_count} - {reason}")
             else:
-                count_cell = ws.cell(row, 13, str(rep_count))
+                count_cell = ws.cell(row, 12, str(rep_count))
             count_cell.alignment = right_align
 
-        ws.cell(row, 14, v.get("eval_engaging") or "Pass")
-        ws.cell(row, 15, v.get("eval_engaging_comment") or "")
-        ws.cell(row, 16, v.get("eval_greeting") or "Pass")
-        ws.cell(row, 17, v.get("eval_greeting_comment") or "")
-        ws.cell(row, 18, v.get("eval_one_no") or "Pass")
-        ws.cell(row, 19, v.get("eval_one_no_comment") or "")
-        ws.cell(row, 20, v.get("eval_pushy") or "Pass")
-        ws.cell(row, 21, v.get("eval_pushy_comment") or "")
-        ws.cell(row, 22, v.get("eval_clogging") or "Pass")
-        ws.cell(row, 23, v.get("eval_clogging_comment") or "")
-        ws.cell(row, 24, v.get("eval_leaning") or "Pass")
-        ws.cell(row, 25, v.get("eval_leaning_comment") or "")
-        ws.cell(row, 26, v.get("eval_food_drink") or "Pass")
-        ws.cell(row, 27, v.get("eval_food_drink_comment") or "")
-        ws.cell(row, 28, v.get("eval_dress_code") or "Pass")
-        ws.cell(row, 29, v.get("eval_dress_code_comment") or "")
-        ws.cell(row, 30, v.get("eval_name_badge") or "Pass")
-        ws.cell(row, 31, v.get("eval_name_badge_comment") or "")
-        ws.cell(row, 32, v.get("eval_badge_location_pass") or "Pass")
-        ws.cell(row, 33, v.get("eval_badge_where") or "")
-        ws.cell(row, 34, v.get("eval_other_area") or "Pass")
-        ws.cell(row, 35, v.get("eval_other_area_comment") or "")
-        ws.cell(row, 36, v.get("eval_other_store_areas") or "Pass")
-        ws.cell(row, 37, v.get("eval_other_store_areas_comment") or "")
-        ws.cell(row, 38, v.get("eval_soft_selling") or "N/A")
-        ws.cell(row, 39, v.get("eval_resource_guide") or "N/A")
-        ws.cell(row, 40, v.get("visit_recap") or "")
+        ws.cell(row, 13, v.get("eval_engaging") or "Pass")
+        ws.cell(row, 14, v.get("eval_engaging_comment") or "")
+        ws.cell(row, 15, v.get("eval_greeting") or "Pass")
+        ws.cell(row, 16, v.get("eval_greeting_comment") or "")
+        ws.cell(row, 17, v.get("eval_one_no") or "Pass")
+        ws.cell(row, 18, v.get("eval_one_no_comment") or "")
+        ws.cell(row, 19, v.get("eval_pushy") or "Pass")
+        ws.cell(row, 20, v.get("eval_pushy_comment") or "")
+        ws.cell(row, 21, v.get("eval_clogging") or "Pass")
+        ws.cell(row, 22, v.get("eval_clogging_comment") or "")
+        ws.cell(row, 23, v.get("eval_leaning") or "Pass")
+        ws.cell(row, 24, v.get("eval_leaning_comment") or "")
+        ws.cell(row, 25, v.get("eval_food_drink") or "Pass")
+        ws.cell(row, 26, v.get("eval_food_drink_comment") or "")
+        ws.cell(row, 27, v.get("eval_dress_code") or "Pass")
+        ws.cell(row, 28, v.get("eval_dress_code_comment") or "")
+        ws.cell(row, 29, v.get("eval_name_badge") or "Pass")
+        ws.cell(row, 30, v.get("eval_name_badge_comment") or "")
+        ws.cell(row, 31, v.get("eval_badge_location_pass") or "Pass")
+        ws.cell(row, 32, v.get("eval_badge_where") or "")
+        ws.cell(row, 33, v.get("eval_other_area") or "Pass")
+        ws.cell(row, 34, v.get("eval_other_area_comment") or "")
+        ws.cell(row, 35, v.get("eval_other_store_areas") or "Pass")
+        ws.cell(row, 36, v.get("eval_other_store_areas_comment") or "")
+        ws.cell(row, 37, v.get("eval_soft_selling") or "N/A")
+        ws.cell(row, 38, v.get("eval_resource_guide") or "N/A")
+        ws.cell(row, 39, v.get("visit_recap") or "")
 
     # Determine filename: last shopping day of the visits
     visit_dates = [v.get("visit_date", "") for v in visits if v.get("visit_date")]
