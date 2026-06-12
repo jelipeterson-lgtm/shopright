@@ -88,11 +88,18 @@ def generate_shopfile_endpoint(
     profile = supabase_admin.table("profiles").select("full_name").eq("id", user_id).single().execute()
     first_name = (profile.data.get("full_name") or "Shopper").split()[0]
 
+    import gc
+    import ctypes
     from excel import generate_shop_file
     rss_before = _rss()
     output, filename = generate_shop_file(visits.data, first_name)
     rss_after = _rss()
     print(f"[shopfile/generate] RSS {rss_before:.1f} → {rss_after:.1f} MB (delta {rss_after - rss_before:+.1f} MB, {len(visits.data)} visits)")
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
     return StreamingResponse(
         output,
@@ -131,6 +138,8 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
     profile = supabase_admin.table("profiles").select("*").eq("id", user_id).single().execute()
     first_name = (profile.data.get("full_name") or "Shopper").split()[0]
 
+    import gc
+    import ctypes
     from excel import generate_shop_file
     import resend
     resend.api_key = os.getenv("RESEND_API_KEY")
@@ -140,6 +149,11 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
     file_bytes = output.read()
     rss_after = _rss()
     print(f"[shopfile/send] RSS {rss_before:.1f} → {rss_after:.1f} MB (delta {rss_after - rss_before:+.1f} MB, {len(visits.data)} visits)")
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
     try:
         result = resend.Emails.send({
