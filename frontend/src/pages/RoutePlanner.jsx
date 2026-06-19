@@ -145,7 +145,7 @@ function RoutePlanner() {
               // Only mark completed if ALL vendors at this store are complete
               const vendorCount = (s.vendors || []).length
               const storeVs = storeVisits[key] || []
-              const allDone = vendorCount > 0 && storeVs.length >= vendorCount && storeVs.every(v => v.status === 'Complete')
+              const allDone = vendorCount > 0 && (s.vendors || []).every(vName => storeVs.some(v => v.program === vName && v.status === 'Complete'))
               if (allDone && s.status !== 'completed') {
                 return { ...s, status: 'completed' }
               }
@@ -1172,10 +1172,33 @@ function RoutePlanner() {
                         v.program === vendor
                       )
                       const isDone = visit?.status === 'Complete'
+                      const handleCompletedVendorTap = async () => {
+                        if (visit) {
+                          navigate(`/visit/${visit.id}`)
+                        } else {
+                          try {
+                            const now = new Date()
+                            const result = await api.createVisit({
+                              store_id: store.store_id,
+                              retailer_name: store.retailer_name,
+                              store_number: store.store_number,
+                              program: vendor,
+                              address: store.address,
+                              city: store.city,
+                              state: store.state,
+                              visit_date: today,
+                              visit_time: now.toTimeString().slice(0, 5),
+                              session_date: today,
+                            })
+                            if (result.data?.id) navigate(`/visit/${result.data.id}`)
+                          } catch (err) {
+                            setError(err.message)
+                          }
+                        }
+                      }
                       return (
                         <button key={vi}
-                          onClick={() => visit ? navigate(`/visit/${visit.id}`) : null}
-                          disabled={!visit}
+                          onClick={handleCompletedVendorTap}
                           className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-b-0 text-left active:bg-gray-100">
                           <div className="flex items-center gap-2 min-w-0">
                             {isDone ? (
@@ -1189,7 +1212,7 @@ function RoutePlanner() {
                             <span className={`text-xs font-medium px-2 py-0.5 rounded ${isDone ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
                               {isDone ? 'Complete' : 'Open'}
                             </span>
-                            {visit && <span className="text-gray-300 text-sm">›</span>}
+                            <span className="text-gray-300 text-sm">›</span>
                           </div>
                         </button>
                       )
