@@ -695,6 +695,11 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
     }
 
     gc.collect()
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
     rss_end = _rss()
     print(f"[route/optimize] done RSS={rss_end:.1f} MB delta={rss_end - rss_start:+.1f} MB stops={len(route)}")
 
