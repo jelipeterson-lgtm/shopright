@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: June 12, 2026*
+*Last updated: June 18, 2026*
 
 ---
 
@@ -376,7 +376,7 @@ RLS: Users can read/insert/update/delete their own visits.
 
 14. **Phone numbers**: Always formatted as (555) 555-5555 in invoice output regardless of input format.
 
-15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using HERE Maps Matrix Routing v8 (traffic-aware, uses departure time for historical patterns) with ORS as automatic fallback. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize mid-route uses current GPS location as start (falls back to saved start address if GPS unavailable); end address always preserved. Drag reorder auto-scrolls page near viewport edges. Stores tab removed from nav — all workflow through Route page. Close-store gate removed.
+15. **Route Planner (Primary Page)**: The main workflow page. Parses event emails and SMS check-ins (AI-first, pattern-match fallback). Optimizes route using HERE Maps Matrix Routing v8 (traffic-aware, uses departure time for historical patterns) with ORS as automatic fallback. Shows estimated arrival/departure per stop. "Accept Route" batch-creates Draft vendor visits. Individual vendor assessment status shown per store — tap to assess. Add stores manually via search (name, number, city, address). Add vendors to any store. "Skip"/"Remove" deletes Draft visits. Re-optimize mid-route uses current GPS location as start (falls back to saved start address if GPS unavailable); end address always preserved. Drag reorder auto-scrolls page near viewport edges. Stores tab removed from nav — all workflow through Route page. Close-store gate removed. **Stop completion**: A stop moves to the Completed section only when every planned vendor (from `s.vendors`) has a matching Complete visit by program name — extra/unplanned vendors that are Complete do NOT count toward planned vendor completion. Open vendors in the Completed section are tappable: tap creates a new visit and navigates to the assessment.
 
 16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific. Fix: use local date construction instead of toISOString().
 
