@@ -104,7 +104,7 @@ def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)
     for v in (existing.data or []):
         existing_keys.add((v["retailer_name"], v["store_number"], v["program"]))
 
-    created = []
+    to_insert = []
     skipped = 0
     for store in body.stores:
         vendors = store.get("vendors", [])
@@ -115,7 +115,7 @@ def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)
             if key in existing_keys:
                 skipped += 1
                 continue
-            visit = {
+            to_insert.append({
                 "user_id": user_id,
                 "store_id": store.get("store_id"),
                 "retailer_name": store["retailer_name"],
@@ -128,11 +128,12 @@ def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)
                 "session_date": body.session_date,
                 "status": "Draft",
                 "stop_open": True,
-            }
-            result = supabase_admin.table("vendor_visits").insert(visit).execute()
-            if result.data:
-                created.append(result.data[0])
-                existing_keys.add(key)
+            })
+
+    created = []
+    if to_insert:
+        result = supabase_admin.table("vendor_visits").insert(to_insert).execute()
+        created = result.data or []
 
     return {
         "success": True,

@@ -575,19 +575,26 @@ function RoutePlanner() {
     if (!upcoming.length) return
     setAccepting(true)
     setError(null)
-    try {
-      const result = await api.batchCreateVisits(upcoming, today)
-      if (result.success) {
-        setAccepted(true)
-        setParseSuccess(`Route accepted! ${result.data.created} vendors added to Stores.${result.data.skipped ? ` ${result.data.skipped} already existed.` : ''}`)
-      } else {
-        setError(result.error)
+    let lastErr = null
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 4000))
+      try {
+        const result = await api.batchCreateVisits(upcoming, today)
+        if (result.success) {
+          setAccepted(true)
+          setParseSuccess(`Route accepted! ${result.data.created} vendors added to Stores.${result.data.skipped ? ` ${result.data.skipped} already existed.` : ''}`)
+          setAccepting(false)
+          return
+        }
+        lastErr = result.error
+        break
+      } catch (err) {
+        lastErr = err.message
+        if (!err.message.includes('503')) break
       }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setAccepting(false)
     }
+    setError(lastErr)
+    setAccepting(false)
   }
 
   const handleRemoveParsedStore = (index) => {
