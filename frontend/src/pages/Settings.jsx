@@ -61,7 +61,7 @@ function Settings() {
   const [refreshResult, setRefreshResult] = useState(null)
   const [refreshError, setRefreshError] = useState(null)
 
-  // Add new store
+  // Add / edit store
   const [showAddStore, setShowAddStore] = useState(false)
   const [addingStore, setAddingStore] = useState(false)
   const [addStoreResult, setAddStoreResult] = useState(null)
@@ -69,6 +69,15 @@ function Settings() {
   const [addStoreForm, setAddStoreForm] = useState({
     retailer_name: 'Costco', store_number: '', address: '', city: '', state: 'UT', zip_code: '',
   })
+
+  // Find & delete store
+  const [showFindStore, setShowFindStore] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [findResults, setFindResults] = useState([])
+  const [findLoading, setFindLoading] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deletingStore, setDeletingStore] = useState(false)
+  const [deleteMsg, setDeleteMsg] = useState(null)
 
   // AI Review
   const [aiEnabled, setAiEnabled] = useState(false)
@@ -427,15 +436,16 @@ function Settings() {
               ) : 'Sync Store Directory'}
             </button>
 
-            {/* Add New Store */}
+            {/* Add / Edit Store */}
             <button
-              onClick={() => { setShowAddStore(v => !v); setAddStoreResult(null); setAddStoreError(null) }}
+              onClick={() => { setShowAddStore(v => !v); setAddStoreResult(null); setAddStoreError(null); setShowFindStore(false) }}
               className="w-full bg-gray-50 text-gray-700 py-2.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-100">
-              {showAddStore ? 'Cancel' : '+ Add New Store'}
+              {showAddStore ? 'Cancel' : '+ Add or Edit a Store'}
             </button>
 
             {showAddStore && (
               <div className="space-y-2 pt-1">
+                <p className="text-xs text-gray-400">To edit an existing store, enter the same retailer and store number with the corrected details and tap Save.</p>
                 <select
                   value={addStoreForm.retailer_name}
                   onChange={e => setAddStoreForm(f => ({ ...f, retailer_name: e.target.value }))}
@@ -491,6 +501,90 @@ function Settings() {
                   className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                   {addingStore ? 'Saving & geocoding…' : 'Save Store'}
                 </button>
+              </div>
+            )}
+
+            {/* Find & Delete Store */}
+            <button
+              onClick={() => { setShowFindStore(v => !v); setFindQuery(''); setFindResults([]); setDeleteConfirm(null); setDeleteMsg(null); setShowAddStore(false) }}
+              className="w-full bg-gray-50 text-gray-700 py-2.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-100">
+              {showFindStore ? 'Cancel' : 'Find & Delete a Store'}
+            </button>
+
+            {showFindStore && (
+              <div className="space-y-2 pt-1">
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Search by store number or city…"
+                    value={findQuery}
+                    onChange={e => setFindQuery(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+                  <button
+                    disabled={findLoading || !findQuery.trim()}
+                    onClick={async () => {
+                      setFindLoading(true)
+                      setFindResults([])
+                      setDeleteConfirm(null)
+                      setDeleteMsg(null)
+                      try {
+                        const r = await api.searchStores(findQuery)
+                        setFindResults(r.data || [])
+                      } catch (e) {
+                        setFindResults([])
+                      } finally {
+                        setFindLoading(false)
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                    {findLoading ? '…' : 'Search'}
+                  </button>
+                </div>
+
+                {deleteMsg && <p className="text-xs text-green-600 bg-green-50 rounded p-2">{deleteMsg}</p>}
+
+                {findResults.map(store => (
+                  <div key={store.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <p className="text-sm font-medium text-gray-800">{store.retailer_name} #{store.store_number}</p>
+                    <p className="text-xs text-gray-500">{store.address}, {store.city}, {store.state} {store.zip_code}</p>
+                    <p className="text-xs text-gray-400">{store.latitude ? `${store.latitude.toFixed(4)}, ${store.longitude.toFixed(4)}` : 'No coordinates'}</p>
+
+                    {deleteConfirm === store.id ? (
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          disabled={deletingStore}
+                          onClick={async () => {
+                            setDeletingStore(true)
+                            try {
+                              await api.deleteStore(store.id)
+                              setFindResults(prev => prev.filter(s => s.id !== store.id))
+                              setDeleteMsg(`${store.retailer_name} #${store.store_number} deleted.`)
+                            } catch (e) {
+                              setDeleteMsg(`Delete failed: ${e.message}`)
+                            } finally {
+                              setDeletingStore(false)
+                              setDeleteConfirm(null)
+                            }
+                          }}
+                          className="flex-1 bg-red-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50">
+                          {deletingStore ? 'Deleting…' : 'Yes, delete'}
+                        </button>
+                        <button onClick={() => setDeleteConfirm(null)}
+                          className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setDeleteConfirm(store.id)}
+                        className="mt-2 w-full bg-white text-red-600 border border-red-200 py-2 rounded-lg text-xs font-medium hover:bg-red-50">
+                        Delete this store
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {!findLoading && findResults.length === 0 && findQuery.trim() && (
+                  <p className="text-xs text-gray-400 text-center py-2">No stores found</p>
+                )}
               </div>
             )}
           </div>

@@ -69,6 +69,7 @@ const api = {
 
   searchStores: (query) => request(`/stores/search?q=${encodeURIComponent(query)}`),
   addStore: (store) => request('/stores/add', { method: 'POST', body: JSON.stringify(store) }),
+  deleteStore: (storeId) => request(`/stores/${storeId}`, { method: 'DELETE' }),
 
   getPrograms: () => request('/stores/programs'),
 

@@ -204,6 +204,15 @@ def add_store(body: AddStoreRequest, authorization: str = Header(...)):
     }
 
 
+@router.delete("/{store_id}")
+def delete_store(store_id: int, authorization: str = Header(...)):
+    """Delete a store from the directory by ID."""
+    from routers.auth import get_user_id
+    get_user_id(authorization)
+    supabase_admin.table("stores").delete().eq("id", store_id).execute()
+    return {"success": True, "data": None, "error": None}
+
+
 @router.get("/programs")
 def get_programs():
     """Get all available program codes from the programs table."""
