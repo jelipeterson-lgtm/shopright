@@ -61,6 +61,15 @@ function Settings() {
   const [refreshResult, setRefreshResult] = useState(null)
   const [refreshError, setRefreshError] = useState(null)
 
+  // Add new store
+  const [showAddStore, setShowAddStore] = useState(false)
+  const [addingStore, setAddingStore] = useState(false)
+  const [addStoreResult, setAddStoreResult] = useState(null)
+  const [addStoreError, setAddStoreError] = useState(null)
+  const [addStoreForm, setAddStoreForm] = useState({
+    retailer_name: 'Costco', store_number: '', address: '', city: '', state: 'UT', zip_code: '',
+  })
+
   // AI Review
   const [aiEnabled, setAiEnabled] = useState(false)
   const [hasApiKey, setHasApiKey] = useState(false)
@@ -417,6 +426,73 @@ function Settings() {
                 </span>
               ) : 'Sync Store Directory'}
             </button>
+
+            {/* Add New Store */}
+            <button
+              onClick={() => { setShowAddStore(v => !v); setAddStoreResult(null); setAddStoreError(null) }}
+              className="w-full bg-gray-50 text-gray-700 py-2.5 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-100">
+              {showAddStore ? 'Cancel' : '+ Add New Store'}
+            </button>
+
+            {showAddStore && (
+              <div className="space-y-2 pt-1">
+                <select
+                  value={addStoreForm.retailer_name}
+                  onChange={e => setAddStoreForm(f => ({ ...f, retailer_name: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
+                  {['Costco', 'Costco BC', 'Kroger - Fred Meyer', "Lowe's", "Sam's Club", 'Target'].map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <input placeholder="Store Number" value={addStoreForm.store_number}
+                  onChange={e => setAddStoreForm(f => ({ ...f, store_number: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+                <input placeholder="Address (e.g. 3151 W 1700 South)" value={addStoreForm.address}
+                  onChange={e => setAddStoreForm(f => ({ ...f, address: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+                <div className="flex gap-2">
+                  <input placeholder="City" value={addStoreForm.city}
+                    onChange={e => setAddStoreForm(f => ({ ...f, city: e.target.value }))}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+                  <input placeholder="ST" value={addStoreForm.state} maxLength={2}
+                    onChange={e => setAddStoreForm(f => ({ ...f, state: e.target.value.toUpperCase() }))}
+                    className="w-16 border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+                  <input placeholder="Zip" value={addStoreForm.zip_code}
+                    onChange={e => setAddStoreForm(f => ({ ...f, zip_code: e.target.value }))}
+                    className="w-24 border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+                </div>
+                {addStoreResult && (
+                  <p className="text-xs text-green-600 bg-green-50 rounded p-2">
+                    {addStoreResult.retailer_name} #{addStoreResult.store_number} saved
+                    {addStoreResult.geocoded ? ' with coordinates.' : ' — coordinates will be set on first search.'}
+                  </p>
+                )}
+                {addStoreError && <p className="text-xs text-red-600 bg-red-50 rounded p-2">{addStoreError}</p>}
+                <button
+                  disabled={addingStore || !addStoreForm.store_number.trim() || !addStoreForm.address.trim() || !addStoreForm.city.trim()}
+                  onClick={async () => {
+                    setAddingStore(true)
+                    setAddStoreResult(null)
+                    setAddStoreError(null)
+                    try {
+                      const result = await api.addStore(addStoreForm)
+                      if (result.success) {
+                        setAddStoreResult(result.data)
+                        setAddStoreForm({ retailer_name: 'Costco', store_number: '', address: '', city: '', state: 'UT', zip_code: '' })
+                      } else {
+                        setAddStoreError(result.error || 'Failed to save store')
+                      }
+                    } catch (e) {
+                      setAddStoreError(e.message)
+                    } finally {
+                      setAddingStore(false)
+                    }
+                  }}
+                  className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                  {addingStore ? 'Saving & geocoding…' : 'Save Store'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

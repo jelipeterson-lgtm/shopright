@@ -68,6 +68,7 @@ const api = {
   getNearbyStores: (lat, lng) => request(`/stores/nearby?lat=${lat}&lng=${lng}`),
 
   searchStores: (query) => request(`/stores/search?q=${encodeURIComponent(query)}`),
+  addStore: (store) => request('/stores/add', { method: 'POST', body: JSON.stringify(store) }),
 
   getPrograms: () => request('/stores/programs'),
 

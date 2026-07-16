@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Header, Query
+from pydantic import BaseModel
 from db import supabase_admin
 from math import radians, cos, sin, asin, sqrt
 import httpx
@@ -137,6 +138,70 @@ def fix_missing_coordinates():
             pass
 
     return {"success": True, "data": {"fixed": fixed, "total_missing": len(stores)}, "error": None}
+
+
+class AddStoreRequest(BaseModel):
+    retailer_name: str
+    store_number: str
+    address: str
+    city: str
+    state: str
+    zip_code: str = ""
+
+
+@router.post("/add")
+def add_store(body: AddStoreRequest, authorization: str = Header(...)):
+    """Manually add or update a store in the directory, with auto-geocoding."""
+    from routers.auth import get_user_id
+    get_user_id(authorization)  # auth check
+
+    store = {
+        "retailer_name": body.retailer_name.strip(),
+        "store_number": body.store_number.strip(),
+        "address": body.address.strip(),
+        "city": body.city.strip(),
+        "state": body.state.strip().upper(),
+        "zip_code": body.zip_code.strip(),
+    }
+
+    # Geocode the address
+    import time as _time
+    candidates = [
+        f"{store['address']}, {store['city']}, {store['state']} {store['zip_code']}",
+        f"{store['address']}, {store['city']}, {store['state']}",
+        f"{store['city']}, {store['state']} {store['zip_code']}",
+    ]
+    lat, lon = None, None
+    for q in candidates:
+        try:
+            r = httpx.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": q, "format": "json", "limit": 1},
+                headers={"User-Agent": "ShopRight/1.0 (shopright-api.onrender.com)"},
+                timeout=10,
+            )
+            data = r.json()
+            if data:
+                lat, lon = float(data[0]["lat"]), float(data[0]["lon"])
+                break
+        except Exception:
+            pass
+        _time.sleep(1.1)
+
+    if lat:
+        store["latitude"] = lat
+        store["longitude"] = lon
+
+    result = supabase_admin.table("stores").upsert(
+        store, on_conflict="retailer_name,store_number"
+    ).execute()
+
+    saved = result.data[0] if result.data else store
+    return {
+        "success": True,
+        "data": {**saved, "geocoded": lat is not None},
+        "error": None,
+    }
 
 
 @router.get("/programs")
