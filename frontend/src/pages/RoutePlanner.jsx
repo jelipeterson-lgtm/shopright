@@ -4,6 +4,20 @@ import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
 import RouteMap from '../components/RouteMap'
 
+async function withRetry(fn) {
+  let lastErr
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 4000))
+    try {
+      return await fn()
+    } catch (err) {
+      lastErr = err
+      if (!err.message?.includes('503')) throw err
+    }
+  }
+  throw lastErr
+}
+
 function haversineMiles(lat1, lon1, lat2, lon2) {
   const R = 3959
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -243,7 +257,7 @@ function RoutePlanner() {
     setError(null)
     setParseSuccess(null)
     try {
-      const result = await api.parseEmail(emailText)
+      const result = await withRetry(() => api.parseEmail(emailText))
       const newStores = result.data || []
 
       if (newStores.length === 0) {
@@ -282,7 +296,7 @@ function RoutePlanner() {
     setError(null)
     setParseSuccess(null)
     try {
-      const result = await api.parseCheckin(checkinText)
+      const result = await withRetry(() => api.parseCheckin(checkinText))
       const newStores = result.data || []
 
       if (newStores.length === 0) {
@@ -339,7 +353,7 @@ function RoutePlanner() {
         timeWindowMinutes = (eh * 60 + em) - (sh * 60 + sm)
         if (timeWindowMinutes <= 0) timeWindowMinutes = null
       }
-      const result = await api.optimizeRoute(stores, startAddress, endAddress || startAddress, timeWindowMinutes, startTime)
+      const result = await withRetry(() => api.optimizeRoute(stores, startAddress, endAddress || startAddress, timeWindowMinutes, startTime))
       if (result.success) {
         const allStores = [...result.data.route, ...(result.data.overflow || [])]
         setRoute(allStores)
@@ -470,7 +484,7 @@ function RoutePlanner() {
       const isMidRoute = route.some(s => s.status === 'completed')
       const gpsStart = isMidRoute ? await getGPSStart() : null
       const effectiveStartAddr = gpsStart || startAddress
-      const result = await api.optimizeRoute(unvisited, effectiveStartAddr, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      const result = await withRetry(() => api.optimizeRoute(unvisited, effectiveStartAddr, endAddress || startAddress, timeWindowMinutes, effectiveStartTime))
       if (result.success) {
         // Preserve completed stops at the top, append optimized + overflow
         const kept = route.filter(s => s.status === 'completed')
@@ -529,7 +543,7 @@ function RoutePlanner() {
       setAccepted(false)
       const isMidRouteR = route.some(s => s.status === 'completed')
       const gpsStartR = isMidRouteR ? await getGPSStart() : null
-      const result = await api.optimizeRoute(candidates, gpsStartR || startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime)
+      const result = await withRetry(() => api.optimizeRoute(candidates, gpsStartR || startAddress, endAddress || startAddress, timeWindowMinutes, effectiveStartTime))
       if (result.success) {
         const kept = route.filter(s => s.status === 'completed')
         const overflow = result.data.overflow || []
@@ -575,26 +589,19 @@ function RoutePlanner() {
     if (!upcoming.length) return
     setAccepting(true)
     setError(null)
-    let lastErr = null
-    for (let attempt = 0; attempt < 2; attempt++) {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 4000))
-      try {
-        const result = await api.batchCreateVisits(upcoming, today)
-        if (result.success) {
-          setAccepted(true)
-          setParseSuccess(`Route accepted! ${result.data.created} vendors added to Stores.${result.data.skipped ? ` ${result.data.skipped} already existed.` : ''}`)
-          setAccepting(false)
-          return
-        }
-        lastErr = result.error
-        break
-      } catch (err) {
-        lastErr = err.message
-        if (!err.message.includes('503')) break
+    try {
+      const result = await withRetry(() => api.batchCreateVisits(upcoming, today))
+      if (result.success) {
+        setAccepted(true)
+        setParseSuccess(`Route accepted! ${result.data.created} vendors added to Stores.${result.data.skipped ? ` ${result.data.skipped} already existed.` : ''}`)
+      } else {
+        setError(result.error)
       }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setAccepting(false)
     }
-    setError(lastErr)
-    setAccepting(false)
   }
 
   const handleRemoveParsedStore = (index) => {
@@ -833,7 +840,7 @@ function RoutePlanner() {
       const isMidRouteNL = route.some(s => s.status === 'completed')
       const gpsStartNL = isMidRouteNL ? await getGPSStart() : null
       setAccepted(false)
-      const result = await api.optimizeRoute(candidates, gpsStartNL || startAddress, endAddress || startAddress, null, effectiveStart)
+      const result = await withRetry(() => api.optimizeRoute(candidates, gpsStartNL || startAddress, endAddress || startAddress, null, effectiveStart))
       if (result.success) {
         const kept = route.filter(s => s.status === 'completed')
         const newRoute = [...kept, ...result.data.route]
