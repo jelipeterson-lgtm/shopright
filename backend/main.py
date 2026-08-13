@@ -193,6 +193,11 @@ def keep_alive():
             _keep_alive_client.get(url)
         except Exception:
             pass
+        try:
+            from db import supabase_admin
+            supabase_admin.table("programs").select("code").limit(1).execute()
+        except Exception:
+            pass
         rss_before = _rss_mb()
         try:
             ctypes.CDLL("libc.so.6").malloc_trim(0)
