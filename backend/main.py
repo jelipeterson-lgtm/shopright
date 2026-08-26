@@ -45,6 +45,21 @@ import threading
 import time
 import httpx
 
+_THREAD_LOG_THRESHOLD = 15
+
+
+@app.middleware("http")
+async def log_thread_bursts(request, call_next):
+    """Log active thread count on requests during high-concurrency bursts.
+    Correlates with [keep-alive] RSS jumps to test whether thread-pool
+    growth under concurrent sync DB calls drives the OOM spikes.
+    """
+    response = await call_next(request)
+    count = threading.active_count()
+    if count > _THREAD_LOG_THRESHOLD:
+        print(f"[threads] {count} active — {request.method} {request.url.path}")
+    return response
+
 
 def _rss_mb():
     """Current process RSS in MB.
@@ -204,7 +219,8 @@ def keep_alive():
         except Exception:
             pass
         rss_after = _rss_mb()
-        print(f"[keep-alive] RSS: {rss_before:.1f} → {rss_after:.1f} MB (freed {rss_before - rss_after:.1f} MB)")
+        thread_count = threading.active_count()
+        print(f"[keep-alive] RSS: {rss_before:.1f} → {rss_after:.1f} MB (freed {rss_before - rss_after:.1f} MB), {thread_count} threads")
         if rss_after > RESTART_THRESHOLD_MB:
             print(f"[keep-alive] RSS {rss_after:.1f} MB still above {RESTART_THRESHOLD_MB} MB after trim — initiating clean restart")
             _os.kill(_os.getpid(), signal.SIGTERM)
