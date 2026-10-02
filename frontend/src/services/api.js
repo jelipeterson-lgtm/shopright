@@ -91,6 +91,8 @@ const api = {
 
   getVisit: (id) => request(`/visits/${id}`),
 
+  getLastWeekRepeats: (weekOf) => request(`/visits/repeat-check?week_of=${weekOf}`),
+
   updateVisit: (id, data) => request(`/visits/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),

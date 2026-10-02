@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY
 from routers.auth import get_user_id
+from repeat_rule import last_week_repeats, previous_week_range
 from datetime import date, time, datetime
 
 router = APIRouter(prefix="/visits", tags=["visits"])
@@ -156,6 +157,39 @@ def get_visits(
         query = query.eq("status", status)
     result = query.order("created_at", desc=False).execute()
     return {"success": True, "data": result.data or [], "error": None}
+
+
+@router.get("/repeat-check")
+def repeat_check(week_of: str = Query(...), authorization: str = Header(...)):
+    """Store+vendor pairs the user may not repeat in the week containing `week_of`."""
+    user_id = get_user_id(authorization)
+    try:
+        week_of_date = date.fromisoformat(week_of)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_of must be YYYY-MM-DD")
+    start, end = previous_week_range(week_of_date)
+    rows = (
+        supabase_admin.table("vendor_visits")
+        .select("retailer_name, store_number, program, visit_date, status, reps_present")
+        .eq("user_id", user_id)
+        .eq("status", "Complete")
+        .gte("visit_date", start.isoformat())
+        .lte("visit_date", end.isoformat())
+        .execute()
+    )
+    repeats = last_week_repeats(rows.data or [], week_of_date)
+    return {
+        "success": True,
+        "data": {
+            "week_start": start.isoformat(),
+            "week_end": end.isoformat(),
+            "repeats": [
+                {"retailer_name": r, "store_number": s, "program": p, "visit_date": d}
+                for (r, s, p), d in sorted(repeats.items())
+            ],
+        },
+        "error": None,
+    }
 
 
 @router.get("/{visit_id}")

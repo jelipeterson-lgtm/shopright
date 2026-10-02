@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: August 26, 2026*
+*Last updated: October 2, 2026*
 
 ---
 
@@ -140,7 +140,9 @@ shopright/
 │   ├── db.py                          ← Supabase service-role client + claude() API helper (anon client removed — never used)
 │   ├── excel.py                       ← Shop File + Invoice generation (template-copy); columns match Smart Circle 6/12/26 template (39 data cols)
 │   ├── ingest_stores.py               ← Download + geocode Book1.xlsx into database
+│   ├── repeat_rule.py                 ← "Same vendor, same store, two weeks in a row" rule (pure logic)
 │   ├── requirements.txt               ← Python dependencies
+│   ├── tests/                         ← pytest suite + live_repeat_rule_check.py (real-API check, run by hand)
 │   ├── .env → ../.env                 ← symlink to root .env
 │   └── routers/
 │       ├── __init__.py
@@ -156,6 +158,8 @@ shopright/
 │   ├── index.html                     ← PWA meta tags, viewport, theme color
 │   ├── vercel.json                    ← SPA rewrites for client-side routing
 │   ├── vite.config.js                 ← Vite + React + Tailwind plugins
+│   ├── playwright.config.js           ← Browser tests (mocked API + fake session — never touches real data)
+│   ├── tests/                         ← Playwright browser tests
 │   ├── package.json
 │   ├── .env.production                ← Production API URL + Supabase keys
 │   ├── .env.development               ← Local dev API URL + Supabase keys
@@ -176,6 +180,8 @@ shopright/
 │       │   ├── EvaluationField.jsx    ← Reusable Pass/Fail/N/A field component
 │       │   ├── HelpChat.jsx           ← AI help chatbot (floating ? button)
 │       │   ├── PageHeader.jsx         ← Standardized page header with logo
+│       │   ├── RepeatConfirmModal.jsx ← "Same vendor two weeks in a row — add anyway?" confirmation
+│       │   ├── RepeatIcon.jsx         ← Small amber ↻ marker; tap to see last week's date
 │       │   └── VoiceInput.jsx         ← Web Speech API mic button
 │       │
 │       ├── pages/
@@ -196,6 +202,9 @@ shopright/
 │       │   ├── RoutePlanner.jsx        ← Route optimization from event emails/check-ins
 │       │   ├── HelpGuide.jsx          ← Expandable FAQ sections
 │       │   └── Tutorial.jsx           ← Step-by-step Getting Started guide
+│       │
+│       ├── utils/
+│       │   └── repeatRule.js          ← Hold-back matching for the repeat-vendor rule (+ .test.js)
 │       │
 │       └── services/
 │           ├── api.js                 ← All API calls (centralized, auth headers)
@@ -315,6 +324,7 @@ RLS: Users can read/insert/update/delete their own visits.
 | GET | /stores/programs | Yes | Get all available vendor program codes |
 | POST | /visits | Yes | Create vendor visit |
 | GET | /visits | Yes | List visits (filter by date/status) |
+| GET | /visits/repeat-check?week_of=YYYY-MM-DD | Yes | Store+vendor pairs the user submitted in the Mon–Sun week before `week_of` (excluding Reps Present = Fail) — drives the repeat-vendor hold-back |
 | GET | /visits/{id} | Yes | Get single visit |
 | PUT | /visits/{id} | Yes | Update visit fields |
 | POST | /visits/{id}/complete | Yes | Mark visit complete |
@@ -381,6 +391,8 @@ RLS: Users can read/insert/update/delete their own visits.
 16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific. Fix: use local date construction instead of toISOString().
 
 17. **Visit time**: Set from the user's local browser clock (`new Date().toTimeString()`) when the assessment form is first opened, not at route-acceptance time. Batch-created visits store null visit_time; Visit.jsx auto-initializes it on first open. This ensures the time reflects when the shopper actually did the assessment, not when they accepted the route.
+
+18. **Repeat vendor rule (Smart Circle, Oct 2026)**: A shopper may not assess the same vendor (exact program code) at the same store in two consecutive Monday–Sunday weeks. Same store + different vendor is fine; same vendor + different store is fine; a skipped week resets it. Program codes already encode location within a store (e.g. `RTL-GDI-LeafGuard` vs `RTL-GDI-LG Exit Fence` are different vendors). Only **submitted** (Complete) visits from last week count, and a visit with **Reps Present = Fail** does not count (the vendor wasn't there) — any other Fail still counts. Checked per shopper, never across shoppers. "Last week" is relative to the week being planned (the Route Planner's date, or the date chosen on the manual entry page). Behavior: repeats are held back from the optimizer and listed in a collapsed "Held back — shopped last week" section; only the repeat vendor is held back, not the whole store. "Add anyway" (and adding a repeat by hand on the Route Planner, Add Store or manual entry pages) shows one confirmation naming the vendor, store and last week's date; it is asked once and never again for that vendor (re-optimizing or reloading the saved route doesn't re-ask). Overridden vendors show a small amber ↻ icon in the app for the rest of the week. No settings toggle, overrides are not recorded, and nothing appears in the Shop File or invoice. If the check fails to load, planning continues with nothing held back.
 
 ---
 
@@ -457,6 +469,12 @@ If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Depl
 ### Create a free account
 1. User signs up through the app
 2. In Supabase SQL Editor: `UPDATE public.profiles SET is_free_account = true WHERE report_email = 'their@email.com';`
+
+### Run the tests
+- **Backend**: `cd backend && pip install -r requirements.txt pytest && python -m pytest tests`
+- **Frontend logic**: `cd frontend && npm test`
+- **Browser (Route Planner, Add Store, manual entry)**: `cd frontend && npx playwright install chromium` (once), then `npm run test:ui`. Uses a mocked API and fake login — never touches real data.
+- **Live check against the real API + database**: `cd backend && E2E_EMAIL=... E2E_PASSWORD=... python tests/live_repeat_rule_check.py --create-account`. Use a dedicated test account (not a shopper's): it creates throwaway assessments at a fake "ShopRight E2E Test" store and deletes them, and sweeps leftovers from interrupted runs (`--cleanup-only`). Can't run from Claude Code's cloud sandbox (network blocks Supabase/Render) — run it from a Mac/PC.
 
 ### Change Stripe from test to live mode
 1. On Render, ensure `STRIPE_SECRET_KEY` has the live key (`sk_live_...`)

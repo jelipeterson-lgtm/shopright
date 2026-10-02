@@ -373,6 +373,7 @@ ROUTE PLANNER:
 - "Skip" or "Remove" a stop to remove its vendor assessments. "Restore" brings them back.
 - "Re-optimize Route" recalculates using the current time and live traffic.
 - When all vendors at a store are submitted, the stop moves to the "Completed" section at the top of the route.
+- Smart Circle doesn't allow the same vendor at the same store two weeks in a row (Monday–Sunday weeks). If a check-in matches a vendor you submitted at that store last week, it's left out of the route and listed under "Held back — shopped last week" below the route. Other vendors at that store stay in the route. Tap "Add anyway" to include it after confirming. It doesn't apply if reps weren't present last week. A small amber ↻ icon marks vendors you added anyway.
 - No API key setup required — route optimization is built in.
 
 ROUTE PLANNER STATUS LABELS:

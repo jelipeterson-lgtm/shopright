@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
+import RepeatConfirmModal from '../components/RepeatConfirmModal'
+import { buildRepeatMap, getRepeatDate } from '../utils/repeatRule'
 
 function ManualVisit() {
   const navigate = useNavigate()
@@ -16,6 +18,7 @@ function ManualVisit() {
   const [visitTime, setVisitTime] = useState(new Date().toTimeString().slice(0, 5))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [repeatConfirm, setRepeatConfirm] = useState(null)
 
   const handleSearch = async (e) => {
     e.preventDefault()
@@ -48,6 +51,29 @@ function ManualVisit() {
       setError('Date and time are required')
       return
     }
+    setLoading(true)
+    setError(null)
+    let lastDate = null
+    try {
+      const r = await api.getLastWeekRepeats(visitDate)
+      lastDate = getRepeatDate(buildRepeatMap(r.data?.repeats), selectedStore.retailer_name, selectedStore.store_number, selectedProgram)
+    } catch {
+      // Never block an assessment because the check itself failed.
+    }
+    if (lastDate) {
+      setLoading(false)
+      setRepeatConfirm({
+        retailer_name: selectedStore.retailer_name,
+        store_number: selectedStore.store_number,
+        program: selectedProgram,
+        visit_date: lastDate,
+      })
+      return
+    }
+    await createVisit()
+  }
+
+  const createVisit = async () => {
     setLoading(true)
     setError(null)
     try {
@@ -177,6 +203,11 @@ function ManualVisit() {
           </div>
         )}
       </div>
+      <RepeatConfirmModal
+        repeat={repeatConfirm}
+        onConfirm={() => { setRepeatConfirm(null); createVisit() }}
+        onCancel={() => setRepeatConfirm(null)}
+      />
     </div>
   )
 }

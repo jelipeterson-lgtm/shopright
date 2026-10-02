@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
 import RouteMap from '../components/RouteMap'
+import RepeatIcon from '../components/RepeatIcon'
+import RepeatConfirmModal from '../components/RepeatConfirmModal'
+import { buildRepeatMap, getRepeatDate, isHeldBack, repeatKey, formatRepeatDate } from '../utils/repeatRule'
 
 async function withRetry(fn) {
   let lastErr
@@ -73,6 +76,9 @@ function RoutePlanner() {
   const [dragOver, setDragOver] = useState(null)
   const [dragPos, setDragPos] = useState(null)
   const [dragCardInfo, setDragCardInfo] = useState(null)
+  const [repeatMap, setRepeatMap] = useState({})
+  const [repeatConfirm, setRepeatConfirm] = useState(null)
+  const [pendingReoptimize, setPendingReoptimize] = useState(false)
   const dragIdxRef = useRef(null)
   const dragOverRef = useRef(null)
   const routeRef = useRef(route)
@@ -187,6 +193,9 @@ function RoutePlanner() {
                   longitude: s.longitude,
                   store_id: s.store_id,
                   program,
+                  // Already in the saved route, so it was either not a repeat or she
+                  // confirmed it — never hold it back again or ask twice.
+                  repeat_override: true,
                 })
               }
             }
@@ -202,6 +211,13 @@ function RoutePlanner() {
       console.error('Failed to load route plan:', err)
       // Keep localStorage data — don't clear on API failure
     }).finally(() => setLoading(false))
+  }, [today])
+
+  // If this fails the route still works, just without hold-backs.
+  useEffect(() => {
+    api.getLastWeekRepeats(today)
+      .then(r => setRepeatMap(buildRepeatMap(r.data?.repeats)))
+      .catch(() => {})
   }, [today])
 
   // Auto-refresh travel times when returning to route page (e.g., after assessment)
@@ -251,6 +267,11 @@ function RoutePlanner() {
     }))
   }
 
+  const heldBackNote = (entries) => {
+    const n = entries.filter(e => isHeldBack(e, repeatMap)).length
+    return n ? ` ${n} held back — shopped last week.` : ''
+  }
+
   const handleParseEmail = async () => {
     if (!emailText.trim()) return
     setParsing(true)
@@ -279,7 +300,7 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowEmailInput(false)
       setEmailText('')
-      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new). Verify the list below, then continue to filters.`)
+      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new).${heldBackNote(merged)} Verify the list below, then continue to filters.`)
       setShowVerification(true)
       setSelectedCities(null)
       setMaxDistance('')
@@ -330,7 +351,7 @@ function RoutePlanner() {
       setShowCheckinInput(false)
       setCheckinText('')
       const hasExistingRoute = route.length > 0
-      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Verify the list below, then continue to filters.'}`)
+      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${heldBackNote(merged)}${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Verify the list below, then continue to filters.'}`)
       if (!hasExistingRoute) {
         setShowVerification(true)
         setSelectedCities(null)
@@ -416,12 +437,39 @@ function RoutePlanner() {
     return Object.values(cityMap).sort()
   })()
 
+  // Every optimize path draws from here, so held-back repeats never reach the optimizer.
   const getFilteredStores = () => {
-    let filtered = distanceFilteredStores
+    let filtered = distanceFilteredStores.filter(s => !isHeldBack(s, repeatMap))
     if (selectedCities && selectedCities.length > 0) {
       filtered = filtered.filter(s => selectedCities.includes((s.city || '').toLowerCase()))
     }
     return filtered
+  }
+
+  const heldBackEntries = parsedStores.filter(s => isHeldBack(s, repeatMap))
+
+  const markRepeatOverride = (retailerName, storeNumber, program) => {
+    const key = repeatKey(retailerName, storeNumber, program)
+    setParsedStores(prev => prev.map(e =>
+      repeatKey(e.retailer_name, e.store_number, e.program) === key ? { ...e, repeat_override: true } : e
+    ))
+  }
+
+  const handleAddHeldBack = (entry) => {
+    setRepeatConfirm({
+      retailer_name: entry.retailer_name,
+      store_number: entry.store_number,
+      program: entry.program,
+      visit_date: getRepeatDate(repeatMap, entry.retailer_name, entry.store_number, entry.program),
+      onConfirm: () => {
+        markRepeatOverride(entry.retailer_name, entry.store_number, entry.program)
+        if (route.length > 0) {
+          setPendingReoptimize(true)
+        } else {
+          setParseSuccess(`${entry.program} at ${entry.retailer_name} #${entry.store_number} will be included when you optimize.`)
+        }
+      },
+    })
   }
 
   const toggleCity = (city) => {
@@ -448,7 +496,9 @@ function RoutePlanner() {
   const handleOptimizeFiltered = async () => {
     const filtered = getFilteredStores()
     if (!filtered.length) {
-      setError('No stores match your filters.')
+      setError(heldBackEntries.length > 0
+        ? 'Every matching vendor was shopped at the same store last week, so they are held back. Use "Add anyway" below to include any of them.'
+        : 'No stores match your filters.')
       return
     }
     if (!startAddress) {
@@ -692,8 +742,26 @@ function RoutePlanner() {
     } catch (err) {}
   }
 
-  const handleConfirmAddVendor = async () => {
+  const handleConfirmAddVendor = () => {
     if (!addingVendorStore || !selectedProgram?.trim()) return
+    const lastDate = getRepeatDate(repeatMap, addingVendorStore.retailer_name, addingVendorStore.store_number, selectedProgram)
+    if (!lastDate) {
+      addVendorToRoute()
+      return
+    }
+    setRepeatConfirm({
+      retailer_name: addingVendorStore.retailer_name,
+      store_number: addingVendorStore.store_number,
+      program: selectedProgram,
+      visit_date: lastDate,
+      onConfirm: () => {
+        markRepeatOverride(addingVendorStore.retailer_name, addingVendorStore.store_number, selectedProgram)
+        addVendorToRoute()
+      },
+    })
+  }
+
+  const addVendorToRoute = async () => {
     try {
       const now = new Date()
       const visitData = {
@@ -858,6 +926,18 @@ function RoutePlanner() {
     }
   }
 
+  // Runs after the override has rendered, so the latest handleReoptimize sees the updated parsedStores.
+  const reoptimizeRef = useRef(handleReoptimize)
+  useEffect(() => { reoptimizeRef.current = handleReoptimize })
+  useEffect(() => {
+    if (pendingReoptimize && !optimizing) {
+      setPendingReoptimize(false)
+      reoptimizeRef.current()
+    }
+  }, [pendingReoptimize, parsedStores, optimizing])
+
+  const repeatDateFor = (store, vendor) => getRepeatDate(repeatMap, store.retailer_name, store.store_number, vendor)
+
   const assessedStops = route.filter(s => s.status === 'completed')
   const skippedStops = route.filter(s => s.status === 'skipped' || s.status === 'removed')
   const upcomingStops = route.filter(s => s.status === 'upcoming')
@@ -967,10 +1047,13 @@ function RoutePlanner() {
             <p className="text-xs text-gray-500 mb-3">Review the list below. Remove any incorrect entries before continuing.</p>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {parsedStores.map((store, index) => (
-                <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div key={index} className={`flex items-center justify-between rounded-lg p-3 ${isHeldBack(store, repeatMap) ? 'bg-gray-50 opacity-60' : 'bg-gray-50'}`}>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{store.retailer_name} #{store.store_number}</p>
                     <p className="text-xs text-gray-500">{store.program} — {store.city}, {store.state}</p>
+                    {isHeldBack(store, repeatMap) && (
+                      <p className="text-[10px] text-amber-700 mt-0.5">Held back — shopped last week ({formatRepeatDate(repeatDateFor(store, store.program))})</p>
+                    )}
                   </div>
                   <button onClick={() => handleRemoveParsedStore(index)}
                     className="text-red-500 hover:text-red-700 text-sm font-medium">Remove</button>
@@ -1044,6 +1127,9 @@ function RoutePlanner() {
                 const storeCount = new Set(filtered.map(s => `${s.retailer_name}-${s.store_number}`)).size
                 return `${filtered.length} vendors at ${storeCount} stores selected`
               })()}
+              {heldBackEntries.length > 0 && (
+                <span className="block text-amber-700 mt-0.5">{heldBackEntries.length} held back — shopped last week</span>
+              )}
             </div>
             <div className="flex gap-2">
               <button onClick={handleOptimizeFiltered} disabled={optimizing}
@@ -1221,6 +1307,7 @@ function RoutePlanner() {
                               <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] shrink-0">●</span>
                             )}
                             <span className="text-sm text-gray-700 truncate">{vendor}</span>
+                            {repeatDateFor(store, vendor) && <RepeatIcon date={repeatDateFor(store, vendor)} />}
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className={`text-xs font-medium px-2 py-0.5 rounded ${isDone ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
@@ -1363,6 +1450,7 @@ function RoutePlanner() {
                                 <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-400 flex items-center justify-center text-[10px] shrink-0">○</span>
                               )}
                               <span className="text-sm text-gray-800 truncate">{vendor}</span>
+                              {repeatDateFor(store, vendor) && <RepeatIcon date={repeatDateFor(store, vendor)} />}
                               </div>
                               {(flags.same_week || flags.month_limit) && (
                                 <div className="ml-7 mt-0.5">
@@ -1447,7 +1535,14 @@ function RoutePlanner() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-700">{store.retailer_name} #{store.store_number}</p>
                     {store.address && <p className="text-xs text-gray-400">{store.address}, {store.city}</p>}
-                    <p className="text-xs text-gray-500 mt-0.5">{store.vendors?.join(', ')}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-center gap-1">
+                      {(store.vendors || []).map((vendor, vi) => (
+                        <span key={vi} className="inline-flex items-center gap-1">
+                          {vendor}{vi < store.vendors.length - 1 ? ',' : ''}
+                          {repeatDateFor(store, vendor) && <RepeatIcon date={repeatDateFor(store, vendor)} />}
+                        </span>
+                      ))}
+                    </p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {store.drive_time_min > 0 && <span className="text-[10px] text-gray-400">Travel: {Math.round(store.drive_time_min)} min</span>}
                       {store.drive_distance_mi > 0 && <span className="text-[10px] text-gray-400">Dist: {store.drive_distance_mi} mi</span>}
@@ -1471,6 +1566,33 @@ function RoutePlanner() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Held back — same vendor at same store last week; not offered to the optimizer */}
+        {heldBackEntries.length > 0 && !showVerification && !optimizing && (
+          <details className="mb-4 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden" data-testid="held-back-section">
+            <summary className="p-3 flex items-center gap-2 cursor-pointer list-none">
+              <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-700 border border-amber-300 flex items-center justify-center text-[10px] font-bold leading-none shrink-0">↻</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase flex-1">Held back — shopped last week ({heldBackEntries.length})</span>
+              <span className="text-gray-300 text-sm">›</span>
+            </summary>
+            <div className="border-t border-gray-200">
+              <p className="text-[10px] text-gray-400 px-3 pt-2">Smart Circle doesn't allow the same vendor at the same store two weeks in a row, so these weren't included in your route.</p>
+              {heldBackEntries.map((entry) => (
+                <div key={repeatKey(entry.retailer_name, entry.store_number, entry.program)}
+                  className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 last:border-b-0">
+                  <div className="min-w-0 opacity-70">
+                    <p className="text-sm text-gray-700">{entry.retailer_name} #{entry.store_number}</p>
+                    <p className="text-xs text-gray-500">{entry.program} · last week {formatRepeatDate(repeatDateFor(entry, entry.program))}</p>
+                  </div>
+                  <button onClick={() => handleAddHeldBack(entry)}
+                    className="px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-white rounded-lg border border-amber-300 active:bg-amber-50 shrink-0 ml-2">
+                    Add anyway
+                  </button>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
 
         {/* Accept Route button */}
@@ -1583,6 +1705,12 @@ function RoutePlanner() {
           </div>
         )}
       </div>
+
+      <RepeatConfirmModal
+        repeat={repeatConfirm}
+        onConfirm={() => { const r = repeatConfirm; setRepeatConfirm(null); r.onConfirm() }}
+        onCancel={() => setRepeatConfirm(null)}
+      />
 
       {/* Ghost card — floats under finger while dragging */}
       {dragPos && dragCardInfo && (

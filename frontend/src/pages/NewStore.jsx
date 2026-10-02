@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import api, { getLocalDate } from '../services/api'
 import PageHeader from '../components/PageHeader'
+import RepeatConfirmModal from '../components/RepeatConfirmModal'
+import { buildRepeatMap, getRepeatDate } from '../utils/repeatRule'
 
 function NewStore() {
   const navigate = useNavigate()
@@ -23,6 +25,7 @@ function NewStore() {
   const [programs, setPrograms] = useState([])
   const [selectedProgram, setSelectedProgram] = useState(null)
   const [loadingPrograms, setLoadingPrograms] = useState(false)
+  const [repeatConfirm, setRepeatConfirm] = useState(null)
 
   useEffect(() => {
     if (preselectedStore) {
@@ -102,6 +105,29 @@ function NewStore() {
   }
 
   const handleConfirm = async () => {
+    setLoading(true)
+    setError(null)
+    let lastDate = null
+    try {
+      const r = await api.getLastWeekRepeats(sessionDate)
+      lastDate = getRepeatDate(buildRepeatMap(r.data?.repeats), selectedStore.retailer_name, selectedStore.store_number, selectedProgram)
+    } catch {
+      // Never block an assessment because the check itself failed.
+    }
+    if (lastDate) {
+      setLoading(false)
+      setRepeatConfirm({
+        retailer_name: selectedStore.retailer_name,
+        store_number: selectedStore.store_number,
+        program: selectedProgram,
+        visit_date: lastDate,
+      })
+      return
+    }
+    await createVisit()
+  }
+
+  const createVisit = async () => {
     setLoading(true)
     setError(null)
     try {
@@ -314,7 +340,7 @@ function NewStore() {
 
                 <button
                   onClick={handleConfirm}
-                  disabled={!selectedProgram?.trim()}
+                  disabled={!selectedProgram?.trim() || loading}
                   className="w-full bg-blue-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                   Confirm Store & Add Vendor
@@ -331,6 +357,11 @@ function NewStore() {
           </div>
         )}
       </div>
+      <RepeatConfirmModal
+        repeat={repeatConfirm}
+        onConfirm={() => { setRepeatConfirm(null); createVisit() }}
+        onCancel={() => setRepeatConfirm(null)}
+      />
     </div>
   )
 }
