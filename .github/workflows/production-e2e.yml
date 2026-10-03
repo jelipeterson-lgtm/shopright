@@ -38,6 +38,17 @@ jobs:
           echo "::error::Render never reported $GITHUB_SHA"
           exit 1
 
+      - name: Wait for Vercel to be serving this commit
+        run: |
+          for attempt in $(seq 1 40); do
+            v=$(curl -sf --max-time 60 https://shopright-jet.vercel.app/ | grep -o 'name="app-version" content="[^"]*"' | sed 's/.*content="//;s/"$//') || v="unreachable"
+            if [ "$v" = "$GITHUB_SHA" ]; then echo "Vercel is serving $GITHUB_SHA"; exit 0; fi
+            echo "Attempt $attempt: live site is ${v:-unstamped}, waiting for $GITHUB_SHA"
+            sleep 30
+          done
+          echo "::error::Vercel never served $GITHUB_SHA"
+          exit 1
+
       - name: Generate a throwaway password
         run: |
           P=$(openssl rand -hex 16)
@@ -65,7 +76,7 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
-          npx playwright test -c playwright.prod.config.js --reporter=list
+          npx playwright test -c playwright.prod.config.js --reporter=list,github
 
       - name: Save screenshots
         if: always()

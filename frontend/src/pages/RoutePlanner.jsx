@@ -77,6 +77,8 @@ function RoutePlanner() {
   const [dragPos, setDragPos] = useState(null)
   const [dragCardInfo, setDragCardInfo] = useState(null)
   const [repeatMap, setRepeatMap] = useState({})
+  // Optimizing before last week's data arrives would let repeats through, so wait for it.
+  const [repeatsChecked, setRepeatsChecked] = useState(false)
   const [repeatConfirm, setRepeatConfirm] = useState(null)
   const [pendingReoptimize, setPendingReoptimize] = useState(false)
   const dragIdxRef = useRef(null)
@@ -218,6 +220,7 @@ function RoutePlanner() {
     api.getLastWeekRepeats(today)
       .then(r => setRepeatMap(buildRepeatMap(r.data?.repeats)))
       .catch(() => {})
+      .finally(() => setRepeatsChecked(true))
   }, [today])
 
   // Auto-refresh travel times when returning to route page (e.g., after assessment)
@@ -267,11 +270,6 @@ function RoutePlanner() {
     }))
   }
 
-  const heldBackNote = (entries) => {
-    const n = entries.filter(e => isHeldBack(e, repeatMap)).length
-    return n ? ` ${n} held back — shopped last week.` : ''
-  }
-
   const handleParseEmail = async () => {
     if (!emailText.trim()) return
     setParsing(true)
@@ -300,7 +298,7 @@ function RoutePlanner() {
       setParsedStores(merged)
       setShowEmailInput(false)
       setEmailText('')
-      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new).${heldBackNote(merged)} Verify the list below, then continue to filters.`)
+      setParseSuccess(`Found ${newStores.length} store/vendor entries (${addedCount} new). Verify the list below, then continue to filters.`)
       setShowVerification(true)
       setSelectedCities(null)
       setMaxDistance('')
@@ -351,7 +349,7 @@ function RoutePlanner() {
       setShowCheckinInput(false)
       setCheckinText('')
       const hasExistingRoute = route.length > 0
-      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${heldBackNote(merged)}${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Verify the list below, then continue to filters.'}`)
+      setParseSuccess(`Found ${newStores.length} check-ins (${addedCount} new, added to ${parsedStores.length} existing).${hasExistingRoute ? ' Re-optimize to include new check-ins.' : ' Verify the list below, then continue to filters.'}`)
       if (!hasExistingRoute) {
         setShowVerification(true)
         setSelectedCities(null)
@@ -1044,6 +1042,9 @@ function RoutePlanner() {
         {showVerification && parsedStores.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
             <p className="text-sm font-semibold text-gray-800 mb-3">Verify Parsed Stores ({parsedStores.length} entries)</p>
+            {heldBackEntries.length > 0 && (
+              <p className="text-xs text-amber-700 mb-2" data-testid="held-back-count">{heldBackEntries.length} held back — shopped last week</p>
+            )}
             <p className="text-xs text-gray-500 mb-3">Review the list below. Remove any incorrect entries before continuing.</p>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {parsedStores.map((store, index) => (
@@ -1132,9 +1133,9 @@ function RoutePlanner() {
               )}
             </div>
             <div className="flex gap-2">
-              <button onClick={handleOptimizeFiltered} disabled={optimizing}
+              <button onClick={handleOptimizeFiltered} disabled={optimizing || !repeatsChecked}
                 className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                Optimize Route
+                {repeatsChecked ? 'Optimize Route' : 'Checking last week…'}
               </button>
               <button onClick={() => setShowFilters(false)}
                 className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-200">
@@ -1190,7 +1191,7 @@ function RoutePlanner() {
             {isOverWindow && (
               <div className="text-center mt-1.5">
                 <p className="text-[10px] text-yellow-300">Route extends past your {endTime} end time</p>
-                <button onClick={handleReoptimizeNoLimit}
+                <button onClick={handleReoptimizeNoLimit} disabled={!repeatsChecked}
                   className="text-[10px] text-yellow-200 underline mt-0.5">
                   Re-optimize without time limit
                 </button>
@@ -1213,9 +1214,9 @@ function RoutePlanner() {
         {route.length > 0 && !optimizing && !showFilters && (
           <div className="mb-4">
             <div className="flex gap-2">
-              <button onClick={handleReoptimize}
+              <button onClick={handleReoptimize} disabled={!repeatsChecked}
                 className="flex-1 bg-blue-100 text-blue-700 py-2 rounded-xl text-xs font-medium border border-blue-200 hover:bg-blue-200">
-                Re-optimize Route
+                {repeatsChecked ? 'Re-optimize Route' : 'Checking last week…'}
               </button>
               <button onClick={() => setShowFilters(true)}
                 className="flex-1 bg-green-50 text-green-700 py-2 rounded-xl text-xs font-medium border border-green-200 hover:bg-green-100">
@@ -1491,7 +1492,7 @@ function RoutePlanner() {
                         onChange={(e) => setSelectedProgram(e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-2" />
                       <div className="flex gap-2">
-                        <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
+                        <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim() || !repeatsChecked}
                           className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                           Add Vendor
                         </button>
@@ -1621,7 +1622,7 @@ function RoutePlanner() {
               onChange={(e) => setSelectedProgram(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2" />
             <div className="flex gap-2">
-              <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim()}
+              <button onClick={handleConfirmAddVendor} disabled={!selectedProgram?.trim() || !repeatsChecked}
                 className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
                 Add Vendor
               </button>

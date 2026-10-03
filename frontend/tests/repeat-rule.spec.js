@@ -18,7 +18,7 @@ const json = (data, status = 200) => ({ status, contentType: 'application/json',
 const ok = (data) => json({ success: true, data, error: null })
 
 // Fake API. Records every call so tests can assert what was (and wasn't) sent.
-async function mockApp(page, { repeatCheckFails = false } = {}) {
+async function mockApp(page, { repeatCheckFails = false, repeatDelayMs = 0 } = {}) {
   const calls = []
   await page.addInitScript(() => {
     const session = {
@@ -42,6 +42,7 @@ async function mockApp(page, { repeatCheckFails = false } = {}) {
     calls.push({ method, path, query: Object.fromEntries(url.searchParams), body })
 
     if (path === '/visits/repeat-check') {
+      if (repeatDelayMs) await new Promise(r => setTimeout(r, repeatDelayMs))
       if (repeatCheckFails) return route.fulfill(json({ detail: 'boom' }, 500))
       return route.fulfill(ok({ repeats: [{ ...FM, program: ATT, visit_date: LAST_WEEK }] }))
     }
@@ -83,7 +84,7 @@ test('a repeat vendor is held back from the route, but the store and its other v
   const api = await mockApp(page)
   await planRouteFromCheckin(page)
 
-  await expect(page.getByText('1 held back — shopped last week.')).toBeVisible()
+  await expect(page.getByTestId('held-back-count')).toHaveText('1 held back — shopped last week')
   await expect(page.getByText(`Held back — shopped last week (${formatRepeatDate(LAST_WEEK)})`)).toBeVisible()
 
   await page.getByRole('button', { name: 'Continue to Filters' }).click()
@@ -219,4 +220,18 @@ test('if the repeat check fails, planning still works with nothing held back', a
   await page.getByRole('button', { name: 'Optimize Route' }).click()
   await expect.poll(() => api.optimizeBodies().length).toBe(1)
   expect(api.optimizeBodies()[0]).toEqual([`1287:${ATT}`, `242:${ATT}`, `242:${LEAFGUARD}`])
+})
+
+test('a check-in pasted before last week\'s data arrives still holds the repeat back', async ({ page }) => {
+  // Real phones and a sleeping server can take seconds; the live run caught this race.
+  const api = await mockApp(page, { repeatDelayMs: 3000 })
+  await planRouteFromCheckin(page)
+  await page.getByRole('button', { name: 'Continue to Filters' }).click()
+  await expect(page.getByRole('button', { name: 'Checking last week…' })).toBeDisabled()
+  await expect(page.getByTestId('held-back-count')).toBeHidden()
+
+  await page.getByRole('button', { name: 'Optimize Route' }).click()
+  await expect.poll(() => api.optimizeBodies().length).toBe(1)
+  expect(api.optimizeBodies()[0]).toEqual([`1287:${ATT}`, `242:${LEAFGUARD}`])
+  await expect(page.getByTestId('held-back-section')).toContainText('Held back — shopped last week (1)')
 })

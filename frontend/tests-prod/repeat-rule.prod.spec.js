@@ -89,7 +89,7 @@ test('live: repeat is held back, others route normally, "Add anyway" and manual 
 
   // Exactly one held back: AT&T at Fred Meyer. CKE there had reps absent, so it is NOT held back.
   await expect(page.getByText('Found 4 check-ins')).toBeVisible()
-  await expect(page.getByText('1 held back — shopped last week.')).toBeVisible()
+  await expect(page.getByTestId('held-back-count')).toHaveText('1 held back — shopped last week')
 
   await page.getByRole('button', { name: 'Continue to Filters' }).click()
   await page.getByRole('button', { name: 'Optimize Route' }).click()
