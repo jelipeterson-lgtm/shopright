@@ -73,6 +73,15 @@ async function mockApp(page, { repeatCheckFails = false, repeatDelayMs = 0 } = {
   return { calls, optimizeBodies, visitPosts }
 }
 
+// Phones are narrow: popups and tooltips must sit fully inside the screen.
+async function expectOnScreen(page, locator) {
+  const box = await locator.boundingBox()
+  const { width } = page.viewportSize()
+  expect(box, 'element should be rendered').not.toBeNull()
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1)
+}
+
 async function planRouteFromCheckin(page) {
   await page.goto('/route')
   await page.getByRole('button', { name: 'Paste SMS Check-in' }).click()
@@ -122,6 +131,7 @@ test('"Add anyway" asks once with specifics, cancel changes nothing, confirm re-
   const dialog = page.getByRole('dialog')
   await expect(dialog).toContainText(`You completed an assessment for ${ATT} at Kroger - Fred Meyer #242 last week (${formatRepeatDate(LAST_WEEK)})`)
   await expect(dialog).toContainText("doesn't allow the same vendor at the same store two weeks in a row")
+  await expectOnScreen(page, dialog.locator('> div'))
   await page.screenshot({ path: test.info().outputPath('confirm-dialog.png') })
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
@@ -139,7 +149,9 @@ test('"Add anyway" asks once with specifics, cancel changes nothing, confirm re-
   const icon = page.getByTestId('repeat-icon').first()
   await expect(icon).toBeVisible()
   await icon.click()
-  await expect(page.getByText(`Also shopped last week (${formatRepeatDate(LAST_WEEK)})`)).toBeVisible()
+  const tip = page.getByText(`Also shopped last week (${formatRepeatDate(LAST_WEEK)})`)
+  await expect(tip).toBeVisible()
+  await expectOnScreen(page, tip)
   await page.screenshot({ path: test.info().outputPath('route-with-icon.png'), fullPage: true })
 
   // Re-optimizing again never asks a second time and keeps the vendor.

@@ -79,6 +79,10 @@ test('live: repeat is held back, others route normally, "Add anyway" and manual 
   await page.waitForURL(url => !url.pathname.startsWith('/login'))
 
   await page.goto('/route')
+  // An earlier phone in this run saved today's route for the shared account; start fresh like a shopper would.
+  await page.waitForLoadState('networkidle')
+  const clear = page.getByRole('button', { name: 'Clear', exact: true })
+  if (await clear.isVisible()) await clear.click()
   await page.getByRole('button', { name: 'Paste SMS Check-in' }).click()
   const checkin = [
     [FM.retailer_name, FM.store_number, ATT, FM.city, FM.state],
