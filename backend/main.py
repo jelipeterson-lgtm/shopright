@@ -50,9 +50,9 @@ _THREAD_LOG_THRESHOLD = 15
 
 @app.middleware("http")
 async def log_thread_bursts(request, call_next):
-    """Log active thread count on requests during high-concurrency bursts.
-    Correlates with [keep-alive] RSS jumps to test whether thread-pool
-    growth under concurrent sync DB calls drives the OOM spikes.
+    """Log the active thread count when a request runs during a burst.
+    Worker-thread growth was checked against the OOM spikes and was not
+    what retained memory; the log stays so a future burst is visible.
     """
     response = await call_next(request)
     count = threading.active_count()
@@ -184,23 +184,14 @@ def debug_memory():
 _keep_alive_client = httpx.Client(timeout=10)
 
 def keep_alive():
-    """Ping self every 14 minutes to prevent Render free tier sleep.
+    """Ping self every 14 minutes so the free-tier web service is not spun down.
 
-    Also manages memory autonomously:
-    1. malloc_trim(0) — releases freed Python allocator blocks back to the OS,
-       preventing gradual RSS accumulation over long-running process lifetimes.
-    2. Proactive self-restart — if RSS is still above the safety threshold after
-       trimming, sends SIGTERM to itself. Uvicorn catches SIGTERM and does a
-       graceful shutdown (in-flight requests complete first). Render then
-       restarts the process immediately. This is a controlled ~30s restart
-       rather than an abrupt OOM kill.
+    Also pings Supabase so that project is not paused for inactivity, and asks
+    glibc to return pages Python has already freed. This loop does not restart
+    the process. Stopping it when RSS was high only hid the HTTP/2 connection
+    leak and showed up in Render as exit status 143.
     """
     import ctypes
-    import os as _os
-    import signal
-    # Restart if RSS stays above this after trimming. Chosen so cgroup_usage
-    # (rss + ~35MB kernel overhead) stays well below the 512MB cgroup limit.
-    RESTART_THRESHOLD_MB = 430
     url = os.getenv("RENDER_EXTERNAL_URL", "https://shopright-api.onrender.com") + "/health"
     while True:
         time.sleep(840)  # 14 minutes
@@ -221,9 +212,6 @@ def keep_alive():
         rss_after = _rss_mb()
         thread_count = threading.active_count()
         print(f"[keep-alive] RSS: {rss_before:.1f} → {rss_after:.1f} MB (freed {rss_before - rss_after:.1f} MB), {thread_count} threads")
-        if rss_after > RESTART_THRESHOLD_MB:
-            print(f"[keep-alive] RSS {rss_after:.1f} MB still above {RESTART_THRESHOLD_MB} MB after trim — initiating clean restart")
-            _os.kill(_os.getpid(), signal.SIGTERM)
 
 threading.Thread(target=keep_alive, daemon=True).start()
 

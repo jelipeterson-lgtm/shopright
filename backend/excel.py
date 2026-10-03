@@ -67,6 +67,23 @@ def _format_time(time_str):
         return time_str
 
 
+def _clear_existing_data_cells(ws, header_row=1, max_col=40):
+    """Blank values on cells that already exist under the header.
+
+    ``ws.cell(row, col)`` creates a cell when that coordinate is empty.
+    Walking ``range(2, ws.max_row + 1)`` for every column therefore builds a
+    dense rectangle out to the template's highest row. Excel files often
+    carry one leftover cell far down the sheet; each Shop File then allocates
+    (max_row × 40) Cell objects. That spike happens before malloc_trim and
+    can exhaust a 512 MB process on its own. Clearing the cells already in
+    the sheet blanks sample rows and keeps their formatting, without
+    inventing the empty ones in between.
+    """
+    for (row, col), cell in list(ws._cells.items()):
+        if row > header_row and col <= max_col:
+            cell.value = None
+
+
 def generate_shop_file(visits, first_name):
     """Generate Shop File .xlsx from a list of Complete visits for one ISO week."""
     from openpyxl import load_workbook
@@ -75,10 +92,8 @@ def generate_shop_file(visits, first_name):
     wb = load_workbook(template)
     ws = wb.active
 
-    # Clear ALL existing data rows thoroughly (keep row 1 headers only)
-    for row in range(2, ws.max_row + 1):
-        for col in range(1, 41):
-            ws.cell(row, col).value = None
+    # Clear existing data cells only (keep row 1 headers and their formatting).
+    _clear_existing_data_cells(ws)
 
     # Write visit data starting at row 2
     for i, v in enumerate(visits):

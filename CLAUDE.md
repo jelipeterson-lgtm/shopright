@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: October 2, 2026*
+*Last updated: October 3, 2026*
 
 ---
 
@@ -498,7 +498,7 @@ If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Depl
 | Anthropic API | Called via direct httpx (no SDK) — `claude()` helper in db.py |
 | Memory logging | Render logs: `[startup] RSS`, `[keep-alive] RSS` every 14 min (now also logs active thread count), `[route/optimize] start/done RSS+delta`, `[threads] N active — METHOD /path` on any request where concurrent thread count exceeds 15 (added Aug 26, 2026 to diagnose OOM recurrence). Uses VmRSS from /proc/self/status (current physical RAM, not peak). |
 | Memory check URL | GET https://shopright-api.onrender.com/debug/memory — returns rss_mb (current), peak_rss_mb (VmHWM = peak physical), headroom_mb, vm_size_mb, cgroup_limit_mb (actual Render-enforced ceiling, ~512 MB on Free tier). |
-| Render memory | Idle baseline drifted from 157 MB (confirmed June 11) to ~189 MB (observed Aug 25) — a slow ~0.1 MB/14-min drip even with zero real traffic, cause unconfirmed, small enough on its own to not explain an OOM. Real driver: OOM recurred Aug 20, 2026 (hard kill, exceeded 512 MB) and Aug 21, 2026 (proactive self-restart — the keep-alive loop's 430 MB threshold fired as designed, logged by Render as "Instance failed" but was a controlled restart). Both incidents show bursty RSS growth (100+ MB within 12–17 minutes) tied to concurrent shopper autosave traffic (`PUT /visits/{id}`), not a steady leak. Leading hypothesis: FastAPI dispatches sync Supabase calls to anyio's worker thread pool, and thread-pool growth under bursty concurrent load drives it — unconfirmed, thread-count instrumentation deployed Aug 26 to test it. Ruled out: Supabase client created per-call/per-thread (it's a single shared module-level instance). Open lead: postgrest-py hardcodes `http2=True` with no exposed toggle; the Aug 21 traceback was itself an HTTP/2 connection-reset error in that client. Render is still on the Free tier (512 MB) as of Aug 26, 2026 — Eli confirmed he has not upgraded it. |
+| Render memory | Idle baseline drifted from 157 MB (confirmed June 11) to ~189 MB (observed Aug 25) — a slow ~0.1 MB/14-min drip even with zero real traffic, cause unconfirmed, small enough on its own to not explain an OOM. Real driver: OOM recurred Aug 20, 2026 (hard kill, exceeded 512 MB) and Aug 21, 2026 (proactive self-restart — the keep-alive loop's 430 MB threshold fired as designed, logged by Render as "Instance failed" but was a controlled restart). Both incidents show bursty RSS growth (100+ MB within 12–17 minutes) tied to concurrent shopper autosave traffic (`PUT /visits/{id}`), not a steady leak. Leading hypothesis: FastAPI dispatches sync Supabase calls to anyio's worker thread pool, and thread-pool growth under bursty concurrent load drives it — unconfirmed, thread-count instrumentation deployed Aug 26 to test it. Ruled out: Supabase client created per-call/per-thread (it's a single shared module-level instance). Resolved in code Oct 3, 2026 (not deployed with that change): postgrest-py hardcodes `http2=True`, and a connection reset leaves that HTTP/2 connection in the pool while the next request opens another. Concurrent `PUT /visits/{id}` stacked those dead connections; the retained h2/TLS buffers are what crossed 430 MB (keep-alive self-kill, Render status 143) or 512 MB (hard OOM). `db.py` forces every sync httpx client to HTTP/1 with a small pool. Shop File generation no longer creates a cell for every empty coordinate out to `max_row`. The keep-alive no longer kills the process. Instance size was not changed. |
 
 ### CORS Configuration
 Backend allows requests from:
@@ -529,7 +529,7 @@ Backend allows requests from:
 - [ ] Kelsey real-world test on an actual shopping day
 - [ ] Generated Shop File submitted to and accepted by Smart Circle
 - [ ] Second new program code to add to programs table (Eli to identify)
-- [ ] Monitor Render memory logs — REOPENED Aug 26, 2026. OOM recurred Aug 20 (hard kill) and Aug 21 (self-restart), months after the June 11 "resolved" status. Thread-count instrumentation deployed; awaiting next high-traffic burst to confirm whether thread-pool growth under concurrent autosave load is the cause. Check https://shopright-api.onrender.com/debug/memory any time.
+- [ ] Confirm the Oct 3, 2026 memory fix after it is deployed (not deployed from the fix branch). shopright-api was retaining dead HTTP/2 connections on the shared Supabase client and allocating a dense cell grid on every Shop File. The keep-alive no longer sends SIGTERM at 430 MB. After deploy, check https://shopright-api.onrender.com/debug/memory on a shopping day — RSS should stay well under the limit without the process restarting itself.
 - [ ] Fix `visit_time` NOT NULL constraint violation on `POST /visits/batch` — batch-created visits never set `visit_time` by design (rule 17 — Visit.jsx sets it on first open), but the DB column is NOT NULL, causing intermittent 500s during Accept Route. Needs a Supabase migration (`ALTER TABLE vendor_visits ALTER COLUMN visit_time DROP NOT NULL`) — blocked on DB access as of Aug 26, 2026.
 - [ ] Custom domain (optional, ~$12/year)
 - [ ] Resend verified domain for professional email sender address

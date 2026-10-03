@@ -5,6 +5,39 @@ from supabase import create_client, Client
 
 load_dotenv()
 
+# postgrest, gotrue, storage3, and supafunc each construct an httpx.Client
+# with http2=True and no way to turn it off (supabase 2.7 / postgrest 0.16).
+# That client is one process-wide object, and FastAPI runs sync endpoints on
+# a thread pool, so autosave (PUT /visits/{id}) uses it from many threads.
+#
+# httpcore does not drop an HTTP/2 connection that has hit a connection reset.
+# The socket stays in the pool: idle, not closed, and not available. The next
+# request opens another connection beside it. A burst of resets — the failure
+# logged against this client on 2026-08-21 — therefore stacks dead HTTP/2
+# connections. Their h2 and TLS buffers are still referenced, so malloc_trim
+# cannot give the memory back, and RSS climbs until the process is killed.
+# HTTP/1 closes the failed connection instead of keeping it.
+#
+# Installed before create_client so every sync client the SDK builds is HTTP/1
+# with a small pool. Keyword-only http2=True from the libraries is overwritten.
+_HTTPX_CLIENT_INIT = httpx.Client.__init__
+
+
+def _http1_client_init(self, *args, **kwargs):
+    kwargs["http2"] = False
+    kwargs.setdefault(
+        "limits",
+        httpx.Limits(
+            max_connections=10,
+            max_keepalive_connections=2,
+            keepalive_expiry=5.0,
+        ),
+    )
+    _HTTPX_CLIENT_INIT(self, *args, **kwargs)
+
+
+httpx.Client.__init__ = _http1_client_init
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
