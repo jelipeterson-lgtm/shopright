@@ -224,10 +224,24 @@ def _save(wb):
     return buf.getvalue()
 
 
-def test_shop_file_does_not_materialize_rows_up_to_max_row():
-    """A stray cell on row 2000 used to create 1999×40 cells. It must not."""
+def test_shop_file_does_not_materialize_rows_up_to_max_row(monkeypatch):
+    """A stray cell on row 2000 used to create 1999×40 cells. It must not.
+
+    Counted in memory at save time: saving drops empty cells, so a reloaded
+    file looks the same with or without the bug.
+    """
+    from openpyxl.workbook.workbook import Workbook as WorkbookClass
+    cells_at_save = []
+    real_save = WorkbookClass.save
+
+    def counting_save(self, filename):
+        cells_at_save.append(len(self.active._cells))
+        return real_save(self, filename)
+
+    monkeypatch.setattr(WorkbookClass, "save", counting_save)
     raw = _save(_template_workbook())
     excel._template_cache["shopfile"] = raw
+    cells_at_save.clear()
     try:
         output, filename = excel.generate_shop_file(
             [{
@@ -246,6 +260,7 @@ def test_shop_file_does_not_materialize_rows_up_to_max_row():
         excel._template_cache.pop("shopfile", None)
 
     assert filename.startswith("Shop File Kelsey ")
+    assert cells_at_save and cells_at_save[0] < 80
     wb = load_workbook(output)
     ws = wb.active
     # Header row + the one visit row + the stray cell that was already there.
