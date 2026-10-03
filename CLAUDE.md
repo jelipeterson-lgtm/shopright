@@ -312,7 +312,7 @@ RLS: Users can read/insert/update/delete their own visits.
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| GET | /health | No | Health check |
+| GET | /health | No | Health check; `version` = the commit Render is running (RENDER_GIT_COMMIT) |
 | GET | /debug/memory | No | Live memory stats: rss_mb, peak_rss_mb (VmHWM), headroom_mb, vm_size_mb |
 | POST | /contact | No | Landing page contact form |
 | POST | /help/chat | Yes | AI help chatbot |
@@ -470,6 +470,12 @@ If Render doesn't auto-deploy, go to Render dashboard → Manual Deploy → Depl
 1. User signs up through the app
 2. In Supabase SQL Editor: `UPDATE public.profiles SET is_free_account = true WHERE report_email = 'their@email.com';`
 
+### Verify what's live (no Render dashboard needed)
+- **Backend version**: GET https://shopright-api.onrender.com/health → `version` is the running commit. Render only redeploys when `backend/` changes.
+- **Frontend version**: the live page's `<meta name="app-version">` is the commit Vercel is serving (every push redeploys).
+- **GitHub Actions → "Production check"** runs after every push to main: waits for Render to run the latest backend commit, then confirms the required endpoints are served. Read-only.
+- **GitHub Actions → "Production end-to-end"** (manual "Run workflow", or automatic when its test files change): waits for both deploys, creates a throwaway account `j.eli.peterson+shopright-e2e-<run id>@gmail.com` with a random password, runs the live API check and a full browser walkthrough of the repeat-vendor rule on shopright-jet.vercel.app, and deletes its assessments. The empty login is left behind — delete it in Supabase afterwards: `delete from public.profiles where id in (select id from auth.users where email like 'j.eli.peterson+shopright-e2e-%'); delete from auth.users where email like 'j.eli.peterson+shopright-e2e-%';`
+
 ### Run the tests
 - **Backend**: `cd backend && pip install -r requirements.txt pytest && python -m pytest tests`
 - **Frontend logic**: `cd frontend && npm test`
@@ -529,7 +535,7 @@ Backend allows requests from:
 - [ ] Kelsey real-world test on an actual shopping day
 - [ ] Generated Shop File submitted to and accepted by Smart Circle
 - [ ] Second new program code to add to programs table (Eli to identify)
-- [ ] Confirm the Oct 3, 2026 memory fix after it is deployed (not deployed from the fix branch). shopright-api was retaining dead HTTP/2 connections on the shared Supabase client and allocating a dense cell grid on every Shop File. The keep-alive no longer sends SIGTERM at 430 MB. After deploy, check https://shopright-api.onrender.com/debug/memory on a shopping day — RSS should stay well under the limit without the process restarting itself.
+- [ ] Confirm the Oct 3, 2026 memory fix holds for a week — **merged (PR #4) and verified live Oct 3** (Render reported running `e82c6a7`'s successor `a5d8e20` via /health). A daily Routine checks Eli's Gmail for Render "status 143" / "exceeded its memory limit" alerts through Oct 10 (baseline: a 143 about weekly since Sep 10). shopright-api was retaining dead HTTP/2 connections on the shared Supabase client and allocating a dense cell grid on every Shop File. The keep-alive no longer sends SIGTERM at 430 MB. After deploy, check https://shopright-api.onrender.com/debug/memory on a shopping day — RSS should stay well under the limit without the process restarting itself.
 - [ ] Fix `visit_time` NOT NULL constraint violation on `POST /visits/batch` — batch-created visits never set `visit_time` by design (rule 17 — Visit.jsx sets it on first open), but the DB column is NOT NULL, causing intermittent 500s during Accept Route. Needs a Supabase migration (`ALTER TABLE vendor_visits ALTER COLUMN visit_time DROP NOT NULL`) — blocked on DB access as of Aug 26, 2026.
 - [ ] Custom domain (optional, ~$12/year)
 - [ ] Resend verified domain for professional email sender address
