@@ -26,6 +26,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Wait for Render to be running this commit
+        # A deploy swapping servers mid-test drops the in-flight request, so don't start until it's done.
+        run: |
+          for attempt in $(seq 1 40); do
+            v=$(curl -sf --max-time 90 https://shopright-api.onrender.com/health | jq -r '.version // "unknown"') || v="unreachable"
+            if [ "$v" = "$GITHUB_SHA" ]; then echo "Render is running $GITHUB_SHA"; exit 0; fi
+            echo "Attempt $attempt: live version is $v, waiting for $GITHUB_SHA"
+            sleep 30
+          done
+          echo "::error::Render never reported $GITHUB_SHA"
+          exit 1
+
       - name: Generate a throwaway password
         run: |
           P=$(openssl rand -hex 16)

@@ -101,7 +101,8 @@ print(f"[startup] RSS after import: {_rss_mb():.1f} MB  peak: {_peak_rss_mb():.1
 
 @app.get("/health")
 def health_check():
-    return {"success": True, "data": "ShopRight API is running", "error": None}
+    # Render sets RENDER_GIT_COMMIT; the GitHub production checks wait for it to match the pushed commit.
+    return {"success": True, "data": "ShopRight API is running", "version": os.getenv("RENDER_GIT_COMMIT", "local"), "error": None}
 
 
 @app.get("/debug/memory")

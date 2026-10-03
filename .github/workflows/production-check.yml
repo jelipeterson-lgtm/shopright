@@ -16,7 +16,19 @@ jobs:
       API: https://shopright-api.onrender.com
       REQUIRED_PATHS: /health /visits/repeat-check /visits/batch /route/optimize /reports/generate/invoice
     steps:
-      - name: Wait for the live API to serve every required endpoint
+      - name: Wait for Render to be running this commit
+        run: |
+          # /health reports Render's RENDER_GIT_COMMIT. Build + swap can take several minutes.
+          for attempt in $(seq 1 40); do
+            v=$(curl -sf --max-time 90 "$API/health" | jq -r '.version // "unknown"') || v="unreachable"
+            if [ "$v" = "$GITHUB_SHA" ]; then echo "Render is running $GITHUB_SHA"; exit 0; fi
+            echo "Attempt $attempt: live version is $v, waiting for $GITHUB_SHA"
+            sleep 30
+          done
+          echo "::error::Render never reported $GITHUB_SHA (a newer push may have superseded it)"
+          exit 1
+
+      - name: Confirm every required endpoint is served
         run: |
           # Render can take several minutes to build and swap in a new deploy, and the
           # free tier can take ~30s to wake, so keep polling for up to 15 minutes.
