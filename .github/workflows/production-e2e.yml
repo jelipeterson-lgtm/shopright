@@ -25,17 +25,22 @@ jobs:
       TZ: America/Los_Angeles
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Wait for Render to be running this commit
+      - name: Wait for Render to be running the latest backend commit
         # A deploy swapping servers mid-test drops the in-flight request, so don't start until it's done.
         run: |
+          # Render only redeploys when backend/ changes, so expect the newest commit that touched it.
+          EXPECTED=$(git log -1 --first-parent --format=%H -- backend)
+          echo "Expecting Render to run $EXPECTED"
           for attempt in $(seq 1 40); do
             v=$(curl -sf --max-time 90 https://shopright-api.onrender.com/health | jq -r '.version // "unknown"') || v="unreachable"
-            if [ "$v" = "$GITHUB_SHA" ]; then echo "Render is running $GITHUB_SHA"; exit 0; fi
-            echo "Attempt $attempt: live version is $v, waiting for $GITHUB_SHA"
+            if [ "$v" = "$EXPECTED" ]; then echo "Render is running $EXPECTED"; exit 0; fi
+            echo "Attempt $attempt: live version is $v, waiting for $EXPECTED"
             sleep 30
           done
-          echo "::error::Render never reported $GITHUB_SHA"
+          echo "::error::Render never reported $EXPECTED"
           exit 1
 
       - name: Wait for Vercel to be serving this commit
