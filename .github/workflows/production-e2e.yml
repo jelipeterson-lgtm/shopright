@@ -1,0 +1,64 @@
+name: Production end-to-end
+
+# Exercises the repeat-vendor rule on the LIVE site, API and database with a brand-new
+# throwaway account per run (random password, never stored). Each run leaves one empty
+# account named in the job summary; delete it in Supabase afterwards (deleting the
+# account removes its assessments and route plans too).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/tests-prod/**'
+      - 'frontend/playwright.prod.config.js'
+      - 'backend/tests/live_repeat_rule_check.py'
+      - '.github/workflows/production-e2e.yml'
+
+concurrency: production-e2e
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      E2E_EMAIL: j.eli.peterson+shopright-e2e-${{ github.run_id }}@gmail.com
+      TZ: America/Los_Angeles
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate a throwaway password
+        run: |
+          P=$(openssl rand -hex 16)
+          echo "::add-mask::$P"
+          echo "E2E_PASSWORD=$P" >> "$GITHUB_ENV"
+          echo "Test account for this run: \`$E2E_EMAIL\` — delete it in Supabase when done." >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Live API check (creates the throwaway account)
+        run: |
+          pip install httpx==0.27.2
+          python backend/tests/live_repeat_rule_check.py --create-account
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Live browser check on shopright-jet.vercel.app
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.prod.config.js --reporter=list
+
+      - name: Save screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-e2e-screenshots
+          path: frontend/test-results/
+          retention-days: 14
