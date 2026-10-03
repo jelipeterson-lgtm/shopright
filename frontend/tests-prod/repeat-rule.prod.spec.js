@@ -60,6 +60,8 @@ test.beforeAll(async () => {
   expect(r.status, 'sign-in to Supabase').toBe(200)
   token = (await r.json()).access_token
 
+  // A brand-new account has no address, and the Route Planner won't optimize without a start.
+  await api('PUT', '/auth/profile', { home_address: '1120 SW 5th Ave, Portland, OR 97204' })
   await deleteAllMyVisits()
   await seedSubmitted(FM, ATT, 'Pass')   // last week, reps present → must be held back
   await seedSubmitted(FM, CKE, 'Fail')   // last week, reps NOT present → may return
@@ -96,6 +98,13 @@ test('live: repeat is held back, others route normally, "Add anyway" and manual 
 
   const fmCard = page.locator('[data-upcoming-index]').filter({ hasText: 'Kroger - Fred Meyer #242' })
   const costcoCard = page.locator('[data-upcoming-index]').filter({ hasText: 'Costco #2' })
+  // Fail fast with the app's own message if it shows an error instead of a route.
+  const appError = page.locator('p.text-red-500').first()
+  const outcome = await Promise.race([
+    fmCard.waitFor({ timeout: 120_000 }).then(() => 'route').catch(() => 'timeout'),
+    appError.waitFor({ timeout: 120_000 }).then(() => 'error').catch(() => 'timeout'),
+  ])
+  if (outcome === 'error') throw new Error(`Route Planner showed an error: ${await appError.innerText()}`)
   await expect(fmCard).toBeVisible()
   await expect(fmCard).toContainText(LEAFGUARD)
   await expect(fmCard).toContainText(CKE)
