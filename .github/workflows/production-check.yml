@@ -1,0 +1,44 @@
+name: Production check
+
+# Confirms the live Render backend is up and serving the endpoints the frontend depends on.
+# Read-only: no login, no data touched. Runs after each push to main (waiting out the
+# Render deploy) and on demand from the Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      API: https://shopright-api.onrender.com
+      REQUIRED_PATHS: /health /visits/repeat-check /visits/batch /route/optimize /reports/generate/invoice
+    steps:
+      - name: Wait for the live API to serve every required endpoint
+        run: |
+          # Render can take several minutes to build and swap in a new deploy, and the
+          # free tier can take ~30s to wake, so keep polling for up to 15 minutes.
+          for attempt in $(seq 1 30); do
+            if curl -sf --max-time 90 "$API/openapi.json" -o openapi.json; then
+              missing=""
+              for p in $REQUIRED_PATHS; do
+                jq -e --arg p "$p" '.paths | has($p)' openapi.json > /dev/null || missing="$missing $p"
+              done
+              if [ -z "$missing" ]; then
+                echo "All required endpoints are live:"
+                for p in $REQUIRED_PATHS; do echo "  ✓ $p"; done
+                exit 0
+              fi
+              echo "Attempt $attempt: not live yet:$missing"
+            else
+              echo "Attempt $attempt: API not responding yet"
+            fi
+            sleep 30
+          done
+          echo "::error::Production backend is missing:$missing"
+          exit 1
+
+      - name: Health check
+        run: curl -sf --max-time 90 "$API/health" | jq -e '.success == true'
