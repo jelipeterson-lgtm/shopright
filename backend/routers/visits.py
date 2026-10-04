@@ -126,6 +126,10 @@ def batch_create_visits(body: BatchCreateVisit, authorization: str = Header(...)
                 "city": store.get("city", ""),
                 "state": store.get("state", ""),
                 "visit_date": body.session_date,
+                # Null until the assessment is opened. Visit.jsx then stores the
+                # shopper's local time. A clock time here would be Render's UTC
+                # time, or the moment Accept Route was tapped.
+                "visit_time": None,
                 "session_date": body.session_date,
                 "status": "Draft",
                 "stop_open": True,
