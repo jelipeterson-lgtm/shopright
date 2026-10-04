@@ -2,7 +2,7 @@
 
 Read this file at the start of every session. This is the comprehensive reference for the entire project.
 
-*Last updated: October 3, 2026*
+*Last updated: October 4, 2026*
 
 ---
 
@@ -276,7 +276,7 @@ RLS: authenticated users can read. 11 programs currently in table. Users can als
 | address, city, state | text | |
 | status | text | Draft or Complete (displayed as Open/Completed in UI) |
 | visit_date | date | |
-| visit_time | time | |
+| visit_time | time | Nullable. Null when Accept Route creates the row; set from the shopper's local clock when the assessment is first opened |
 | session_date | date | |
 | stop_open | boolean | True until store is closed |
 | reps_present | text | Pass or Fail |
@@ -390,7 +390,7 @@ RLS: Users can read/insert/update/delete their own visits.
 
 16. **Dates**: All dates use local timezone (not UTC). Previous bug caused dates to flip to next day after 5 PM Pacific. Fix: use local date construction instead of toISOString().
 
-17. **Visit time**: Set from the user's local browser clock (`new Date().toTimeString()`) when the assessment form is first opened, not at route-acceptance time. Batch-created visits store null visit_time; Visit.jsx auto-initializes it on first open. This ensures the time reflects when the shopper actually did the assessment, not when they accepted the route.
+17. **Visit time**: Set from the user's local browser clock (`new Date().toTimeString()`) when the assessment form is first opened, not at route-acceptance time. Batch-created visits store null visit_time; Visit.jsx auto-initializes it on first open. This ensures the time reflects when the shopper actually did the assessment, not when they accepted the route. The column is nullable (Oct 4, 2026). It was `time NOT NULL` with no default, so the batch insert — which does not send a clock time — failed until the constraint was dropped.
 
 18. **Repeat vendor rule (Smart Circle, Oct 2026)**: A shopper may not assess the same vendor (exact program code) at the same store in two consecutive Monday–Sunday weeks. Same store + different vendor is fine; same vendor + different store is fine; a skipped week resets it. Program codes already encode location within a store (e.g. `RTL-GDI-LeafGuard` vs `RTL-GDI-LG Exit Fence` are different vendors). Only **submitted** (Complete) visits from last week count, and a visit with **Reps Present = Fail** does not count (the vendor wasn't there) — any other Fail still counts. Checked per shopper, never across shoppers. "Last week" is relative to the week being planned (the Route Planner's date, or the date chosen on the manual entry page). Behavior: repeats are held back from the optimizer and listed in a collapsed "Held back — shopped last week" section; only the repeat vendor is held back, not the whole store. "Add anyway" (and adding a repeat by hand on the Route Planner, Add Store or manual entry pages) shows one confirmation naming the vendor, store and last week's date; it is asked once and never again for that vendor (re-optimizing or reloading the saved route doesn't re-ask). Overridden vendors show a small amber ↻ icon in the app for the rest of the week. No settings toggle, overrides are not recorded, and nothing appears in the Shop File or invoice. If the check fails to load, planning continues with nothing held back.
 
@@ -537,7 +537,7 @@ Backend allows requests from:
 - [ ] Generated Shop File submitted to and accepted by Smart Circle
 - [ ] Second new program code to add to programs table (Eli to identify)
 - [ ] Confirm the Oct 3, 2026 memory fix holds for a week — **merged (PR #4) and verified live Oct 3** (Render reported running `e82c6a7`'s successor `a5d8e20` via /health). A daily Routine checks Eli's Gmail for Render "status 143" / "exceeded its memory limit" alerts through Oct 10 (baseline: a 143 about weekly since Sep 10). shopright-api was retaining dead HTTP/2 connections on the shared Supabase client and allocating a dense cell grid on every Shop File. The keep-alive no longer sends SIGTERM at 430 MB. After deploy, check https://shopright-api.onrender.com/debug/memory on a shopping day — RSS should stay well under the limit without the process restarting itself.
-- [ ] Fix `visit_time` NOT NULL constraint violation on `POST /visits/batch` — batch-created visits never set `visit_time` by design (rule 17 — Visit.jsx sets it on first open), but the DB column is NOT NULL, causing intermittent 500s during Accept Route. Needs a Supabase migration (`ALTER TABLE vendor_visits ALTER COLUMN visit_time DROP NOT NULL`) — blocked on DB access as of Aug 26, 2026.
+- [x] Fix `visit_time` NOT NULL constraint violation on `POST /visits/batch` — verified Oct 4, 2026. The column was `time NOT NULL` with no default; omitting `visit_time` failed with a not-null violation (it succeeded only when every vendor was already on that date, which is why it looked intermittent). The value on batch create is null. A server clock is UTC, and the Accept Route clock would stick because Visit.jsx only fills an empty time. Migration `vendor_visits_visit_time_nullable` is applied. The API change that sets `visit_time` to null is in the open PR and is not deployed; the live handler still omits the column, which now stores null.
 - [ ] Custom domain (optional, ~$12/year)
 - [ ] Resend verified domain for professional email sender address
 - [ ] Error monitoring (Sentry or equivalent)
