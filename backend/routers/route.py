@@ -4,6 +4,7 @@ from typing import Optional, List
 from db import supabase_admin, claude
 from routers.auth import get_user_id
 from routers.stores import ensure_coordinates, haversine
+from route_order import plan_route
 from datetime import datetime, date
 import re
 
@@ -601,64 +602,39 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             display_h = 12
         return f"{display_h}:{m:02d} {ampm}"
 
-    # Greedy optimization: best earnings/minute order within time window
-    # Never drops stores — includes all that fit, marks overflow separately
+    # Order stops for the least total drive (start -> stops -> end); every stop pays the same
+    # whatever the order, so that is the best hourly rate. A time window drops the stops that
+    # pay least per minute they cost.
     max_minutes = body.time_window_minutes or 99999
+    order, overflow_idx = plan_route(
+        [s["earnings"] for s in stores],
+        [s["est_minutes"] for s in stores],
+        drive_times,
+        body.time_window_minutes or None,
+    )
     route = []
-    overflow = []  # stores that don't fit in time window
-    remaining = list(range(num_stores))
     current = 0
-    elapsed = 0
-    total_earnings_so_far = 0
     clock = start_hour * 60 + start_minute  # minutes from midnight
-
-    while remaining:
-        best_score = -1
-        best_idx = None
-
-        for idx in remaining:
-            drive_min = drive_times.get((current, idx), 9999)
-            store = stores[idx]
-            time_at_store = drive_min + store["est_minutes"]
-            return_from_store = drive_times.get((idx + 1, num_stores), 0)
-
-            would_fit = (elapsed + time_at_store + return_from_store) <= max_minutes
-            if not would_fit:
-                continue
-
-            score = store["earnings"] / max(time_at_store, 1)
-            if score > best_score:
-                best_score = score
-                best_idx = idx
-
-        if best_idx is None:
-            # No more stores fit — remaining go to overflow
-            for idx in remaining:
-                store = stores[idx]
-                drive_min = drive_times.get((current, idx), 0)
-                store["drive_time_min"] = round(drive_min, 1)
-                store["drive_distance_mi"] = round(drive_distances.get((current, idx), 0), 1)
-                store["status"] = "overflow"
-                overflow.append(store)
-            break
-
-        store = stores[best_idx]
-        drive_min = drive_times.get((current, best_idx), 0)
+    for idx in order:
+        store = stores[idx]
+        drive_min = drive_times.get((current, idx), 0)
         store["drive_time_min"] = round(drive_min, 1)
-        store["drive_distance_mi"] = round(drive_distances.get((current, best_idx), 0), 1)
+        store["drive_distance_mi"] = round(drive_distances.get((current, idx), 0), 1)
         store["status"] = "upcoming"
-
-        # Schedule: arrival, assessment window, departure
         arrival = clock + drive_min
         store["est_arrival"] = minutes_to_time(arrival)
         store["est_depart"] = minutes_to_time(arrival + store["est_minutes"])
-
-        elapsed += drive_min + store["est_minutes"]
-        total_earnings_so_far += store["earnings"]
         clock = arrival + store["est_minutes"]
         route.append(store)
-        remaining.remove(best_idx)
-        current = best_idx + 1
+        current = idx + 1
+
+    overflow = []
+    for idx in overflow_idx:
+        store = stores[idx]
+        store["drive_time_min"] = round(drive_times.get((current, idx), 0), 1)
+        store["drive_distance_mi"] = round(drive_distances.get((current, idx), 0), 1)
+        store["status"] = "overflow"
+        overflow.append(store)
 
     if route:
         last_store_idx = stores.index(route[-1])
