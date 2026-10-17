@@ -33,6 +33,9 @@ function Visit() {
   const [flaggedFields, setFlaggedFields] = useState(new Set())
   const [skipReason, setSkipReason] = useState(null)
   const saveTimerRef = useRef(null)
+  const pendingRef = useRef({})
+  const [saveFailed, setSaveFailed] = useState(false)
+  const backupKey = `shopright-unsaved-${id}`
 
   // Map AI flag field names to form field IDs for highlighting
   const FLAG_FIELD_MAP = {
@@ -56,9 +59,44 @@ function Visit() {
     'Soft Selling Comment': 'eval_soft_selling',
   }
 
+  // Unsaved edits stay in pendingRef (and on the phone) until the server confirms them,
+  // so a dropped request or a server restart never loses what the shopper entered.
+  const writeBackup = () => {
+    try {
+      if (Object.keys(pendingRef.current).length) localStorage.setItem(backupKey, JSON.stringify(pendingRef.current))
+      else localStorage.removeItem(backupKey)
+    } catch (e) {}
+  }
+
+  const flush = useCallback(async () => {
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null }
+    const sent = { ...pendingRef.current }
+    if (!Object.keys(sent).length) return true
+    try {
+      await api.updateVisit(id, sent)
+      for (const [k, v] of Object.entries(sent)) {
+        if (pendingRef.current[k] === v) delete pendingRef.current[k]
+      }
+      writeBackup()
+      setSaveFailed(false)
+      return true
+    } catch (err) {
+      setSaveFailed(true)
+      saveTimerRef.current = setTimeout(flush, 5000)
+      return false
+    }
+  }, [id])
+
   useEffect(() => {
+    pendingRef.current = {}
+    setSaveFailed(false)
     loadVisit()
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+    const onHide = () => { if (document.visibilityState === 'hidden') flush() }
+    document.addEventListener('visibilitychange', onHide)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      flush()
+    }
   }, [id])
 
   const loadVisit = async () => {
@@ -70,6 +108,13 @@ function Visit() {
         visitData.visit_time = localTime
         api.updateVisit(id, { visit_time: localTime }).catch(() => {})
       }
+      let backup = null
+      try { backup = JSON.parse(localStorage.getItem(backupKey) || 'null') } catch (e) {}
+      if (backup && visitData.status !== 'Complete') {
+        Object.assign(visitData, backup)
+        pendingRef.current = { ...backup, ...pendingRef.current }
+        flush()
+      }
       setVisit(visitData)
     } catch (err) {
       setError('Failed to load visit')
@@ -79,15 +124,11 @@ function Visit() {
   }
 
   const autoSave = useCallback((updates) => {
+    Object.assign(pendingRef.current, updates)
+    writeBackup()
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(async () => {
-      try {
-        await api.updateVisit(id, updates)
-      } catch (err) {
-        // Silent fail on auto-save — data is in local state
-      }
-    }, 500)
-  }, [id])
+    saveTimerRef.current = setTimeout(flush, 500)
+  }, [id, flush])
 
   const updateField = (field, value) => {
     setVisit((prev) => {
@@ -150,11 +191,15 @@ function Visit() {
 
     setSaving(true)
     setError(null)
+    // Everything must be saved before submitting, or the submitted assessment could miss edits.
+    Object.assign(pendingRef.current, visit)
+    if (!(await flush())) {
+      setSaving(false)
+      setError("Couldn't save your answers. Check your connection and tap Review & Submit again — nothing you entered is lost.")
+      return
+    }
     setReviewState('reviewing')
     try {
-      // Save any pending changes first
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-      await api.updateVisit(id, visit)
 
       // Run AI review
       const reviewResult = await api.reviewVisit(id)
@@ -269,6 +314,11 @@ function Visit() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="Assessment" rightButton={<button onClick={() => navigate('/route')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
+      {saveFailed && (
+        <p role="status" className="mx-4 mt-2 px-3 py-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+          Not saved yet — no connection to the server. Your answers are kept on this phone and will save automatically.
+        </p>
+      )}
       <div className="max-w-lg mx-auto px-4 py-4 pb-64">
 
         {error && (
