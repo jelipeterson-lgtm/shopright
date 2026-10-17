@@ -4,6 +4,7 @@ import api from '../services/api'
 import EvaluationField from '../components/EvaluationField'
 import VoiceInput from '../components/VoiceInput'
 import PageHeader from '../components/PageHeader'
+import { createVisitAutosave } from '../utils/visitAutosave'
 
 // All 22 evaluation fields: [fieldId, label, commentFieldId]
 const EVAL_FIELDS = [
@@ -32,7 +33,7 @@ function Visit() {
   const [flags, setFlags] = useState([])
   const [flaggedFields, setFlaggedFields] = useState(new Set())
   const [skipReason, setSkipReason] = useState(null)
-  const saveTimerRef = useRef(null)
+  const saverRef = useRef(null)
 
   // Map AI flag field names to form field IDs for highlighting
   const FLAG_FIELD_MAP = {
@@ -57,8 +58,24 @@ function Visit() {
   }
 
   useEffect(() => {
+    const saver = createVisitAutosave({
+      save: (updates, opts = {}) => api.updateVisit(id, updates, opts),
+    })
+    saverRef.current = saver
+    const flushHidden = () => saver.flush({ keepalive: true })
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushHidden()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', flushHidden)
     loadVisit()
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', flushHidden)
+      // Navigation and unmount: send whatever is still pending. The request
+      // uses keepalive so it can finish if the page is going away.
+      saver.flush({ keepalive: true })
+    }
   }, [id])
 
   const loadVisit = async () => {
@@ -79,15 +96,8 @@ function Visit() {
   }
 
   const autoSave = useCallback((updates) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(async () => {
-      try {
-        await api.updateVisit(id, updates)
-      } catch (err) {
-        // Silent fail on auto-save — data is in local state
-      }
-    }, 500)
-  }, [id])
+    saverRef.current?.schedule(updates)
+  }, [])
 
   const updateField = (field, value) => {
     setVisit((prev) => {
@@ -152,8 +162,8 @@ function Visit() {
     setError(null)
     setReviewState('reviewing')
     try {
-      // Save any pending changes first
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      // Save any pending changes first, then the full assessment.
+      if (saverRef.current) await saverRef.current.flush()
       await api.updateVisit(id, visit)
 
       // Run AI review
@@ -267,8 +277,8 @@ function Visit() {
   const isCostco = visit.retailer_name?.toLowerCase().includes('costco')
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PageHeader title="Assessment" rightButton={<button onClick={() => navigate('/route')} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
+    <div className="min-h-screen bg-gray-50" onBlur={() => { saverRef.current?.flush() }}>
+      <PageHeader title="Assessment" rightButton={<button onClick={async () => { await saverRef.current?.flush(); navigate('/route') }} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
       <div className="max-w-lg mx-auto px-4 py-4 pb-64">
 
         {error && (
@@ -610,7 +620,7 @@ function Visit() {
                   {saving ? 'Saving...' : 'Review & Submit'}
                 </button>
                 <button
-                  onClick={() => navigate('/route')}
+                  onClick={async () => { await saverRef.current?.flush(); navigate('/route') }}
                   className="w-full bg-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-300"
                 >
                   Save & Go Back

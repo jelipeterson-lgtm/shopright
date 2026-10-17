@@ -1,4 +1,5 @@
 import os
+import threading
 import httpx
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -47,6 +48,65 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 supabase_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 
+# One process-wide client for every outbound call that used to go through
+# httpx.get/post/head. Those helpers construct a new Client per call, and each
+# Client loads the CA bundle into a fresh SSL context — about 0.7 MB that is
+# only released by a full garbage collection. get_user_id() did this on every
+# authenticated request. PUT /visits autosave during a shopping session therefore
+# climbed ~0.7 MB per save (Oct 15 2026: ~90 MB to the 512 MB limit, malloc_trim
+# freed <1 MB). A single client keeps one SSL context and a small pool.
+_outbound_lock = threading.Lock()
+_outbound_client = None
+
+
+def _new_outbound_client():
+    return httpx.Client(
+        timeout=httpx.Timeout(30.0, connect=10.0),
+        limits=httpx.Limits(
+            max_connections=20,
+            max_keepalive_connections=4,
+            keepalive_expiry=15.0,
+        ),
+        follow_redirects=False,
+        http2=False,
+    )
+
+
+def outbound_client():
+    """Return the shared client, creating it on first use and after close()."""
+    global _outbound_client
+    with _outbound_lock:
+        if _outbound_client is None or _outbound_client.is_closed:
+            _outbound_client = _new_outbound_client()
+        return _outbound_client
+
+
+def close_outbound_client():
+    """Close the shared client. The next outbound call opens a new one."""
+    global _outbound_client
+    with _outbound_lock:
+        if _outbound_client is not None and not _outbound_client.is_closed:
+            _outbound_client.close()
+        _outbound_client = None
+
+
+class _Outbound:
+    def get(self, *args, **kwargs):
+        return outbound_client().get(*args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        return outbound_client().post(*args, **kwargs)
+
+    def head(self, *args, **kwargs):
+        return outbound_client().head(*args, **kwargs)
+
+    def close(self):
+        close_outbound_client()
+
+
+outbound = _Outbound()
+
+
 def claude(api_key: str, messages: list, max_tokens: int = 1024, system: str = None) -> str:
     """
     Call Anthropic Messages API directly via httpx — no anthropic SDK required.
@@ -60,7 +120,7 @@ def claude(api_key: str, messages: list, max_tokens: int = 1024, system: str = N
     }
     if system:
         payload["system"] = system
-    r = httpx.post(
+    r = outbound.post(
         "https://api.anthropic.com/v1/messages",
         headers={
             "x-api-key": api_key,

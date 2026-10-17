@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, Query
 from pydantic import BaseModel
 from typing import Optional, List
-from db import supabase_admin, claude
+from db import supabase_admin, claude, outbound
 from routers.auth import get_user_id
 from routers.stores import ensure_coordinates, haversine
 from route_order import plan_route
@@ -443,7 +443,6 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         store["earnings"] = 50 + (15 * (vendor_count - 1))
         store["est_minutes"] = 20 + (7.5 * (vendor_count - 1))
 
-    import httpx
     import time
 
     num_stores = len(stores)
@@ -460,7 +459,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
             except ValueError:
                 pass
         try:
-            r = httpx.get("https://nominatim.openstreetmap.org/search", params={
+            r = outbound.get("https://nominatim.openstreetmap.org/search", params={
                 "q": address, "format": "json", "limit": 1,
             }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
             results = r.json()
@@ -527,7 +526,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
         today_str = datetime.now().strftime("%Y-%m-%d")
         departure_iso = f"{today_str}T{start_hour:02d}:{start_minute:02d}:00"
         try:
-            r = httpx.post(
+            r = outbound.post(
                 "https://matrix.router.hereapi.com/v8/matrix",
                 params={"apikey": here_key, "async": "false"},
                 json={
@@ -565,7 +564,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     if not here_succeeded and ors_key:
         try:
-            r = httpx.post(
+            r = outbound.post(
                 "https://api.openrouteservice.org/v2/matrix/driving-car",
                 headers={"Authorization": ors_key, "Content-Type": "application/json"},
                 json={
@@ -687,7 +686,6 @@ def test_ors(authorization: str = Header(...)):
     """Diagnostic: test ORS API key presence and a minimal 2-point matrix request."""
     get_user_id(authorization)
     import os
-    import httpx
     api_key = os.environ.get("OPENROUTESERVICE_API_KEY")
     if not api_key:
         return {"key_present": False, "error": "OPENROUTESERVICE_API_KEY not set"}
@@ -696,7 +694,7 @@ def test_ors(authorization: str = Header(...)):
         "key_prefix": api_key[:8] + "...",
     }
     try:
-        r = httpx.post(
+        r = outbound.post(
             "https://api.openrouteservice.org/v2/matrix/driving-car",
             headers={"Authorization": api_key, "Content-Type": "application/json"},
             json={
@@ -719,9 +717,8 @@ def test_ors(authorization: str = Header(...)):
 @router.get("/geocode")
 def geocode_address(address: str = Query(...), authorization: str = Header(...)):
     get_user_id(authorization)
-    import httpx
     try:
-        r = httpx.get("https://nominatim.openstreetmap.org/search", params={
+        r = outbound.get("https://nominatim.openstreetmap.org/search", params={
             "q": address, "format": "json", "limit": 1,
         }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
         results = r.json()

@@ -1,33 +1,106 @@
+import base64
+import json
+import threading
+import time
+from collections import OrderedDict
+
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY, claude
-import httpx
+from db import supabase_admin, SUPABASE_URL, SUPABASE_ANON_KEY, claude, outbound
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Successful verifications only. A shopping session reuses one access token for
+# every autosave; asking Supabase each time is what built a new SSL context per
+# PUT. A few minutes is enough to collapse that to a handful of checks per hour.
+# Failures are not stored. The entry is dropped at the token's own exp if that
+# is sooner, and the map is capped so a flood of distinct tokens cannot grow it.
+_AUTH_CACHE_TTL = 180.0
+_AUTH_CACHE_MAX = 256
+_auth_cache = OrderedDict()
+_auth_lock = threading.Lock()
+
+
+def _wall_time():
+    return time.time()
+
+
+def _mono():
+    return time.monotonic()
+
+
+def _token_exp(token):
+    """JWT exp claim, or None when the token isn't a JWT. Signature is not checked.
+
+    Identity still comes from Supabase. exp only limits how long a successful
+    verification may be reused.
+    """
+    parts = token.split(".")
+    if len(parts) < 2:
+        return None
+    try:
+        payload = parts[1]
+        pad = "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload + pad))
+    except Exception:
+        return None
+    exp = data.get("exp") if isinstance(data, dict) else None
+    if isinstance(exp, (int, float)):
+        return float(exp)
+    return None
+
+
+def clear_auth_cache():
+    with _auth_lock:
+        _auth_cache.clear()
 
 
 def get_user_id(authorization: str = Header(...)) -> str:
     """Extract and verify user from Supabase JWT via direct API call."""
     token = authorization.replace("Bearer ", "")
+    now = _mono()
+    with _auth_lock:
+        hit = _auth_cache.get(token)
+        if hit is not None:
+            user_id, deadline = hit
+            if deadline > now:
+                _auth_cache.move_to_end(token)
+                return user_id
+            _auth_cache.pop(token, None)
     try:
-        r = httpx.get(
+        r = outbound.get(
             f"{SUPABASE_URL}/auth/v1/user",
             headers={
                 "Authorization": f"Bearer {token}",
                 "apikey": SUPABASE_ANON_KEY,
             },
+            timeout=5.0,
         )
         if r.status_code != 200:
             raise HTTPException(
                 status_code=401,
                 detail=f"Supabase auth returned {r.status_code}: {r.text[:200]}"
             )
-        return r.json()["id"]
+        user_id = r.json()["id"]
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Auth error: {type(e).__name__}: {str(e)}")
+
+    ttl = _AUTH_CACHE_TTL
+    exp = _token_exp(token)
+    if exp is not None:
+        remaining = exp - _wall_time()
+        if remaining <= 0:
+            return user_id
+        ttl = min(ttl, remaining)
+    with _auth_lock:
+        _auth_cache[token] = (user_id, _mono() + ttl)
+        _auth_cache.move_to_end(token)
+        while len(_auth_cache) > _AUTH_CACHE_MAX:
+            _auth_cache.popitem(last=False)
+    return user_id
 
 
 class ProfileUpdate(BaseModel):

@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Header, Query
 from pydantic import BaseModel
-from db import supabase_admin
+from db import supabase_admin, outbound
 from math import radians, cos, sin, asin, sqrt
-import httpx
 
 router = APIRouter(prefix="/stores", tags=["stores"])
 
@@ -19,7 +18,7 @@ def ensure_coordinates(store):
         return store
     full_address = f"{address}, {city}, {state} {zip_code}".strip(", ")
     try:
-        r = httpx.get(
+        r = outbound.get(
             "https://nominatim.openstreetmap.org/search",
             params={"q": full_address, "format": "json", "limit": 1},
             headers={"User-Agent": "ShopRight/1.0"},
@@ -107,7 +106,6 @@ def search_stores(q: str = Query(..., min_length=1)):
 @router.post("/fix-coords")
 def fix_missing_coordinates():
     """Geocode stores that have null lat/lng."""
-    import httpx
     import time as _time
 
     result = supabase_admin.table("stores").select("*").is_("latitude", "null").execute()
@@ -120,7 +118,7 @@ def fix_missing_coordinates():
     for store in stores:
         full_address = f"{store.get('address', '')}, {store.get('city', '')}, {store.get('state', '')} {store.get('zip_code', '')}"
         try:
-            r = httpx.get(
+            r = outbound.get(
                 "https://nominatim.openstreetmap.org/search",
                 params={"q": full_address, "format": "json", "limit": 1},
                 headers={"User-Agent": "ShopRight/1.0"},
@@ -174,7 +172,7 @@ def add_store(body: AddStoreRequest, authorization: str = Header(...)):
     lat, lon = None, None
     for q in candidates:
         try:
-            r = httpx.get(
+            r = outbound.get(
                 "https://nominatim.openstreetmap.org/search",
                 params={"q": q, "format": "json", "limit": 1},
                 headers={"User-Agent": "ShopRight/1.0 (shopright-api.onrender.com)"},
