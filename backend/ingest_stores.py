@@ -9,10 +9,9 @@ Also loads program list into a programs table.
 """
 import os
 import time
-import httpx
 from openpyxl import load_workbook
 from dotenv import load_dotenv
-from db import supabase_admin
+from db import supabase_admin, outbound
 
 load_dotenv()
 
@@ -68,7 +67,7 @@ def _fetch_remote_last_modified():
     if not DROPBOX_URL:
         return None
     try:
-        r = httpx.head(DROPBOX_URL, follow_redirects=True, timeout=15)
+        r = outbound.head(DROPBOX_URL, follow_redirects=True, timeout=15)
         if r.status_code >= 400:
             print(f"HEAD {DROPBOX_URL} returned {r.status_code}")
             return None
@@ -80,7 +79,7 @@ def _fetch_remote_last_modified():
 
 def download_book1():
     print("Downloading Book1.xlsx from Dropbox...")
-    r = httpx.get(DROPBOX_URL, follow_redirects=True, timeout=60)
+    r = outbound.get(DROPBOX_URL, follow_redirects=True, timeout=60)
     r.raise_for_status()
     content_type = r.headers.get("content-type", "")
     if "html" in content_type or (len(r.content) < 1000 and b"<!DOCTYPE" in r.content[:100]):
@@ -104,7 +103,7 @@ def geocode_address(address, city, state, zip_code):
     ]
     for query in candidates:
         try:
-            r = httpx.get(
+            r = outbound.get(
                 "https://nominatim.openstreetmap.org/search",
                 params={"q": query, "format": "json", "limit": 1},
                 headers={"User-Agent": "ShopRight/1.0 (shopright-api.onrender.com)"},

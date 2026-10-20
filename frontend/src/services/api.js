@@ -93,9 +93,10 @@ const api = {
 
   getLastWeekRepeats: (weekOf) => request(`/visits/repeat-check?week_of=${weekOf}`),
 
-  updateVisit: (id, data) => request(`/visits/${id}`, {
+  updateVisit: (id, data, { keepalive = false } = {}) => request(`/visits/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
+    keepalive,
   }),
 
   completeVisit: (id) => request(`/visits/${id}/complete`, { method: 'POST' }),

@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -5,7 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="ShopRight API")
+
+@asynccontextmanager
+async def _lifespan(_app):
+    yield
+    # Drop the shared outbound pool on process shutdown (uvicorn lifespan).
+    from db import close_outbound_client
+    close_outbound_client()
+
+
+app = FastAPI(title="ShopRight API", lifespan=_lifespan)
 
 # CORS — allow frontend origins
 origins = [
@@ -43,7 +54,7 @@ app.include_router(route_router)
 import resource
 import threading
 import time
-import httpx
+from db import outbound
 
 _THREAD_LOG_THRESHOLD = 15
 
@@ -182,8 +193,6 @@ def debug_memory():
 
 
 # Keep-alive: prevent Render free tier from sleeping
-_keep_alive_client = httpx.Client(timeout=10)
-
 def keep_alive():
     """Ping self every 14 minutes so the free-tier web service is not spun down.
 
@@ -197,7 +206,7 @@ def keep_alive():
     while True:
         time.sleep(840)  # 14 minutes
         try:
-            _keep_alive_client.get(url)
+            outbound.get(url, timeout=10)
         except Exception:
             pass
         try:
@@ -316,7 +325,7 @@ ASSESSMENT FORM:
 - Soft Selling: only applies to Water programs (RS-DS WATER-Primo and RSW)
 - Resource Guide: only applies to Costco stores
 - Visit Recap: describe the overall visit at the bottom
-- Auto-saves every change — you won't lose work if the browser closes
+- Auto-saves while you work (after a short pause, and when you leave a field or the page) — you won't lose work if the browser closes
 
 NAVIGATION:
 - Bottom bar: Home, Stores, Reports, Profile, Settings
