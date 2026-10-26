@@ -4,9 +4,9 @@ Downloads master templates from Dropbox, copies them, writes visit data.
 """
 import os
 import io
-import httpx
 from datetime import datetime, date
 from collections import defaultdict
+from db import outbound
 
 
 def _normalize_dropbox_url(url):
@@ -31,7 +31,7 @@ _template_cache = {}
 def _download_template(url, key):
     """Download and cache template. Always return a fresh BytesIO copy."""
     if key not in _template_cache:
-        r = httpx.get(url, follow_redirects=True, timeout=30)
+        r = outbound.get(url, follow_redirects=True, timeout=30)
         r.raise_for_status()
         _template_cache[key] = r.content
     return io.BytesIO(bytes(_template_cache[key]))
