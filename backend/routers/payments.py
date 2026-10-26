@@ -15,7 +15,11 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 def _stripe():
     """Lazy-load stripe and set api_key on first use."""
+    import certifi
     import stripe as _s
+    # Stripe ships its own CA bundle, which still trusts the eMudhra/emSign
+    # roots compromised in Oct 2026. Verify against certifi's patched bundle.
+    _s.ca_bundle_path = certifi.where()
     _s.api_key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_TEST_SECRET_KEY")
     return _s
 
