@@ -34,6 +34,8 @@ function Visit() {
   const [flaggedFields, setFlaggedFields] = useState(new Set())
   const [skipReason, setSkipReason] = useState(null)
   const saverRef = useRef(null)
+  const [saveFailed, setSaveFailed] = useState(false)
+  const backupKey = `shopright-unsaved-${id}`
 
   // Map AI flag field names to form field IDs for highlighting
   const FLAG_FIELD_MAP = {
@@ -58,8 +60,18 @@ function Visit() {
   }
 
   useEffect(() => {
+    setSaveFailed(false)
+    // Unsaved edits are also kept on the phone until the server confirms them,
+    // so closing the app or a server restart never loses what the shopper entered.
     const saver = createVisitAutosave({
       save: (updates, opts = {}) => api.updateVisit(id, updates, opts),
+      onChange: (unsaved, failed) => {
+        try {
+          if (Object.keys(unsaved).length) localStorage.setItem(backupKey, JSON.stringify(unsaved))
+          else localStorage.removeItem(backupKey)
+        } catch (e) {}
+        setSaveFailed(failed)
+      },
     })
     saverRef.current = saver
     const flushHidden = () => saver.flush({ keepalive: true })
@@ -86,6 +98,15 @@ function Visit() {
         const localTime = new Date().toTimeString().slice(0, 5)
         visitData.visit_time = localTime
         api.updateVisit(id, { visit_time: localTime }).catch(() => {})
+      }
+      let backup = null
+      try { backup = JSON.parse(localStorage.getItem(backupKey) || 'null') } catch (e) {}
+      if (backup && visitData.status !== 'Complete') {
+        Object.assign(visitData, backup)
+        saverRef.current?.schedule(backup)
+        saverRef.current?.flush()
+      } else if (backup) {
+        try { localStorage.removeItem(backupKey) } catch (e) {}
       }
       setVisit(visitData)
     } catch (err) {
@@ -160,12 +181,15 @@ function Visit() {
 
     setSaving(true)
     setError(null)
+    // Everything must be saved before submitting, or the submitted assessment could miss edits.
+    saverRef.current.schedule(visit)
+    if (!(await saverRef.current.flush())) {
+      setSaving(false)
+      setError("Couldn't save your answers. Check your connection and tap Review & Submit again. Nothing you entered is lost.")
+      return
+    }
     setReviewState('reviewing')
     try {
-      // Save any pending changes first, then the full assessment.
-      if (saverRef.current) await saverRef.current.flush()
-      await api.updateVisit(id, visit)
-
       // Run AI review
       const reviewResult = await api.reviewVisit(id)
       const data = reviewResult.data
@@ -279,6 +303,11 @@ function Visit() {
   return (
     <div className="min-h-screen bg-gray-50" onBlur={() => { saverRef.current?.flush() }}>
       <PageHeader title="Assessment" rightButton={<button onClick={async () => { await saverRef.current?.flush(); navigate('/route') }} className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-100 active:bg-gray-200 shadow-sm">Back</button>} />
+      {saveFailed && (
+        <p role="status" className="mx-4 mt-2 px-3 py-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+          Not saved yet. No connection to the server. Your answers are kept on this phone and will save automatically.
+        </p>
+      )}
       <div className="max-w-lg mx-auto px-4 py-4 pb-64">
 
         {error && (

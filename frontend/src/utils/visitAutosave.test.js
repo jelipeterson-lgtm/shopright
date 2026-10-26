@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test'
 import assert from 'node:assert/strict'
-import { createVisitAutosave, AUTOSAVE_IDLE_MS } from './visitAutosave.js'
+import { createVisitAutosave, AUTOSAVE_IDLE_MS, AUTOSAVE_RETRY_MS } from './visitAutosave.js'
 
 function harness(delay = AUTOSAVE_IDLE_MS) {
   const saved = []
@@ -103,4 +103,46 @@ test('a failed save does not block the next flush', async () => {
     { visit_recap: 'kept locally' },
     { visit_recap: 'retry' },
   ])
+})
+
+test('a failed save is kept, reported and retried until the server confirms it', async () => {
+  mock.timers.enable({ apis: ['setTimeout'] })
+  try {
+    const saved = []
+    const reports = []
+    let fail = true
+    const saver = createVisitAutosave({
+      save: async (updates) => {
+        saved.push(updates)
+        if (fail) throw new Error('503')
+      },
+      onChange: (unsaved, failed) => reports.push({ unsaved, failed }),
+    })
+    saver.schedule({ visit_recap: 'during restart' })
+    assert.equal(await saver.flush(), false)
+    assert.deepEqual(reports.at(-1), { unsaved: { visit_recap: 'during restart' }, failed: true })
+    fail = false
+    mock.timers.tick(AUTOSAVE_RETRY_MS)
+    assert.equal(await saver.flush(), true)
+    assert.deepEqual(saved, [{ visit_recap: 'during restart' }, { visit_recap: 'during restart' }])
+    assert.deepEqual(reports.at(-1), { unsaved: {}, failed: false })
+  } finally {
+    mock.timers.reset()
+  }
+})
+
+test('an edit made while a save is in flight stays unsaved after that save succeeds', async () => {
+  const reports = []
+  let release
+  const saver = createVisitAutosave({
+    save: () => new Promise((r) => { release = r }),
+    onChange: (unsaved) => reports.push(unsaved),
+  })
+  saver.schedule({ visit_recap: 'a' })
+  const first = saver.flush()
+  await Promise.resolve()
+  saver.schedule({ visit_recap: 'ab' })
+  release()
+  await first
+  assert.deepEqual(reports.at(-1), { visit_recap: 'ab' })
 })
