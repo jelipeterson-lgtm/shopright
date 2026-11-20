@@ -5,6 +5,7 @@ from db import supabase_admin, claude, outbound
 from routers.auth import get_user_id
 from routers.stores import ensure_coordinates, haversine
 from route_order import plan_route
+from geocode import geocode
 from datetime import datetime, date
 import re
 
@@ -447,27 +448,9 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     num_stores = len(stores)
 
-    # Geocode start and end addresses via Nominatim
-    # Accepts "lat,lon" GPS strings directly — skips Nominatim for those
     def _geocode(address):
-        parts = address.split(',')
-        if len(parts) == 2:
-            try:
-                lat, lon = float(parts[0].strip()), float(parts[1].strip())
-                if -90 <= lat <= 90 and -180 <= lon <= 180:
-                    return [lon, lat]
-            except ValueError:
-                pass
-        try:
-            r = outbound.get("https://nominatim.openstreetmap.org/search", params={
-                "q": address, "format": "json", "limit": 1,
-            }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
-            results = r.json()
-            if results:
-                return [float(results[0]["lon"]), float(results[0]["lat"])]
-        except Exception:
-            pass
-        return None
+        found = geocode(address)
+        return [found[1], found[0]] if found else None  # [lon, lat] for the matrix calls
 
     start_ll = _geocode(body.start_address)
     if not start_ll:
@@ -717,16 +700,10 @@ def test_ors(authorization: str = Header(...)):
 @router.get("/geocode")
 def geocode_address(address: str = Query(...), authorization: str = Header(...)):
     get_user_id(authorization)
-    try:
-        r = outbound.get("https://nominatim.openstreetmap.org/search", params={
-            "q": address, "format": "json", "limit": 1,
-        }, headers={"User-Agent": "ShopRight/1.0"}, timeout=10)
-        results = r.json()
-        if results:
-            return {"success": True, "data": {"latitude": float(results[0]["lat"]), "longitude": float(results[0]["lon"])}, "error": None}
-        return {"success": False, "data": None, "error": "Address not found"}
-    except Exception as e:
-        return {"success": False, "data": None, "error": str(e)}
+    found = geocode(address)
+    if found:
+        return {"success": True, "data": {"latitude": found[0], "longitude": found[1]}, "error": None}
+    return {"success": False, "data": None, "error": "Address not found"}
 
 
 class SavePlanRequest(BaseModel):
