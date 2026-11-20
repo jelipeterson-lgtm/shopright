@@ -310,7 +310,7 @@ COMPLETE WORKFLOW:
 9. Back on Stores page: "Add Another Vendor" at same store or "Close Store"
 10. "Add Store" for next location
 11. Weekly: tap Reports > Weekly Shop File to generate and email your report
-12. Monthly: tap Reports > Monthly Invoice, enter mileage, send invoice
+12. Monthly: tap Reports > Monthly Invoice, review the totals, download the invoice
 
 VENDOR PROGRAM SELECTION:
 When adding a vendor, you'll see a dropdown with available programs including:
@@ -350,11 +350,12 @@ HOW TO SET UP AI REVIEW (the Anthropic API key):
 
 REPORTS:
 - Weekly Shop File: generates an Excel file with all your completed vendor assessments for the week. Emailed to Smart Circle.
-- Monthly Invoice: enter mileage per shopping day, pricing auto-calculated ($50 first vendor per store per day, $15 each additional). Emailed to Smart Circle.
+- Monthly Invoice: pricing auto-calculated ($65 first vendor per store per day, $15 each additional). Mileage is no longer paid. Download the invoice and send it to Smart Circle.
 
 PRICING:
-- $50 for the first vendor at each store location per day
+- $65 for the first vendor at each store location per day
 - $15 for each additional vendor at the same store on the same day
+- Mileage is no longer reimbursed
 
 STORES:
 The app has 236 stores across 6 retailers: Costco, Costco BC, Kroger - Fred Meyer, Lowe's Home Improvement, Sam's Club, and Target. If you can't find your store, search by store number or retailer name.
@@ -406,7 +407,7 @@ Keep answers SHORT, SIMPLE, and FRIENDLY. One step at a time. Never assume techn
         if "report" in msg or "shop file" in msg or "weekly" in msg:
             return {"success": True, "data": "To send your weekly report:\n\n1. Tap 'Reports' in the bottom nav\n2. Or tap 'Weekly Shop File' on the Home page\n3. Check the visits listed\n4. Enter the recipient email\n5. Tap 'Send Shop File'", "error": None}
         if "invoice" in msg or "monthly" in msg or "mileage" in msg:
-            return {"success": True, "data": "To send your monthly invoice:\n\n1. Tap 'Monthly Invoice' on the Home page\n2. Enter your mileage for each shopping day\n3. Review the pricing ($50 first vendor/store/day, $15 additional)\n4. Enter the recipient email\n5. Tap 'Generate & Send Invoice'", "error": None}
+            return {"success": True, "data": "To create your monthly invoice:\n\n1. Tap Reports, then Monthly Invoice\n2. Pick the month\n3. Review the totals ($65 first vendor per store per day, $15 each additional; mileage is no longer paid)\n4. Tap Download Invoice and send it to Smart Circle", "error": None}
         if "program" in msg or "vendor" in msg or "dropdown" in msg:
             return {"success": True, "data": "When adding a vendor, you'll see a dropdown with available programs like RTL-ATT-EDM, RS-CKE, etc.\n\nIf your program isn't listed, select 'Other (enter manually)' at the bottom of the dropdown and type it in.\n\nThe program identifies which vendor or brand you're assessing at the store.", "error": None}
         if "store" in msg or "location" in msg or "gps" in msg or "search" in msg:

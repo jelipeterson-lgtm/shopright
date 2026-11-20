@@ -20,7 +20,6 @@ function Signup() {
   const [reportEmail, setReportEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [homeAddress, setHomeAddress] = useState('')
-  const [mileageRate, setMileageRate] = useState('0.725')
   const [invoiceNumberStart, setInvoiceNumberStart] = useState('1')
 
   // Step 3 — API key
@@ -70,7 +69,6 @@ function Signup() {
         report_email: reportEmail || email,
         phone,
         home_address: homeAddress,
-        mileage_rate: parseFloat(mileageRate),
         invoice_number_start: parseInt(invoiceNumberStart),
         next_invoice_number: parseInt(invoiceNumberStart),
       })
@@ -226,20 +224,9 @@ function Signup() {
                 type="text"
                 value={homeAddress}
                 onChange={(e) => setHomeAddress(e.target.value)}
-                placeholder="Used for mileage calculations"
+                placeholder="Default start for route planning"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Rate ($/mile)</label>
-              <input
-                type="number"
-                step="0.001"
-                value={mileageRate}
-                onChange={(e) => setMileageRate(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-400 mt-1">2026 IRS rate: $0.725/mile</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Starting Invoice Number</label>

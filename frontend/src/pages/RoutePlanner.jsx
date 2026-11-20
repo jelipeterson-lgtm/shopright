@@ -6,6 +6,7 @@ import RouteMap from '../components/RouteMap'
 import RepeatIcon from '../components/RepeatIcon'
 import RepeatConfirmModal from '../components/RepeatConfirmModal'
 import { buildRepeatMap, getRepeatDate, isHeldBack, repeatKey, formatRepeatDate } from '../utils/repeatRule'
+import { stopEarnings } from '../utils/pricing'
 
 async function withRetry(fn) {
   let lastErr
@@ -792,7 +793,7 @@ function RoutePlanner() {
           latitude: addingVendorStore.latitude,
           longitude: addingVendorStore.longitude,
           vendors: [selectedProgram],
-          earnings: 50,
+          earnings: stopEarnings(1),
           est_minutes: 20,
           drive_time_min: 0,
           drive_distance_mi: 0,

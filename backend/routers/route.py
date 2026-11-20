@@ -6,6 +6,7 @@ from routers.auth import get_user_id
 from routers.stores import ensure_coordinates, haversine
 from route_order import plan_route
 from geocode import geocode
+from pricing import stop_earnings
 from datetime import datetime, date
 import re
 
@@ -441,7 +442,7 @@ def optimize_route(body: OptimizeRequest, authorization: str = Header(...)):
 
     for store in stores:
         vendor_count = len(store["vendors"])
-        store["earnings"] = 50 + (15 * (vendor_count - 1))
+        store["earnings"] = stop_earnings(vendor_count)
         store["est_minutes"] = 20 + (7.5 * (vendor_count - 1))
 
     import time

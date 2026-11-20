@@ -107,9 +107,8 @@ const steps = [
   },
   {
     title: 'Sending Your Monthly Invoice',
-    content: 'At the end of each month, tap "Reports" then "Monthly Invoice."\n\nYou\'ll see all your completed assessments for the month. For each shopping day, enter the total miles you drove in the mileage field.\n\nPricing is calculated automatically:\n• $50 for the first vendor at each store that day\n• $15 for each additional vendor at the same store that day\n\nReview the totals, enter the recipient email, and tap "Generate & Send Invoice."',
+    content: 'At the end of each month, tap "Reports" then "Monthly Invoice."\n\nYou\'ll see all your completed assessments for the month.\n\nPricing is calculated automatically:\n• $65 for the first vendor at each store that day\n• $15 for each additional vendor at the same store that day\n• Mileage is no longer paid\n\nReview the totals and tap "Download Invoice."',
     tips: [
-      'Enter mileage for every day you shopped — it\'s not tracked automatically',
       'The invoice number is generated automatically based on the year and month',
     ],
   },
