@@ -142,6 +142,8 @@ shopright/
 │   ├── ingest_stores.py               ← Download + geocode Book1.xlsx into database
 │   ├── repeat_rule.py                 ← "Same vendor, same store, two weeks in a row" rule (pure logic)
 │   ├── route_order.py                 ← Route Planner stop order: shortest total drive (pure logic)
+│   ├── pricing.py                     ← Pay per vendor ($65 first / $15 additional; $50 before 2026-11-01)
+│   ├── geocode.py                     ← Address → lat/lon: HERE first, Nominatim fallback, cached
 │   ├── requirements.txt               ← Python dependencies
 │   ├── tests/                         ← pytest suite + live_repeat_rule_check.py (real-API check, run by hand)
 │   ├── .env → ../.env                 ← symlink to root .env
@@ -225,7 +227,7 @@ shopright/
 | report_email | text | Email for sending reports |
 | phone | text | |
 | home_address | text | |
-| mileage_rate | numeric(4,3) | Default 0.725 (2026 IRS rate) |
+| mileage_rate | numeric(4,3) | Legacy — mileage is no longer paid (Nov 2026); not shown or used |
 | invoice_number_start | integer | Default 1 |
 | next_invoice_number | integer | Default 1 |
 | invoice_start_day | integer | Default 1 — day of month invoice period starts |
@@ -359,7 +361,7 @@ RLS: Users can read/insert/update/delete their own visits.
 
 ## Key Business Rules
 
-1. **Pricing**: $50 first vendor per store per day. $15 each additional vendor at same store same day. Calculated at invoice generation.
+1. **Pricing** (`backend/pricing.py`, mirrored in `frontend/src/utils/pricing.js`): $65 first vendor per store per day, $15 each additional vendor at the same store the same day. **Mileage is no longer paid** (no mileage line on the invoice, no mileage inputs). Shops dated before `PRICE_CHANGE_DATE` (2026-11-01) keep the old $50 first-vendor price. Route Planner earnings use the current price.
 
 2. **Fail Count**: Count of "Fail" values across evaluation fields per row. Blank if 0. Calculated server-side at Shop File generation. Never shown to user.
 

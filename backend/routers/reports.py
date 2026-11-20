@@ -168,15 +168,10 @@ def send_shopfile(body: SendShopFileRequest, authorization: str = Header(...)):
         return {"success": False, "data": None, "error": f"Failed to send email: {str(e)}"}
 
 
-class MileageEntry(BaseModel):
-    date: str
-    miles: float
-
-
 class GenerateInvoiceRequest(BaseModel):
     year: int
     month: int
-    mileage_entries: List[MileageEntry]
+    mileage_entries: Optional[list] = None  # ignored: mileage is no longer paid
 
 
 @router.post("/generate/invoice")
@@ -213,9 +208,8 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
     if not visits.data:
         return {"success": False, "data": None, "error": "No complete visits for this period"}
 
-    mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
     from excel import generate_invoice
-    output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
+    output, invoice_id = generate_invoice(visits.data, profile.data, body.year, body.month)
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November', 'December']
@@ -231,7 +225,7 @@ def generate_invoice_endpoint(body: GenerateInvoiceRequest, authorization: str =
 class SendInvoiceRequest(BaseModel):
     year: int
     month: int
-    mileage_entries: List[MileageEntry]
+    mileage_entries: Optional[list] = None  # ignored: mileage is no longer paid
     recipient_email: str
 
 
@@ -269,9 +263,8 @@ def send_invoice(body: SendInvoiceRequest, authorization: str = Header(...)):
     if not visits.data:
         return {"success": False, "data": None, "error": "No complete visits for this period"}
 
-    mileage_dicts = [{"date": e.date, "miles": e.miles} for e in body.mileage_entries]
 
-    output, invoice_id = generate_invoice(visits.data, mileage_dicts, profile.data, body.year, body.month)
+    output, invoice_id = generate_invoice(visits.data, profile.data, body.year, body.month)
     file_bytes = output.read()
 
     month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',

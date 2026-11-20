@@ -51,15 +51,15 @@ function HelpGuide() {
       title: 'Reports & Invoices',
       items: [
         { q: 'How do I send my weekly report?', a: 'From Home, tap "Weekly Shop File" under Reports. Review your completed vendors for the week, enter the recipient email, and tap Send.' },
-        { q: 'How do I send my monthly invoice?', a: 'From Home, tap "Monthly Invoice" under Reports. Enter your mileage for each shopping day, review the pricing, and tap Send.' },
-        { q: 'How is pricing calculated?', a: '$50 for the first vendor at each store per day. $15 for each additional vendor at the same store on the same day.' },
+        { q: 'How do I send my monthly invoice?', a: 'Tap Reports, then Monthly Invoice. Pick the month, review the totals, and tap Download Invoice.' },
+        { q: 'How is pricing calculated?', a: '$65 for the first vendor at each store per day. $15 for each additional vendor at the same store on the same day. Mileage is no longer paid.' },
         { q: 'What format is the report?', a: 'Both the Shop File and Invoice are Excel (.xlsx) files that match Smart Circle\'s required format exactly.' },
       ],
     },
     {
       title: 'Account & Settings',
       items: [
-        { q: 'How do I edit my profile?', a: 'Tap Profile in the bottom nav. You can update your name, email, phone, address, and mileage rate.' },
+        { q: 'How do I edit my profile?', a: 'Tap Profile in the bottom nav. You can update your name, email, phone and address.' },
         { q: 'How do I change my password?', a: 'Go to Settings > Password > Change Password.' },
         { q: 'How do I manage my subscription?', a: 'Go to Settings > Subscription. You can view your status and manage your subscription through Stripe.' },
       ],

@@ -4,6 +4,7 @@ Downloads master templates from Dropbox, copies them, writes visit data.
 """
 import os
 import io
+from pricing import vendor_price
 from datetime import datetime, date
 from collections import defaultdict
 from db import outbound
@@ -217,11 +218,10 @@ def _format_phone(phone):
     return phone
 
 
-def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
+def generate_invoice(visits, profile, year=None, month=None):
     """
     Generate Invoice .xlsx.
     visits: list of Complete visits for the month
-    mileage_entries: list of {date: str, miles: number}
     profile: user profile dict
     """
     from openpyxl import load_workbook
@@ -264,7 +264,7 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
     # Row 84: Contact info with formatted phone
     ws.cell(84, 2, f"{full_name}, {phone}, {email}")
 
-    # Clear ALL existing mileage and vendor rows — values AND borders
+    # Clear ALL existing line rows — values AND borders
     for row in range(14, 77):
         for col in range(1, 11):
             cell = ws.cell(row, col)
@@ -274,19 +274,7 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
 
     current_row = 14
 
-    # Write single mileage line — total miles for the month
-    mileage_rate = profile.get("mileage_rate", 0.70)
-    total_miles = sum(e.get("miles", 0) for e in mileage_entries if e.get("miles", 0) > 0)
-    if total_miles > 0:
-        for col in range(2, 11):
-            ws.cell(current_row, col).border = thin_border
-        ws.cell(current_row, 5, "Mileage").font = data_font
-        ws.cell(current_row, 8, mileage_rate).font = data_font
-        ws.cell(current_row, 9, total_miles).font = data_font
-        ws.cell(current_row, 10, f"=I{current_row}*H{current_row}").font = data_font
-        current_row += 1
-
-    # Calculate vendor pricing: $50 first vendor per stop per day, $15 additional
+    # Vendor pricing per store per day (see pricing.vendor_price); mileage is no longer paid
     stops = defaultdict(list)
     for v in visits:
         key = (v.get("visit_date", ""), v.get("store_number", ""), v.get("retailer_name", ""))
@@ -296,7 +284,7 @@ def generate_invoice(visits, mileage_entries, profile, year=None, month=None):
 
     for (visit_date, store_num, retailer), stop_visits in sorted_stops:
         for j, v in enumerate(stop_visits):
-            price = 50 if j == 0 else 15
+            price = vendor_price(visit_date, j)
             # Apply consistent thin borders across all columns
             for col in range(2, 11):
                 ws.cell(current_row, col).border = thin_border

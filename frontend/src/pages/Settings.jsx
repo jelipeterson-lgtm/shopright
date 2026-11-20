@@ -92,8 +92,7 @@ function Settings() {
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
   const [invoiceEndDay, setInvoiceEndDay] = useState(31)
 
-  // Mileage and Invoice
-  const [mileageRate, setMileageRate] = useState('0.725')
+  // Invoice
   const [invoiceNumberStart, setInvoiceNumberStart] = useState('1')
 
   // Password change
@@ -110,7 +109,6 @@ function Settings() {
         setHasApiKey(!!p.anthropic_api_key)
         setInvoiceStartDay(p.invoice_start_day || 1)
         setInvoiceEndDay(p.invoice_end_day || 31)
-        setMileageRate(p.mileage_rate?.toString() || '0.725')
         setInvoiceNumberStart(p.invoice_number_start?.toString() || '1')
         setIsFreeAccount(p.is_free_account || false)
       } catch (err) {
@@ -211,7 +209,7 @@ function Settings() {
     setError(null)
     setSuccess(null)
     try {
-      await api.updateProfile({ mileage_rate: parseFloat(mileageRate), invoice_number_start: parseInt(invoiceNumberStart) })
+      await api.updateProfile({ invoice_number_start: parseInt(invoiceNumberStart) })
       setSuccess('Invoice settings updated')
     } catch (err) { setError(err.message) }
     finally { setSaving(false) }
@@ -339,14 +337,7 @@ function Settings() {
         {/* Invoice Settings */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-800">Invoice Settings</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Mileage Rate ($/mile)</label>
-              <input type="number" step="0.001" value={mileageRate}
-                onChange={(e) => setMileageRate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-gray-400 mt-1">2025 IRS rate: $0.725/mile</p>
-            </div>
+          <div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Starting Invoice Number</label>
               <input type="number" min="1" value={invoiceNumberStart}

@@ -9,7 +9,7 @@ const PAGE_CONTEXT = {
   '/new-store': 'The user is adding a new store via GPS or search, then selecting a vendor program from the dropdown.',
   '/visit': 'The user is filling out the vendor assessment form with evaluation fields, rep info, and visit recap.',
   '/weekly-report': 'The user is viewing the Weekly Shop File report. They can download or email the report.',
-  '/monthly-invoice': 'The user is viewing the Monthly Invoice. They enter mileage and can send the invoice.',
+  '/monthly-invoice': 'The user is viewing the Monthly Invoice. They review the totals and download the invoice. Mileage is no longer paid.',
   '/reports': 'The user is on the Reports hub. They can choose Weekly Shop File or Monthly Invoice.',
   '/profile': 'The user is on their Profile page editing personal information.',
   '/settings': 'The user is on Settings managing their AI review API key, password, and subscription.',
@@ -24,7 +24,7 @@ Key features:
 - Stores: Add stores via GPS or search → Add vendor visits → Fill assessment form → AI review → Submit
 - Assessment form: Reps Present (Pass/Fail gate), 12 evaluation fields (Pass/Fail/N/A), Visit Recap
 - Weekly Shop File: generates Excel report emailed to Smart Circle
-- Monthly Invoice: enter mileage, auto-calculates pricing ($50 first vendor per stop, $15 additional)
+- Monthly Invoice: auto-calculates pricing ($65 first vendor per store per day, $15 additional); mileage is no longer paid
 - AI Review: optional, uses user's own Anthropic API key. Set up in Settings.
 
 Route Planner:

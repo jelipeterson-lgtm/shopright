@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { supabase } from '../services/supabase'
 import PageHeader from '../components/PageHeader'
+import { invoiceTotal } from '../utils/pricing'
 
 function MonthlyInvoice() {
   const navigate = useNavigate()
@@ -10,11 +11,9 @@ function MonthlyInvoice() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [visits, setVisits] = useState([])
-  const [mileage, setMileage] = useState({})
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState(null)
-  const [mileageRate, setMileageRate] = useState(0.725)
   const [invoiceStartDay, setInvoiceStartDay] = useState(1)
   const [invoiceEndDay, setInvoiceEndDay] = useState(31)
 
@@ -30,7 +29,6 @@ function MonthlyInvoice() {
     setError(null)
     try {
       const profile = await api.getProfile()
-      if (profile.data.mileage_rate) setMileageRate(parseFloat(profile.data.mileage_rate))
       const startDay = profile.data.invoice_start_day || 1
       const endDay = profile.data.invoice_end_day || 31
       setInvoiceStartDay(startDay)
@@ -60,16 +58,6 @@ function MonthlyInvoice() {
     }
   }
 
-  const handleMileageChange = (date, miles) => {
-    setMileage((prev) => ({ ...prev, [date]: miles }))
-  }
-
-  const getMileageEntries = () => {
-    return Object.entries(mileage)
-      .filter(([_, miles]) => miles > 0)
-      .map(([date, miles]) => ({ date, miles: parseFloat(miles) }))
-  }
-
   const handleDownload = async () => {
     setGenerating(true)
     setError(null)
@@ -82,7 +70,7 @@ function MonthlyInvoice() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ year, month, mileage_entries: getMileageEntries() }),
+        body: JSON.stringify({ year, month }),
       })
       if (!res.ok) {
         const ct = res.headers.get('content-type') || ''
@@ -119,26 +107,8 @@ function MonthlyInvoice() {
   }
   const sortedDates = Object.keys(byDate).sort()
 
-  // Calculate pricing
-  const calculateTotal = () => {
-    let vendorTotal = 0
-    const stops = {}
-    for (const v of visits) {
-      const key = `${v.visit_date}|${v.store_number}|${v.retailer_name}`
-      if (!stops[key]) stops[key] = 0
-      stops[key]++
-      vendorTotal += stops[key] === 1 ? 50 : 15
-    }
-
-    let mileageTotal = 0
-    for (const [_, miles] of Object.entries(mileage)) {
-      if (miles > 0) mileageTotal += parseFloat(miles) * mileageRate
-    }
-
-    return { vendorTotal, mileageTotal, total: vendorTotal + mileageTotal }
-  }
-
-  const totals = calculateTotal()
+  // Same order as the server's invoice, so the first vendor at each store each day matches
+  const vendorTotal = invoiceTotal([...visits].sort((x, y) => (x.visit_date + (x.visit_time || '')).localeCompare(y.visit_date + (y.visit_time || ''))))
 
   const formatDate = (d) => {
     if (!d) return ''
@@ -197,27 +167,6 @@ function MonthlyInvoice() {
           </div>
         ) : (
           <>
-            {/* Mileage entries by shopping day */}
-            <div className="bg-white rounded-lg shadow p-4 mb-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Mileage by Shopping Day</h2>
-              <div className="space-y-2">
-                {sortedDates.map((date) => (
-                  <div key={date} className="flex items-center gap-3">
-                    <p className="text-sm text-gray-700 w-28">{formatDate(date)}</p>
-                    <input
-                      type="number"
-                      min="0"
-                      value={mileage[date] || ''}
-                      onChange={(e) => handleMileageChange(date, e.target.value)}
-                      placeholder="Miles"
-                      className="flex-1 border border-gray-300 rounded-md px-3 py-1.5 text-sm"
-                    />
-                    <p className="text-xs text-gray-400 w-12">{byDate[date].length} visit{byDate[date].length !== 1 ? 's' : ''}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Visit summary */}
             {sortedDates.map((date) => (
               <div key={date} className="bg-white rounded-lg shadow mb-3 overflow-hidden">
@@ -241,16 +190,13 @@ function MonthlyInvoice() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Vendors ({visits.length})</span>
-                  <span className="text-gray-800">${totals.vendorTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Mileage</span>
-                  <span className="text-gray-800">${totals.mileageTotal.toFixed(2)}</span>
+                  <span className="text-gray-800">${vendorTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-1 border-t border-gray-100">
                   <span className="text-gray-700">Total</span>
-                  <span className="text-gray-900">${totals.total.toFixed(2)}</span>
+                  <span className="text-gray-900">${vendorTotal.toFixed(2)}</span>
                 </div>
+                <p className="text-xs text-gray-400 pt-1">$65 first vendor per store per day, $15 each additional. Mileage is not paid.</p>
               </div>
             </div>
 
